@@ -12,10 +12,7 @@
 ### Key Characteristics
 - **Language Stack**: Nextflow (workflow orchestration) + Python (data processing/LLM interaction)
 - **Architecture**: Modular, containerized pipeline with separate concerns
-- **Execution**: Can run locally, on HPC clusters, or via GitHub Actions (weekly automation)
 - **Data Flow**: RSS feeds → Metadata extraction → Screening → Prioritization → Output (JSON/Zotero/DuckDB)
-
----
 
 ## 🏗️ Architecture
 
@@ -81,8 +78,6 @@ papers_please/
 └── results/                   # Default output directory
 ```
 
----
-
 ## 🔑 Core Concepts
 
 ### 1. **Three-Stage LLM Pipeline**
@@ -137,7 +132,7 @@ Core Pydantic models in `bin/common/models.py`:
 - Calls `PROCESS_ARTICLES` workflow
 - Handles output routing
 
-### 4. **Backend Flexibility**
+### 4. **Input/Output Backends**
 
 **Input Backends** (`--from`):
 - `journals_tsv`: Fetch from RSS feeds defined in TSV file
@@ -149,14 +144,25 @@ Core Pydantic models in `bin/common/models.py`:
 - `zotero`: Upload to Zotero library via API
 - `duckdb`: Store in DuckDB database
 
-### 5. **Containerization**
+### 5. **Execution & Performance**
 
-All Python processes run in Wave containers:
+**Container Environment:**
+- All Python processes run in Wave containers
 - Base: `community.wave.seqera.io/library/pip_google-genai:*`
 - Scripts in `bin/` are automatically available in container PATH
 - Secrets (API keys) injected via Nextflow secrets system
 
----
+**Deployment Options:**
+- Local execution for development/testing
+- HPC clusters for large-scale processing
+- GitHub Actions for weekly automation
+
+**Performance Features:**
+- **Parallel Execution**: Nextflow runs independent tasks in parallel
+- **Batching**: LLM processes batch articles (default: 10) to reduce API calls
+- **Retry Logic**: Failed articles are retried once with relaxed validation
+- **Caching**: Use `-resume` to skip completed tasks
+- **Rate Limiting**: Gemini API has rate limits; batch size and concurrency are tuned
 
 ## 🛠️ Development Workflows
 
@@ -219,27 +225,6 @@ All Python processes run in Wave containers:
    ```
 5. **Add parameters** to `nextflow.config` and `nextflow_schema.json`
 
-### Testing Changes
-
-**Python Unit Tests:**
-```bash
-cd bin
-uv run pytest tests/
-```
-
-**Run Test Workflow:**
-```bash
-nextflow run main.nf \
-    --from articles_json \
-    --from_json_input test_articles.json \
-    --to articles_json \
-    --debug
-```
-
-**Check Specific Process:**
-```bash
-nextflow run main.nf -entry EXTRACT_METADATA --debug
-```
 
 ---
 
@@ -298,7 +283,7 @@ with open("output.json", "w") as f:
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Configuration & Secrets
 
 ### Key Parameters
 
@@ -313,29 +298,57 @@ with open("output.json", "w") as f:
 | `prioritization_model` | `gemini-2.5-flash-lite` | LLM for prioritization |
 | `debug` | `false` | Enable debug logging |
 
-### Secrets Required
+### Required Secrets
 
 - `GOOGLE_API_KEY`: Google AI Studio API key (required)
 - `USER_EMAIL`: Email for CrossRef/NCBI APIs (required)
 - `SPRINGER_META_API_KEY`: Springer API key (optional)
 - `ZOTERO_API_KEY`: Zotero API key (optional, for `--to zotero`)
 
-Set secrets:
+**Set secrets:**
 ```bash
 nextflow secrets set GOOGLE_API_KEY "your-key"
 ```
 
+**Security Notes:**
+- Never commit API keys to repository
+- Use Nextflow secrets or GitHub secrets for CI/CD
+- All processes are containerized for security isolation
+
 ---
 
-## 🐛 Debugging Tips
+## 🧪 Testing & Debugging
 
-### 1. Enable Debug Mode
+### Python Unit Tests
+```bash
+cd bin && uv run pytest tests/
+```
+
+### Workflow Testing
+```bash
+# Test full workflow
+nextflow run main.nf \
+    --from articles_json \
+    --from_json_input test_articles.json \
+    --to articles_json \
+    --debug
+
+# Test specific process
+nextflow run main.nf -entry EXTRACT_METADATA --debug
+
+# Resume failed runs (uses cache)
+nextflow run main.nf -resume
+```
+
+### Debugging Techniques
+
+**1. Enable Debug Mode:**
 ```bash
 nextflow run main.nf --debug
 ```
-This adds verbose logging to Python scripts.
+Adds verbose logging to Python scripts.
 
-### 2. Check Work Directory
+**2. Inspect Work Directory:**
 ```bash
 ls -la work/*/
 ```
@@ -345,16 +358,10 @@ Each task's work directory contains:
 - `.command.err`: stderr
 - Input/output files
 
-### 3. Resume Failed Runs
-```bash
-nextflow run main.nf -resume
-```
-Nextflow caches successful tasks.
-
-### 4. Inspect LLM Responses
+**3. Check LLM Failures:**
 Failed LLM responses are saved to `*_fail.json` files with validation errors.
 
-### 5. Test Python Scripts Directly
+**4. Test Python Scripts Directly:**
 ```bash
 cd bin
 uv run python llm_process_articles.py \
@@ -388,13 +395,6 @@ uv run python llm_process_articles.py \
 
 ---
 
-## 🚀 Performance Considerations
-
-- **Batching**: LLM processes batch articles (default: 10) to reduce API calls
-- **Retry Logic**: Failed articles are retried once with relaxed validation
-- **Parallel Execution**: Nextflow runs independent tasks in parallel
-- **Caching**: Use `-resume` to skip completed tasks
-- **Rate Limiting**: Gemini API has rate limits; batch size and concurrency are tuned
 
 ---
 
@@ -411,27 +411,23 @@ uv run python llm_process_articles.py \
 
 1. **This is NOT for workflow agents**: This file is for code assistants (like GitHub Copilot) helping with development, not for the LLM agents that process articles.
 
-2. **Branch**: Currently on `feat/add_tests` - working branch for adding test coverage.
+2. **Current Branch**: `feat/create_agents` - working branch for agent creation and documentation.
 
-3. **Database**: DuckDB files (`.duckdb`) store processed articles to avoid re-processing.
+3. **Data Persistence**: DuckDB files (`.duckdb`) store processed articles to avoid re-processing.
 
-4. **GitHub Actions**: `.github/workflows/` contains automation for weekly runs.
-
-5. **Secrets Management**: Never commit API keys. Use Nextflow secrets or GitHub secrets.
-
-6. **Containerization**: All processes are containerized. Test locally with Docker before deploying.
+4. **Automation**: `.github/workflows/` contains automation for weekly runs.
 
 ---
 
-## 🤝 Making Changes
+## 🤝 Development Best Practices
 
-### Before Editing
+### Before Making Changes
 1. Read relevant sections of this guide
 2. Check existing tests in `bin/tests/`
 3. Review similar implementations in codebase
 4. Understand data flow through pipeline
 
-### After Editing
+### Development Workflow
 1. Run Python tests: `cd bin && uv run pytest`
 2. Test workflow: `nextflow run main.nf -resume`
 3. Check for errors in work directories
