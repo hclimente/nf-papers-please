@@ -10,6 +10,39 @@ from .models import (
 )
 
 
+def attempt_json_fix(response_text: str) -> str:
+    """
+    Attempt to fix common JSON formatting issues in the response text.
+
+    Args:
+        response_text (str): The AI response text.
+    Returns:
+        str: The potentially fixed JSON string.
+    """
+
+    json_match = re.search(r"```json\s*\n", response_text)
+    bracket_match = re.search(r"\[\s*{", response_text)
+    if json_match and response_text.endswith("```"):
+        # remove everything before ```json and the ending ```
+        response_text = response_text[json_match.end() :].strip()
+        response_text = response_text[:-3].strip()
+    elif response_text.startswith("```") and response_text.endswith("```"):
+        # remove the starting and ending ```
+        response_text = response_text[3:-3].strip()
+    elif response_text.startswith("`") and response_text.endswith("`"):
+        # remove single backticks
+        response_text = response_text[1:-1].strip()
+    elif bracket_match and response_text.endswith("}]"):
+        # remove everything before the first [
+        response_text = response_text[bracket_match.start() :].strip()
+
+    # remove double quotes before keys (e.g., ""doi": -> "doi":)
+    response_text = re.sub(r'\{""(\w+)":', r'{"\1":', response_text)
+    response_text = re.sub(r',\s*""(\w+)":', r', "\1":', response_text)
+
+    return response_text
+
+
 def validate_json_response(response_text: str) -> dict:
     """
     Validate that the response is valid JSON.
@@ -23,23 +56,15 @@ def validate_json_response(response_text: str) -> dict:
     if not response_text or not isinstance(response_text, str):
         raise ValidationError(response_text, "Empty or non-string response.")
 
-    # remove ``` at the start and end if present
-    # Handle cases where there's text before ```json
-
-    json_match = re.search(r"```json\s*\n", response_text)
-    if json_match and response_text.endswith("```"):
-        response_text = response_text[json_match.end() :].strip()
-        response_text = response_text[:-3].strip()
-    elif response_text.startswith("```") and response_text.endswith("```"):
-        response_text = response_text[3:-3].strip()
-    elif response_text.startswith("`") and response_text.endswith("`"):
-        response_text = response_text[1:-1].strip()
-
     # parse as json
     try:
         response = json.loads(response_text)
-    except json.JSONDecodeError:
-        raise ValidationError(response_text, "Response is not valid JSON.")
+    except json.JSONDecodeError as e:
+        try:
+            fixed_response_text = attempt_json_fix(response_text)
+            response = json.loads(fixed_response_text)
+        except json.JSONDecodeError:
+            raise ValidationError(response_text, f"Response is not valid JSON: {e}")
 
     if not isinstance(response, list):
         raise ValidationError(response, "Response should be a list.")
