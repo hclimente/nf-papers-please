@@ -39,7 +39,8 @@ Your goal is to remove clear mismatches quickly (80-90% recall). This is a filte
 3. `decision` is a boolean: `true` (PASS) or `false` (FAIL)
 4. `reasoning` is a single clear sentence (max 25 words) explaining the decision
 5. Use double quotes for all JSON keys and string values
-6. Minify output (remove unnecessary whitespace)
+6. String values must be single-line (escape newlines as \n if needed)
+7. Start your response with `[` and end with `]` - nothing else
 
 ## JSON Schema:
 ```json

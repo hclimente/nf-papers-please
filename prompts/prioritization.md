@@ -47,7 +47,8 @@ Articles that satisfy **1 or fewer** high-priority criteria:
 3. `decision` must be one of: `"high"`, `"medium"`, or `"low"` (string, not enum)
 4. `reasoning` is a single clear sentence (max 25 words) explaining the specific criteria matched
 5. Use double quotes for all JSON keys and string values
-6. Minify output (remove unnecessary whitespace)
+6. String values must be single-line (escape newlines as \n if needed)
+7. Start your response with `[` and end with `]` - nothing else
 
 ## JSON Schema:
 ```json
