@@ -47,7 +47,8 @@ Articles that satisfy **1 or fewer** high-priority criteria:
 3. `decision` must be one of: `"high"`, `"medium"`, or `"low"` (string, not enum)
 4. `reasoning` is a single clear sentence (max 25 words) explaining the specific criteria matched
 5. Use double quotes for all JSON keys and string values
-6. Minify output (remove unnecessary whitespace)
+6. String values must be single-line (escape newlines as \n if needed)
+7. Start your response with `[` and end with `]` - nothing else
 
 ## JSON Schema:
 ```json
@@ -60,52 +61,111 @@ Articles that satisfy **1 or fewer** high-priority criteria:
 ]
 ```
 
-# Examples
-
-## Example 1: HIGH - Multi-dimensional perfect match
-Input: "A Review of Network-Based Methods for Drug Target Identification in Oncology"
-Output:
-```json
-[{{"doi":"10.1234/example1","decision":"high","reasoning":"Review combining multiple core subfields and applications."}}]
-```
-
-## Example 2: HIGH - Novel method in core area
-Input: "DeepTarget: A deep learning framework for cancer drug target prediction using multi-omics networks"
-Output:
-```json
-[{{"doi":"10.1234/example2","decision":"high","reasoning":"Novel method for core application combining multiple key subfields."}}]
-```
-
-## Example 3: MEDIUM - Large-scale study in key subfield
-Input: "Pan-cancer analysis of gene essentiality across 1,000 human cancer cell lines"
-Output:
-```json
-[{{"doi":"10.1234/example3","decision":"medium","reasoning":"Large-scale study in key subfield using established methods."}}]
-```
-
-## Example 4: MEDIUM - New method in adjacent area
-Input: "Graph neural networks for protein function prediction from sequence data"
-Output:
-```json
-[{{"doi":"10.1234/example4","decision":"medium","reasoning":"Novel method in relevant field but for non-core application."}}]
-```
-
-## Example 5: LOW - Peripheral focus
-Input: "Network analysis identifies potential therapeutic targets in Alzheimer's disease"
-Output:
-```json
-[{{"doi":"10.1234/example5","decision":"low","reasoning":"Relevant methodology applied outside primary research focus."}}]
-```
-
-## Example 6: LOW - Standard application
-Input: "Machine learning predicts patient outcomes from electronic health records"
-Output:
-```json
-[{{"doi":"10.1234/example6","decision":"low","reasoning":"Standard application outside core subfields and applications."}}]
-```
-
 # Important Considerations
 - **Context matters**: A review in a peripheral area may be HIGH, while a standard study in a core area may be MEDIUM
 - **Be selective with HIGH**: Reserve for articles that truly warrant immediate attention
 - **Medium is the default**: Most solid, relevant papers should be MEDIUM
 - **Low doesn't mean irrelevant**: These passed screening and may still be valuable later
+
+# Examples
+
+```json
+[
+  {
+    "query": [
+      {
+        "title": "A Review of Network-Based Methods for Drug Target Identification in Oncology",
+        "summary": "This comprehensive review synthesizes current network-based computational approaches for identifying therapeutic targets in cancer research...",
+        "doi": "10.1234/example1"
+      }
+    ],
+    "response": [
+      {
+        "doi": "10.1234/example1",
+        "decision": "high",
+        "reasoning": "Review combining multiple core subfields and applications."
+      }
+    ]
+  },
+  {
+    "query": [
+      {
+        "title": "DeepTarget: A deep learning framework for cancer drug target prediction using multi-omics networks",
+        "summary": "We present DeepTarget, a novel deep learning framework that integrates multi-omics data within biological networks to predict cancer drug targets...",
+        "doi": "10.1234/example2"
+      }
+    ],
+    "response": [
+      {
+        "doi": "10.1234/example2",
+        "decision": "high",
+        "reasoning": "Novel method for core application combining multiple key subfields."
+      }
+    ]
+  },
+  {
+    "query": [
+      {
+        "title": "Pan-cancer analysis of gene essentiality across 1,000 human cancer cell lines",
+        "summary": "We performed a comprehensive analysis of gene essentiality data from 1,000 cancer cell lines across multiple cancer types...",
+        "doi": "10.1234/example3"
+      }
+    ],
+    "response": [
+      {
+        "doi": "10.1234/example3",
+        "decision": "medium",
+        "reasoning": "Large-scale study in key subfield using established methods."
+      }
+    ]
+  },
+  {
+    "query": [
+      {
+        "title": "Graph neural networks for protein function prediction from sequence data",
+        "summary": "This study introduces a graph neural network approach for predicting protein functions directly from sequence information...",
+        "doi": "10.1234/example4"
+      }
+    ],
+    "response": [
+      {
+        "doi": "10.1234/example4",
+        "decision": "medium",
+        "reasoning": "Novel method in relevant field but for non-core application."
+      }
+    ]
+  },
+  {
+    "query": [
+      {
+        "title": "Network analysis identifies potential therapeutic targets in Alzheimer's disease",
+        "summary": "Using network-based approaches, we identified potential therapeutic targets for Alzheimer's disease treatment...",
+        "doi": "10.1234/example5"
+      }
+    ],
+    "response": [
+      {
+        "doi": "10.1234/example5",
+        "decision": "low",
+        "reasoning": "Relevant methodology applied outside primary research focus."
+      }
+    ]
+  },
+  {
+    "query": [
+      {
+        "title": "Machine learning predicts patient outcomes from electronic health records",
+        "summary": "We developed machine learning models to predict patient outcomes using electronic health record data...",
+        "doi": "10.1234/example6"
+      }
+    ],
+    "response": [
+      {
+        "doi": "10.1234/example6",
+        "decision": "low",
+        "reasoning": "Standard application outside core subfields and applications."
+      }
+    ]
+  }
+]
+```
