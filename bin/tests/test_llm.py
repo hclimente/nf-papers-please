@@ -43,8 +43,27 @@ class TestLlmQuery:
 
     @pytest.fixture
     def mock_system_prompt(self, tmp_path):
-        """Create a mock system prompt file"""
+        """Create a mock system prompt file without examples"""
         prompt_file = tmp_path / "prompt.md"
+        prompt_content = """System prompt for testing
+
+# Examples
+
+```json
+[
+  {
+    "query": [{"url": "https://example.com", "title": "Test Article"}],
+    "response": [{"doi": "10.1234/test", "decision": true}]
+  }
+]
+```"""
+        prompt_file.write_text(prompt_content)
+        return str(prompt_file)
+
+    @pytest.fixture
+    def mock_system_prompt_no_examples(self, tmp_path):
+        """Create a mock system prompt file without examples section"""
+        prompt_file = tmp_path / "prompt_no_examples.md"
         prompt_file.write_text("System prompt for testing")
         return str(prompt_file)
 
@@ -341,7 +360,18 @@ class TestLlmQuery:
 
         # Create prompt file with specific content
         prompt_file = tmp_path / "custom_prompt.md"
-        custom_prompt = "Custom system instruction for testing"
+        custom_prompt = """Custom system instruction for testing
+
+# Examples
+
+```json
+[
+  {
+    "query": [{"url": "https://example.com"}],
+    "response": [{"doi": "10.1234/test"}]
+  }
+]
+```"""
         prompt_file.write_text(custom_prompt)
 
         # Execute
@@ -357,7 +387,7 @@ class TestLlmQuery:
         # Verify system prompt was included in context
         call_kwargs = mock_client.models.generate_content.call_args[1]
         contents = call_kwargs["contents"]
-        assert custom_prompt in contents[0].parts[0].text
+        assert "Custom system instruction for testing" in contents[0].parts[0].text
 
     @patch("common.llm.genai.Client")
     def test_llm_query_formats_research_interests_into_prompt(
@@ -373,7 +403,19 @@ class TestLlmQuery:
 
         # Create prompt with placeholder
         prompt_file = tmp_path / "prompt.md"
-        prompt_file.write_text("Research interests: {research_interests}")
+        prompt_content = """Research interests: {research_interests}
+
+# Examples
+
+```json
+[
+  {
+    "query": [{"url": "https://example.com"}],
+    "response": [{"doi": "10.1234/test"}]
+  }
+]
+```"""
+        prompt_file.write_text(prompt_content)
 
         # Create research interests file
         interests_file = tmp_path / "interests.md"
@@ -439,7 +481,21 @@ class TestLlmQuery:
 
         # Create prompt file with whitespace
         prompt_file = tmp_path / "prompt.md"
-        prompt_file.write_text("  \n  System prompt  \n  ")
+        prompt_content = """
+  System prompt
+
+# Examples
+
+```json
+[
+  {
+    "query": [{"url": "https://example.com"}],
+    "response": [{"doi": "10.1234/test"}]
+  }
+]
+```
+"""
+        prompt_file.write_text(prompt_content)
 
         # Execute
         llm_query(
@@ -451,10 +507,11 @@ class TestLlmQuery:
             tools=[],
         )
 
-        # Verify whitespace was stripped
+        # Verify prompt is processed correctly despite whitespace
         call_kwargs = mock_client.models.generate_content.call_args[1]
         contents = call_kwargs["contents"]
-        assert contents[0].parts[0].text == "System prompt"
+        # Should still contain the system prompt part (before examples)
+        assert "System prompt" in contents[0].parts[0].text
 
     @patch("common.llm.genai.Client")
     def test_llm_query_with_whitespace_in_research_interests(
@@ -470,7 +527,19 @@ class TestLlmQuery:
 
         # Create files
         prompt_file = tmp_path / "prompt.md"
-        prompt_file.write_text("Interests: {research_interests}")
+        prompt_content = """Interests: {research_interests}
+
+# Examples
+
+```json
+[
+  {
+    "query": [{"url": "https://example.com"}],
+    "response": [{"doi": "10.1234/test"}]
+  }
+]
+```"""
+        prompt_file.write_text(prompt_content)
 
         interests_file = tmp_path / "interests.md"
         interests_file.write_text("  \n  AI research  \n  ")
@@ -492,10 +561,10 @@ class TestLlmQuery:
         assert "  \n  " not in contents[0].parts[0].text
 
     @patch("common.llm.genai.Client")
-    def test_llm_query_model_acknowledgment_message(
+    def test_llm_query_model_acknowledgment_contains_examples(
         self, mock_client_class, sample_articles, mock_system_prompt
     ):
-        """Test that the model acknowledgment message is correct"""
+        """Test that the model acknowledgment message contains example responses"""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
@@ -513,11 +582,252 @@ class TestLlmQuery:
             tools=[],
         )
 
-        # Verify model acknowledgment
+        # Verify model acknowledgment contains example responses
         call_kwargs = mock_client.models.generate_content.call_args[1]
         contents = call_kwargs["contents"]
         acknowledgment = contents[1].parts[0].text
 
-        assert "Understood" in acknowledgment
-        assert "analyze the articles" in acknowledgment
-        assert "Please provide the articles" in acknowledgment
+        # Should contain the example response from the mock prompt
+        assert "10.1234/test" in acknowledgment
+        assert "decision" in acknowledgment
+
+    @patch("common.llm.genai.Client")
+    def test_llm_query_system_prompt_contains_example_queries(
+        self, mock_client_class, sample_articles, mock_system_prompt
+    ):
+        """Test that the system prompt contains example queries"""
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.text = "Response"
+        mock_client.models.generate_content.return_value = mock_response
+
+        # Execute
+        llm_query(
+            articles=sample_articles,
+            system_prompt_path=mock_system_prompt,
+            model="gemini-1.5-flash",
+            api_key="test-api-key",  # pragma: allowlist secret
+            research_interests_path=None,
+            tools=[],
+        )
+
+        # Verify system prompt contains example queries
+        call_kwargs = mock_client.models.generate_content.call_args[1]
+        contents = call_kwargs["contents"]
+        system_instruction = contents[0].parts[0].text
+
+        # Should contain "Example of a user query:" and the query from mock prompt
+        assert "Example of a user query:" in system_instruction
+        assert "https://example.com" in system_instruction
+
+    @patch("common.llm.genai.Client")
+    def test_llm_query_parses_examples_correctly(
+        self, mock_client_class, sample_articles, tmp_path
+    ):
+        """Test that examples are parsed correctly from the prompt file"""
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.text = "Response"
+        mock_client.models.generate_content.return_value = mock_response
+
+        # Create prompt with multiple examples
+        prompt_file = tmp_path / "prompt_multi_example.md"
+        prompt_content = """System prompt for testing
+
+# Examples
+
+```json
+[
+  {
+    "query": [{"url": "https://example1.com", "title": "Article 1"}],
+    "response": [{"doi": "10.1234/ex1", "decision": true}]
+  },
+  {
+    "query": [{"url": "https://example2.com", "title": "Article 2"}],
+    "response": [{"doi": "10.1234/ex2", "decision": false, "reasoning": "Not relevant"}]
+  }
+]
+```"""
+        prompt_file.write_text(prompt_content)
+
+        # Execute
+        llm_query(
+            articles=sample_articles,
+            system_prompt_path=str(prompt_file),
+            model="gemini-1.5-flash",
+            api_key="test-api-key",  # pragma: allowlist secret
+            research_interests_path=None,
+            tools=[],
+        )
+
+        # Verify both examples are included
+        call_kwargs = mock_client.models.generate_content.call_args[1]
+        contents = call_kwargs["contents"]
+
+        # Check system instruction has both query examples
+        system_instruction = contents[0].parts[0].text
+        assert "https://example1.com" in system_instruction
+        assert "https://example2.com" in system_instruction
+
+        # Check model response has both response examples
+        model_response = contents[1].parts[0].text
+        assert "10.1234/ex1" in model_response
+        assert "10.1234/ex2" in model_response
+        assert "Not relevant" in model_response
+
+    @patch("common.llm.genai.Client")
+    def test_llm_query_handles_complex_example_structure(
+        self, mock_client_class, sample_articles, tmp_path
+    ):
+        """Test handling of complex example structures with multiple queries/responses per example"""
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.text = "Response"
+        mock_client.models.generate_content.return_value = mock_response
+
+        # Create prompt with complex examples
+        prompt_file = tmp_path / "prompt_complex.md"
+        prompt_content = """System prompt for testing
+
+# Examples
+
+```json
+[
+  {
+    "query": [
+      {"url": "https://example1.com", "title": "Article 1"},
+      {"url": "https://example2.com", "title": "Article 2"}
+    ],
+    "response": [
+      {"doi": "10.1234/ex1", "decision": true},
+      {"doi": "10.1234/ex2", "decision": false}
+    ]
+  }
+]
+```"""
+        prompt_file.write_text(prompt_content)
+
+        # Execute
+        llm_query(
+            articles=sample_articles,
+            system_prompt_path=str(prompt_file),
+            model="gemini-1.5-flash",
+            api_key="test-api-key",  # pragma: allowlist secret
+            research_interests_path=None,
+            tools=[],
+        )
+
+        # Verify complex structure is preserved
+        call_kwargs = mock_client.models.generate_content.call_args[1]
+        contents = call_kwargs["contents"]
+
+        system_instruction = contents[0].parts[0].text
+        assert "Article 1" in system_instruction
+        assert "Article 2" in system_instruction
+
+        model_response = contents[1].parts[0].text
+        assert "10.1234/ex1" in model_response
+        assert "10.1234/ex2" in model_response
+
+    def test_llm_query_raises_error_on_malformed_examples(
+        self, sample_articles, tmp_path
+    ):
+        """Test that malformed examples in prompt file raise appropriate errors"""
+        # Create prompt with invalid JSON in examples section
+        prompt_file = tmp_path / "prompt_invalid.md"
+        prompt_content = """System prompt for testing
+
+# Examples
+
+```json
+[
+  {
+    "query": [{"url": "https://example.com"}]
+    # Missing comma and response field - invalid JSON
+  }
+]
+```"""
+        prompt_file.write_text(prompt_content)
+
+        # Execute and expect JSON decode error
+        with pytest.raises(Exception):  # Could be JSONDecodeError or similar
+            llm_query(
+                articles=sample_articles,
+                system_prompt_path=str(prompt_file),
+                model="gemini-1.5-flash",
+                api_key="test-api-key",  # pragma: allowlist secret
+                research_interests_path=None,
+                tools=[],
+            )
+
+    def test_llm_query_raises_error_on_missing_examples_section(
+        self, sample_articles, mock_system_prompt_no_examples
+    ):
+        """Test that prompt without Examples section raises an error"""
+        # Execute and expect ValueError due to split failing
+        with pytest.raises(ValueError):
+            llm_query(
+                articles=sample_articles,
+                system_prompt_path=mock_system_prompt_no_examples,
+                model="gemini-1.5-flash",
+                api_key="test-api-key",  # pragma: allowlist secret
+                research_interests_path=None,
+                tools=[],
+            )
+
+    @patch("common.llm.genai.Client")
+    def test_llm_query_examples_with_research_interests_placeholder(
+        self, mock_client_class, sample_articles, tmp_path
+    ):
+        """Test that examples are parsed correctly when prompt has research interests placeholder"""
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.text = "Response"
+        mock_client.models.generate_content.return_value = mock_response
+
+        # Create prompt with research interests placeholder
+        prompt_file = tmp_path / "prompt_with_placeholder.md"
+        prompt_content = """System prompt with research interests: {research_interests}
+
+# Examples
+
+```json
+[
+  {
+    "query": [{"url": "https://example.com", "title": "Test"}],
+    "response": [{"doi": "10.1234/test", "decision": true}]
+  }
+]
+```"""
+        prompt_file.write_text(prompt_content)
+
+        # Create research interests file
+        interests_file = tmp_path / "interests.md"
+        interests_file.write_text("AI and ML")
+
+        # Execute
+        llm_query(
+            articles=sample_articles,
+            system_prompt_path=str(prompt_file),
+            model="gemini-1.5-flash",
+            api_key="test-api-key",  # pragma: allowlist secret
+            research_interests_path=str(interests_file),
+            tools=[],
+        )
+
+        # Verify both research interests insertion and examples parsing work
+        call_kwargs = mock_client.models.generate_content.call_args[1]
+        contents = call_kwargs["contents"]
+
+        system_instruction = contents[0].parts[0].text
+        assert "AI and ML" in system_instruction  # Research interests inserted
+        assert "Example of a user query:" in system_instruction  # Examples parsed
+        assert "https://example.com" in system_instruction  # Query example present

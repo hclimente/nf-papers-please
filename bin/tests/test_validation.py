@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from common.validation import (
+    attempt_json_fix,
     validate_json_response,
     handle_error,
     ValidationError,
@@ -18,6 +19,116 @@ from common.validation import (
     validate_llm_response,
     save_validated_responses,
 )
+
+
+class TestAttemptJsonFix:
+    """Test suite for attempt_json_fix function"""
+
+    def test_fix_json_with_code_blocks(self):
+        """Test fixing JSON wrapped in ```json code blocks"""
+        input_text = '```json\n[{"key": "value"}]\n```'
+        result = attempt_json_fix(input_text)
+        assert result == '[{"key": "value"}]'
+
+    def test_fix_json_with_preamble_text(self):
+        """Test fixing JSON with preamble text before ```json"""
+        input_text = 'Here are the results:\n```json\n[{"doi": "10.1234"}]\n```'
+        result = attempt_json_fix(input_text)
+        assert result == '[{"doi": "10.1234"}]'
+
+    def test_fix_json_with_triple_backticks(self):
+        """Test fixing JSON wrapped in triple backticks without json marker"""
+        input_text = '```\n[{"key": "value"}]\n```'
+        result = attempt_json_fix(input_text)
+        assert result == '[{"key": "value"}]'
+
+    def test_fix_json_with_single_backticks(self):
+        """Test fixing JSON wrapped in single backticks"""
+        input_text = '`[{"key": "value"}]`'
+        result = attempt_json_fix(input_text)
+        assert result == '[{"key": "value"}]'
+
+    def test_fix_json_with_preamble_text_no_markers(self):
+        """Test fixing JSON with preamble text but no code blocks"""
+        input_text = 'I\'ve processed the articles. Here are the results:\n\n[{"doi": "10.1234"}]'
+        result = attempt_json_fix(input_text)
+        assert result == '[{"doi": "10.1234"}]'
+
+    def test_fix_json_with_double_quotes_in_keys(self):
+        """Test fixing JSON with double quotes before keys (""key":)"""
+        input_text = '[{""doi": "10.1234", ""decision": true}]'
+        result = attempt_json_fix(input_text)
+        assert result == '[{"doi": "10.1234", "decision": true}]'
+
+    def test_fix_json_with_double_quotes_after_comma(self):
+        """Test fixing JSON with double quotes after commas"""
+        input_text = '[{"doi": "10.1234", ""decision": true, ""reasoning": "test"}]'
+        result = attempt_json_fix(input_text)
+        assert result == '[{"doi": "10.1234", "decision": true, "reasoning": "test"}]'
+
+    def test_fix_complex_preamble_with_double_quotes(self):
+        """Test fixing JSON with both preamble and double quote issues"""
+        input_text = 'Here is the output:\n```json\n[{""doi": "10.1234"}]\n```'
+        result = attempt_json_fix(input_text)
+        # After removing code blocks, should fix double quotes
+        assert '""' not in result
+        assert '"doi"' in result
+
+    def test_fix_already_valid_json(self):
+        """Test that valid JSON passes through unchanged"""
+        input_text = '[{"doi": "10.1234", "decision": true}]'
+        result = attempt_json_fix(input_text)
+        assert result == input_text
+
+    def test_fix_empty_array(self):
+        """Test fixing empty JSON array"""
+        input_text = "```json\n[]\n```"
+        result = attempt_json_fix(input_text)
+        assert result == "[]"
+
+    def test_fix_multiline_preamble(self):
+        """Test fixing JSON with multi-line preamble"""
+        input_text = """I've analyzed all articles.
+Here are my findings.
+Please review:
+
+```json
+[{"doi": "10.1234"}]
+```"""
+        result = attempt_json_fix(input_text)
+        assert result == '[{"doi": "10.1234"}]'
+
+    def test_fix_nested_objects_with_issues(self):
+        """Test fixing nested JSON with double quote issues"""
+        input_text = '[{""outer": {""inner": "value"}}]'
+        result = attempt_json_fix(input_text)
+        assert '""' not in result
+        assert result == '[{"outer": {"inner": "value"}}]'
+
+    def test_fix_whitespace_preservation(self):
+        """Test that whitespace inside valid JSON is preserved"""
+        input_text = '```\n[{"key": "value with  spaces"}]\n```'
+        result = attempt_json_fix(input_text)
+        assert "value with  spaces" in result
+
+    def test_fix_special_characters_in_values(self):
+        """Test fixing JSON with special characters in string values"""
+        input_text = '```json\n[{"text": "Value with !@#$%"}]\n```'
+        result = attempt_json_fix(input_text)
+        assert "!@#$%" in result
+
+    def test_no_matching_patterns(self):
+        """Test text that doesn't match any patterns returns as-is"""
+        input_text = "This is just plain text without JSON"
+        result = attempt_json_fix(input_text)
+        assert result == input_text
+
+    def test_fix_multiple_objects_with_double_quotes(self):
+        """Test fixing multiple JSON objects with double quote issues"""
+        input_text = '[{""doi": "10.1", ""val": 1}, {""doi": "10.2", ""val": 2}]'
+        result = attempt_json_fix(input_text)
+        assert '""' not in result
+        assert result.count('"doi"') == 2
 
 
 class TestValidateJsonResponse:
@@ -127,6 +238,42 @@ class TestValidateJsonResponse:
         response_text = '[\n  {"key": "value"},\n  {"key2": "value2"}\n]'
         result = validate_json_response(response_text)
         assert result == [{"key": "value"}, {"key2": "value2"}]
+
+    def test_validate_json_with_conversational_preamble(self):
+        """Test validating JSON with conversational preamble text"""
+        response_text = 'I\'ve processed the articles based on your criteria. Here are the results in the requested JSON format:\n\n[{"doi":"10.1234","decision":true,"reasoning":"Example response."}]'
+        result = validate_json_response(response_text)
+        assert len(result) == 1
+        assert result[0]["doi"] == "10.1234"
+
+    def test_validate_json_with_double_quote_keys(self):
+        """Test validating JSON with double quotes in keys"""
+        response_text = '[{""doi": "10.1234", ""decision": true}]'
+        result = validate_json_response(response_text)
+        assert len(result) == 1
+        assert result[0]["doi"] == "10.1234"
+        assert result[0]["decision"] is True
+
+    def test_validate_json_complex_failure_scenario(self):
+        """Test validating JSON matching real LLM failure scenario"""
+        # This matches actual failure from logs
+        response_text = """I've processed the articles based on your criteria. Here are the results in the requested JSON format:
+
+[{""doi":"10.1093/bib/bbaf500","decision":true,"reasoning":"This paper proposes a novel computational method (cdGAN) for enhancing antimicrobial peptide design using machine learning."}]"""
+        result = validate_json_response(response_text)
+        assert len(result) == 1
+        assert result[0]["doi"] == "10.1093/bib/bbaf500"
+        assert result[0]["decision"] is True
+
+    def test_validate_json_error_includes_original_text(self):
+        """Test that validation error includes original response text for debugging"""
+        response_text = "This is completely invalid JSON that cannot be fixed"
+        try:
+            validate_json_response(response_text)
+            assert False, "Should have raised ValidationError"
+        except ValidationError as e:
+            # Error message should contain info about the issue
+            assert "Response is not valid JSON" in str(e)
 
 
 class TestHandleError:

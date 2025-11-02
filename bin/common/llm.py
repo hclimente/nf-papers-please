@@ -1,3 +1,4 @@
+import json
 import logging
 
 from google import genai
@@ -43,10 +44,11 @@ def llm_query(
 
     client = genai.Client(api_key=api_key)
 
-    logging.info("Began reading system prompt...")
+    logging.info("Began preparing system prompt...")
     with open(system_prompt_path, "r") as f:
         system_instruction = f.read().strip()
-    logging.info("Done reading system prompt.")
+
+    system_instruction, examples = system_instruction.split("# Examples\n\n```json")
 
     if research_interests_path:
         logging.info("Began reading research interests...")
@@ -57,6 +59,21 @@ def llm_query(
         system_instruction = system_instruction.format(
             research_interests=research_interests
         )
+
+    examples = examples.strip().rstrip("```").strip()
+    examples = json.loads(examples)
+    example_queries = [ex["query"] for ex in examples]
+    logging.debug(f"Example queries: {json.dumps(example_queries, indent=2)}")
+    example_responses = [ex["response"] for ex in examples]
+    logging.debug(f"Example responses: {json.dumps(example_responses, indent=2)}")
+
+    system_instruction = f"""
+{system_instruction}
+Example of a user query:
+{json.dumps(example_queries, indent=2)}
+    """
+
+    logging.info("Done preparing system prompt.")
     logging.debug(f"System prompt: {system_instruction}")
 
     prompt = f"Here are the articles: {pprint(articles)}"
@@ -66,11 +83,7 @@ def llm_query(
         Content(role="user", parts=[Part(text=system_instruction)]),
         Content(
             role="model",
-            parts=[
-                Part(
-                    text="Understood. I will analyze the articles based on the provided research interests and use the available tools if necessary. Please provide the articles."
-                )
-            ],
+            parts=[Part(text=json.dumps(example_responses, indent=2))],
         ),
         Content(role="user", parts=[Part(text=prompt)]),
     ]
