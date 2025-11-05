@@ -3,7 +3,7 @@ import argparse
 import logging
 import pathlib
 
-from common.llm import llm_query
+from common.llm import chat
 from common.models import ArticleList, pprint
 from common.parsers import (
     add_input_articles_json_argument,
@@ -59,7 +59,7 @@ def llm_process_articles(
     logging.info(f"Loaded {len(articles)} articles.")
     logging.debug(f"Articles: {pprint(articles)}")
 
-    response_text = llm_query(
+    response_text = chat(
         articles=articles,
         system_prompt_path=system_prompt_path,
         model=model,

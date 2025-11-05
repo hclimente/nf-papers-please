@@ -10,7 +10,7 @@ import pytest
 # Add the parent directory to the path so we can import the module
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.llm import llm_query
+from common.llm import chat
 from common.models import Article
 
 
@@ -81,7 +81,7 @@ class TestLlmQuery:
         with pytest.raises(
             ValueError, match="GOOGLE_API_KEY environment variable not found"
         ):
-            llm_query(
+            chat(
                 articles=sample_articles,
                 system_prompt_path=mock_system_prompt,
                 model="gemini-1.5-flash",
@@ -97,7 +97,7 @@ class TestLlmQuery:
         with pytest.raises(
             ValueError, match="GOOGLE_API_KEY environment variable not found"
         ):
-            llm_query(
+            chat(
                 articles=sample_articles,
                 system_prompt_path=mock_system_prompt,
                 model="gemini-1.5-flash",
@@ -120,7 +120,7 @@ class TestLlmQuery:
         mock_client.models.generate_content.return_value = mock_response
 
         # Execute
-        result = llm_query(
+        result = chat(
             articles=sample_articles,
             system_prompt_path=mock_system_prompt,
             model="gemini-1.5-flash",
@@ -157,7 +157,7 @@ class TestLlmQuery:
         mock_client.models.generate_content.return_value = mock_response
 
         # Execute
-        result = llm_query(
+        result = chat(
             articles=sample_articles,
             system_prompt_path=mock_system_prompt,
             model="gemini-2.5-flash-lite",
@@ -192,7 +192,7 @@ class TestLlmQuery:
         tools = [mock_tool_1, mock_tool_2]
 
         # Execute
-        result = llm_query(
+        result = chat(
             articles=sample_articles,
             system_prompt_path=mock_system_prompt,
             model="gemini-1.5-flash",
@@ -224,7 +224,7 @@ class TestLlmQuery:
 
         for model in models:
             # Execute
-            llm_query(
+            chat(
                 articles=sample_articles,
                 system_prompt_path=mock_system_prompt,
                 model=model,
@@ -250,7 +250,7 @@ class TestLlmQuery:
         mock_client.models.generate_content.return_value = mock_response
 
         # Execute
-        result = llm_query(
+        result = chat(
             articles=sample_articles,
             system_prompt_path=mock_system_prompt,
             model="gemini-1.5-flash",
@@ -275,7 +275,7 @@ class TestLlmQuery:
         mock_client.models.generate_content.return_value = mock_response
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=mock_system_prompt,
             model="gemini-1.5-flash",
@@ -307,7 +307,7 @@ class TestLlmQuery:
         mock_client.models.generate_content.return_value = mock_response
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=mock_system_prompt,
             model="gemini-1.5-flash",
@@ -333,7 +333,7 @@ class TestLlmQuery:
         mock_client.models.generate_content.return_value = mock_response
 
         # Execute with empty list
-        result = llm_query(
+        result = chat(
             articles=[],
             system_prompt_path=mock_system_prompt,
             model="gemini-1.5-flash",
@@ -375,7 +375,7 @@ class TestLlmQuery:
         prompt_file.write_text(custom_prompt)
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=str(prompt_file),
             model="gemini-1.5-flash",
@@ -422,7 +422,7 @@ class TestLlmQuery:
         interests_file.write_text("AI and machine learning")
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=str(prompt_file),
             model="gemini-1.5-flash",
@@ -449,7 +449,7 @@ class TestLlmQuery:
         mock_client.models.generate_content.return_value = mock_response
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=mock_system_prompt,
             model="gemini-1.5-flash",
@@ -498,7 +498,7 @@ class TestLlmQuery:
         prompt_file.write_text(prompt_content)
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=str(prompt_file),
             model="gemini-1.5-flash",
@@ -545,7 +545,7 @@ class TestLlmQuery:
         interests_file.write_text("  \n  AI research  \n  ")
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=str(prompt_file),
             model="gemini-1.5-flash",
@@ -573,7 +573,7 @@ class TestLlmQuery:
         mock_client.models.generate_content.return_value = mock_response
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=mock_system_prompt,
             model="gemini-1.5-flash",
@@ -604,7 +604,7 @@ class TestLlmQuery:
         mock_client.models.generate_content.return_value = mock_response
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=mock_system_prompt,
             model="gemini-1.5-flash",
@@ -655,7 +655,7 @@ class TestLlmQuery:
         prompt_file.write_text(prompt_content)
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=str(prompt_file),
             model="gemini-1.5-flash",
@@ -714,7 +714,7 @@ class TestLlmQuery:
         prompt_file.write_text(prompt_content)
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=str(prompt_file),
             model="gemini-1.5-flash",
@@ -757,7 +757,7 @@ class TestLlmQuery:
 
         # Execute and expect JSON decode error
         with pytest.raises(Exception):  # Could be JSONDecodeError or similar
-            llm_query(
+            chat(
                 articles=sample_articles,
                 system_prompt_path=str(prompt_file),
                 model="gemini-1.5-flash",
@@ -772,7 +772,7 @@ class TestLlmQuery:
         """Test that prompt without Examples section raises an error"""
         # Execute and expect ValueError due to split failing
         with pytest.raises(ValueError):
-            llm_query(
+            chat(
                 articles=sample_articles,
                 system_prompt_path=mock_system_prompt_no_examples,
                 model="gemini-1.5-flash",
@@ -814,7 +814,7 @@ class TestLlmQuery:
         interests_file.write_text("AI and ML")
 
         # Execute
-        llm_query(
+        chat(
             articles=sample_articles,
             system_prompt_path=str(prompt_file),
             model="gemini-1.5-flash",
@@ -831,3 +831,329 @@ class TestLlmQuery:
         assert "AI and ML" in system_instruction  # Research interests inserted
         assert "Example of a user query:" in system_instruction  # Examples parsed
         assert "https://example.com" in system_instruction  # Query example present
+
+
+class TestEmbed:
+    """Test suite for embed function"""
+
+    def test_embed_raises_error_without_api_key(self):
+        """Test that embed raises error when API key is not provided"""
+        from common.llm import embed
+
+        with pytest.raises(ValueError, match="GOOGLE_API_KEY environment variable"):
+            embed(
+                texts=["test text"],
+                model="text-embedding-004",
+                api_key=None,
+            )
+
+    def test_embed_raises_error_with_empty_api_key(self):
+        """Test that embed raises error when API key is empty string"""
+        from common.llm import embed
+
+        with pytest.raises(ValueError, match="GOOGLE_API_KEY environment variable"):
+            embed(
+                texts=["test text"],
+                model="text-embedding-004",
+                api_key="",
+            )
+
+    @patch("common.llm.genai.Client")
+    def test_embed_basic_success(self, mock_client_class):
+        """Test successful embedding generation"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        # Create mock embedding objects
+        mock_embedding1 = Mock()
+        mock_embedding1.values = [0.1, 0.2, 0.3]
+        mock_embedding2 = Mock()
+        mock_embedding2.values = [0.4, 0.5, 0.6]
+
+        mock_response = Mock()
+        mock_response.embeddings = [mock_embedding1, mock_embedding2]
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Execute
+        texts = ["First text to embed", "Second text to embed"]
+        result = embed(
+            texts=texts,
+            model="text-embedding-004",
+            api_key="test-api-key",  # pragma: allowlist secret
+        )
+
+        # Verify
+        mock_client_class.assert_called_once_with(api_key="test-api-key")  # noqa: S106  # pragma: allowlist secret
+        mock_client.models.generate_embeddings.assert_called_once()
+        assert len(result) == 2
+        assert result[0] == mock_embedding1
+        assert result[1] == mock_embedding2
+
+    @patch("common.llm.genai.Client")
+    def test_embed_single_text(self, mock_client_class):
+        """Test embedding generation with single text"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_embedding = Mock()
+        mock_embedding.values = [0.1, 0.2, 0.3]
+
+        mock_response = Mock()
+        mock_response.embeddings = [mock_embedding]
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Execute
+        result = embed(
+            texts=["Single text"],
+            model="text-embedding-004",
+            api_key="test-api-key",  # pragma: allowlist secret
+        )
+
+        # Verify
+        assert len(result) == 1
+        assert result[0] == mock_embedding
+
+    @patch("common.llm.genai.Client")
+    def test_embed_empty_list(self, mock_client_class):
+        """Test embedding generation with empty text list"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.embeddings = []
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Execute
+        result = embed(
+            texts=[],
+            model="text-embedding-004",
+            api_key="test-api-key",  # pragma: allowlist secret
+        )
+
+        # Verify
+        assert len(result) == 0
+        assert result == []
+
+    @patch("common.llm.genai.Client")
+    def test_embed_with_custom_task(self, mock_client_class):
+        """Test embedding generation with custom task type"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_embedding = Mock()
+        mock_response = Mock()
+        mock_response.embeddings = [mock_embedding]
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Execute with custom task
+        _ = embed(
+            texts=["Test text"],
+            model="text-embedding-004",
+            api_key="test-api-key",  # pragma: allowlist secret
+            task="RETRIEVAL_QUERY",
+        )
+
+        # Verify task type was passed correctly
+        call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+        assert call_kwargs["config"].task_type == "RETRIEVAL_QUERY"
+
+    @patch("common.llm.genai.Client")
+    def test_embed_default_task_is_classification(self, mock_client_class):
+        """Test that default task type is CLASSIFICATION"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_embedding = Mock()
+        mock_response = Mock()
+        mock_response.embeddings = [mock_embedding]
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Execute without specifying task
+        embed(
+            texts=["Test text"],
+            model="text-embedding-004",
+            api_key="test-api-key",  # pragma: allowlist secret
+        )
+
+        # Verify default task type
+        call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+        assert call_kwargs["config"].task_type == "CLASSIFICATION"
+
+    @patch("common.llm.genai.Client")
+    def test_embed_passes_correct_model(self, mock_client_class):
+        """Test that correct model is passed to API"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.embeddings = []
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Execute
+        embed(
+            texts=["Test"],
+            model="text-embedding-004",
+            api_key="test-api-key",  # pragma: allowlist secret
+        )
+
+        # Verify
+        call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+        assert call_kwargs["model"] == "text-embedding-004"
+
+    @patch("common.llm.genai.Client")
+    def test_embed_passes_texts_correctly(self, mock_client_class):
+        """Test that texts are passed correctly to API"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.embeddings = []
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Execute
+        texts = ["First text", "Second text", "Third text"]
+        embed(
+            texts=texts,
+            model="text-embedding-004",
+            api_key="test-api-key",  # pragma: allowlist secret
+        )
+
+        # Verify
+        call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+        assert call_kwargs["contents"] == texts
+
+    @patch("common.llm.genai.Client")
+    def test_embed_with_long_texts(self, mock_client_class):
+        """Test embedding generation with long texts"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_embeddings = [Mock() for _ in range(3)]
+        mock_response = Mock()
+        mock_response.embeddings = mock_embeddings
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Execute with long texts
+        long_texts = [
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " * 50,
+            "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " * 50,
+            "Ut enim ad minim veniam, quis nostrud exercitation ullamco. " * 50,
+        ]
+        result = embed(
+            texts=long_texts,
+            model="text-embedding-004",
+            api_key="test-api-key",  # pragma: allowlist secret
+        )
+
+        # Verify
+        assert len(result) == 3
+
+    @patch("common.llm.genai.Client")
+    def test_embed_with_special_characters(self, mock_client_class):
+        """Test embedding generation with special characters in text"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_embedding = Mock()
+        mock_response = Mock()
+        mock_response.embeddings = [mock_embedding]
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Execute with special characters
+        texts = ["Text with émojis 🎉 and spëcial çharacters!"]
+        result = embed(
+            texts=texts,
+            model="text-embedding-004",
+            api_key="test-api-key",  # pragma: allowlist secret
+        )
+
+        # Verify
+        assert len(result) == 1
+        call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+        assert call_kwargs["contents"] == texts
+
+    @patch("common.llm.genai.Client")
+    @patch("common.llm.logging")
+    def test_embed_logs_debug_info(self, mock_logging, mock_client_class):
+        """Test that embed logs debug information"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_embeddings = [Mock(), Mock(), Mock()]
+        mock_response = Mock()
+        mock_response.embeddings = mock_embeddings
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Execute
+        embed(
+            texts=["Text 1", "Text 2", "Text 3"],
+            model="text-embedding-004",
+            api_key="test-api-key",  # pragma: allowlist secret
+        )
+
+        # Verify logging was called
+        mock_logging.debug.assert_called_once()
+        log_message = mock_logging.debug.call_args[0][0]
+        assert "3 embeddings" in log_message
+
+    @patch("common.llm.genai.Client")
+    def test_embed_different_models(self, mock_client_class):
+        """Test embedding with different model names"""
+        from common.llm import embed
+
+        # Setup mock
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        mock_response = Mock()
+        mock_response.embeddings = [Mock()]
+        mock_client.models.generate_embeddings.return_value = mock_response
+
+        # Test different model names
+        models_to_test = [
+            "text-embedding-004",
+            "text-multilingual-embedding-002",
+            "embedding-001",
+        ]
+
+        for model_name in models_to_test:
+            mock_client.models.generate_embeddings.reset_mock()
+
+            embed(
+                texts=["Test"],
+                model=model_name,
+                api_key="test-api-key",  # pragma: allowlist secret
+            )
+
+            call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+            assert call_kwargs["model"] == model_name
