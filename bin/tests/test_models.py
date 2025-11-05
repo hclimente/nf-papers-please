@@ -16,8 +16,7 @@ from common.models import (
     InstitutionalAuthor,
     Article,
     MetadataResponse,
-    ScreeningResponse,
-    PriorityResponse,
+    ScoringResponse,
     pprint,
 )
 
@@ -122,10 +121,8 @@ class TestArticle:
             issue=4,
             date=date(2024, 1, 15),
             language="en",
-            screening_decision=True,
-            screening_reasoning="Relevant to research",
-            priority_decision="high",
-            priority_reasoning="Important findings",
+            score=10,
+            reasoning="Important findings",
             access_date=date(2024, 1, 20),
             raw_contents="Full article content",
             zotero_key="ABC123",
@@ -137,8 +134,8 @@ class TestArticle:
         assert article.volume == 123
         assert article.issue == 4
         assert article.language == "en"
-        assert article.screening_decision is True
-        assert article.priority_decision == "high"
+        assert article.score == 10
+        assert article.reasoning == "Important findings"
         assert article.zotero_key == "ABC123"
 
     def test_article_with_mixed_authors(self):
@@ -176,10 +173,8 @@ class TestArticle:
         assert article.volume is None
         assert article.issue is None
         assert article.language is None
-        assert article.screening_decision is None
-        assert article.screening_reasoning is None
-        assert article.priority_decision is None
-        assert article.priority_reasoning is None
+        assert article.score is None
+        assert article.reasoning is None
         assert article.zotero_key is None
 
     def test_article_requires_url(self):
@@ -326,143 +321,62 @@ class TestMetadataResponse:
             assert "doi" in str(exc_info.value).lower()
 
 
-class TestScreeningResponse:
-    """Test suite for ScreeningResponse model"""
+class TestScoringResponse:
+    """Test suite for ScoringResponse model"""
 
-    def test_create_screening_response_accept(self):
-        """Test creating a ScreeningResponse with accept decision"""
-        response = ScreeningResponse(
-            doi="10.1234/test", decision=True, reasoning="Relevant article"
+    def test_create_scoring_response(self):
+        """Test creating a valid ScoringResponse"""
+        response = ScoringResponse(
+            doi="10.1234/test", score=10, reasoning="Important findings"
         )
         assert response.doi == "10.1234/test"
-        assert response.screening_decision is True
-        assert response.screening_reasoning == "Relevant article"
+        assert response.score == 10
+        assert response.reasoning == "Important findings"
 
-    def test_create_screening_response_reject(self):
-        """Test creating a ScreeningResponse with reject decision"""
-        response = ScreeningResponse(
-            doi="10.1234/test", decision=False, reasoning="Not relevant"
+    def test_scoring_response_positive_score(self):
+        """Test ScoringResponse with positive score"""
+        response = ScoringResponse(
+            doi="10.1234/test", score=15, reasoning="High relevance"
         )
-        assert response.doi == "10.1234/test"
-        assert response.screening_decision is False
-        assert response.screening_reasoning == "Not relevant"
+        assert response.score == 15
 
-    def test_screening_response_field_alias(self):
-        """Test that screening_decision uses 'decision' alias"""
-        data = {"doi": "10.1234/test", "decision": True, "reasoning": "Relevant"}
-        response = ScreeningResponse.model_validate(data)
-        assert response.screening_decision is True
-        assert response.screening_reasoning == "Relevant"
-
-    def test_screening_response_cleans_boolean_strings(self):
-        """Test that screening_decision cleans string boolean values"""
-        # Test various string representations of booleans
-        test_cases = [
-            ("true", True),
-            ("True", True),
-            ("TRUE", True),
-            ("false", False),
-            ("False", False),
-            ("FALSE", False),
-        ]
-        for input_val, expected in test_cases:
-            response = ScreeningResponse(
-                doi="10.1234/test", decision=input_val, reasoning="Test"
-            )
-            assert response.screening_decision == expected
-
-    def test_screening_response_accepts_boolean(self):
-        """Test that screening_decision accepts actual boolean values"""
-        response_true = ScreeningResponse(
-            doi="10.1234/test", decision=True, reasoning="Test"
+    def test_scoring_response_negative_score(self):
+        """Test ScoringResponse with negative score"""
+        response = ScoringResponse(
+            doi="10.1234/test", score=-3, reasoning="Not relevant subfield"
         )
-        assert response_true.screening_decision is True
+        assert response.score == -3
 
-        response_false = ScreeningResponse(
-            doi="10.1234/test", decision=False, reasoning="Test"
+    def test_scoring_response_zero_score(self):
+        """Test ScoringResponse with zero score"""
+        response = ScoringResponse(
+            doi="10.1234/test", score=0, reasoning="Neutral assessment"
         )
-        assert response_false.screening_decision is False
+        assert response.score == 0
 
-    def test_screening_response_requires_all_fields(self):
-        """Test that ScreeningResponse requires all fields"""
+    def test_scoring_response_requires_all_fields(self):
+        """Test that ScoringResponse requires all fields"""
         with pytest.raises(ValidationError) as exc_info:
-            ScreeningResponse(doi="10.1234/test", decision=True)
+            ScoringResponse(doi="10.1234/test", score=10)
         assert "reasoning" in str(exc_info.value).lower()
 
         with pytest.raises(ValidationError) as exc_info:
-            ScreeningResponse(doi="10.1234/test", reasoning="Test")
-        assert "decision" in str(exc_info.value).lower()
+            ScoringResponse(doi="10.1234/test", reasoning="Test")
+        assert "score" in str(exc_info.value).lower()
 
         with pytest.raises(ValidationError) as exc_info:
-            ScreeningResponse(decision=True, reasoning="Test")
+            ScoringResponse(score=10, reasoning="Test")
         assert "doi" in str(exc_info.value).lower()
 
+    def test_scoring_response_score_must_be_integer(self):
+        """Test that score must be an integer"""
+        # This should work - integer
+        response = ScoringResponse(doi="10.1234/test", score=10, reasoning="Test")
+        assert response.score == 10
 
-class TestPriorityResponse:
-    """Test suite for PriorityResponse model"""
-
-    def test_create_priority_response_high(self):
-        """Test creating a PriorityResponse with high priority"""
-        response = PriorityResponse(
-            doi="10.1234/test", decision="high", reasoning="Important findings"
-        )
-        assert response.doi == "10.1234/test"
-        assert response.priority_decision == "high"
-        assert response.priority_reasoning == "Important findings"
-
-    def test_create_priority_response_medium(self):
-        """Test creating a PriorityResponse with medium priority"""
-        response = PriorityResponse(
-            doi="10.1234/test", decision="medium", reasoning="Moderately relevant"
-        )
-        assert response.priority_decision == "medium"
-
-    def test_create_priority_response_low(self):
-        """Test creating a PriorityResponse with low priority"""
-        response = PriorityResponse(
-            doi="10.1234/test", decision="low", reasoning="Less urgent"
-        )
-        assert response.priority_decision == "low"
-
-    def test_priority_response_field_alias(self):
-        """Test that priority_decision uses 'decision' alias"""
-        data = {"doi": "10.1234/test", "decision": "high", "reasoning": "Important"}
-        response = PriorityResponse.model_validate(data)
-        assert response.priority_decision == "high"
-        assert response.priority_reasoning == "Important"
-
-    def test_priority_response_cleans_case_variations(self):
-        """Test that priority_decision normalizes case variations"""
-        test_cases = [
-            ("high", "high"),
-            ("High", "high"),
-            ("HIGH", "high"),
-            ("medium", "medium"),
-            ("Medium", "medium"),
-            ("MEDIUM", "medium"),
-            ("low", "low"),
-            ("Low", "low"),
-            ("LOW", "low"),
-        ]
-        for input_val, expected in test_cases:
-            response = PriorityResponse(
-                doi="10.1234/test", decision=input_val, reasoning="Test"
-            )
-            assert response.priority_decision == expected
-
-    def test_priority_response_requires_all_fields(self):
-        """Test that PriorityResponse requires all fields"""
-        with pytest.raises(ValidationError) as exc_info:
-            PriorityResponse(doi="10.1234/test", decision="high")
-        assert "reasoning" in str(exc_info.value).lower()
-
-        with pytest.raises(ValidationError) as exc_info:
-            PriorityResponse(doi="10.1234/test", reasoning="Test")
-        assert "decision" in str(exc_info.value).lower()
-
-        with pytest.raises(ValidationError) as exc_info:
-            PriorityResponse(decision="high", reasoning="Test")
-        assert "doi" in str(exc_info.value).lower()
+        # This should also work - Pydantic coerces numeric strings to int
+        response2 = ScoringResponse(doi="10.1234/test", score="10", reasoning="Test")
+        assert response2.score == 10
 
 
 class TestPprint:
@@ -559,27 +473,16 @@ class TestPprint:
         assert parsed["title"] == "Test Article"
         assert parsed["doi"] == "10.1234/test"
 
-    def test_pprint_screening_response(self):
-        """Test pprint with ScreeningResponse"""
-        response = ScreeningResponse(
-            doi="10.1234/test", decision=True, reasoning="Relevant"
+    def test_pprint_scoring_response(self):
+        """Test pprint with ScoringResponse"""
+        response = ScoringResponse(
+            doi="10.1234/test", score=10, reasoning="Important findings"
         )
         result = pprint(response)
         parsed = json.loads(result)
         assert parsed["doi"] == "10.1234/test"
-        assert parsed["screening_decision"] is True
-        assert parsed["screening_reasoning"] == "Relevant"
-
-    def test_pprint_priority_response(self):
-        """Test pprint with PriorityResponse"""
-        response = PriorityResponse(
-            doi="10.1234/test", decision="high", reasoning="Important"
-        )
-        result = pprint(response)
-        parsed = json.loads(result)
-        assert parsed["doi"] == "10.1234/test"
-        assert parsed["priority_decision"] == "high"
-        assert parsed["priority_reasoning"] == "Important"
+        assert parsed["score"] == 10
+        assert parsed["reasoning"] == "Important findings"
 
     def test_pprint_empty_list(self):
         """Test pprint with empty list"""

@@ -3,13 +3,10 @@ import re
 
 from pydantic import (
     BaseModel,
-    Field,
     field_validator,
     HttpUrl,
     TypeAdapter,
 )
-
-from .utils import get_common_variations
 
 
 class Author(BaseModel):
@@ -46,11 +43,8 @@ class Article(BaseModel):
     language: str | None = None
 
     # LLM results
-    screening_decision: bool | None = None
-    screening_reasoning: str | None = None
-
-    priority_decision: str | None = None
-    priority_reasoning: str | None = None
+    score: int | None = None
+    reasoning: str | None = None
 
     # Raw and integration data
     access_date: date
@@ -77,35 +71,12 @@ class MetadataResponse(BaseModel):
         return doi
 
 
-class ScreeningResponse(BaseModel):
-    """Model for LLM response containing article screening results."""
+class ScoringResponse(BaseModel):
+    """Model for LLM response containing article scores."""
 
     doi: str
-    screening_decision: bool = Field(validation_alias="decision")
-    screening_reasoning: str = Field(validation_alias="reasoning")
-
-    @field_validator("screening_decision", mode="before")
-    @classmethod
-    def clean_response(cls, decision: str) -> str:
-        if type(decision) is bool:
-            return decision
-
-        mapping = get_common_variations(["true", "false"])
-        return mapping[decision.lower()]
-
-
-class PriorityResponse(BaseModel):
-    """Model for LLM response containing article priority assessment."""
-
-    doi: str
-    priority_decision: str = Field(validation_alias="decision")
-    priority_reasoning: str = Field(validation_alias="reasoning")
-
-    @field_validator("priority_decision", mode="before")
-    @classmethod
-    def clean_response(cls, decision: str) -> str:
-        mapping = get_common_variations(["high", "medium", "low"])
-        return mapping[decision.lower()]
+    score: int
+    reasoning: str
 
 
 def pprint(model: BaseModel, exclude_none: bool = True) -> str:

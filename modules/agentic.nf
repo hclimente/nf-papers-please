@@ -1,4 +1,4 @@
-process EXTRACT_METADATA {
+process BASIC_METADATA {
 
     container 'community.wave.seqera.io/library/pip_google-genai:2e5c0f1812c5cbda'
     label 'gemini_api'
@@ -30,7 +30,7 @@ metadata \
 
 }
 
-process SCREEN {
+process SCORE {
 
     container 'community.wave.seqera.io/library/pip_google-genai:2e5c0f1812c5cbda'
     label 'gemini_api'
@@ -47,48 +47,15 @@ process SCREEN {
     val DEBUG
 
     output:
-    path "screening_pass.json", emit: pass, optional: true
-    path "screening_fail.json", emit: fail, optional: true
+    path "scoring_pass.json", emit: pass, optional: true
+    path "scoring_fail.json", emit: fail, optional: true
 
     script:
     """
     llm_process_articles.py \
 --articles_json ${ARTICLES_JSON} \
 ${DEBUG ? '--debug' : ''} \
-screening \
---system_prompt_path ${SYSTEM_PROMPT} \
---research_interests_path ${RESEARCH_INTERESTS_PATH} \
---model ${MODEL} \
---allow_qc_errors ${ALLOW_QC_ERRORS}
-    """
-}
-
-process PRIORITIZE {
-
-    container 'community.wave.seqera.io/library/pip_google-genai:2e5c0f1812c5cbda'
-    label 'gemini_api'
-    secret 'GOOGLE_API_KEY'
-    secret 'SPRINGER_META_API_KEY'
-    secret 'USER_EMAIL'
-
-    input:
-    path ARTICLES_JSON
-    path SYSTEM_PROMPT
-    path RESEARCH_INTERESTS_PATH
-    val MODEL
-    val ALLOW_QC_ERRORS
-    val DEBUG
-
-    output:
-    path "priority_pass.json", emit: pass, optional: true
-    path "priority_fail.json", emit: fail, optional: true
-
-    script:
-    """
-    llm_process_articles.py \
---articles_json ${ARTICLES_JSON} \
-${DEBUG ? '--debug' : ''} \
-priority \
+scoring \
 --system_prompt_path ${SYSTEM_PROMPT} \
 --research_interests_path ${RESEARCH_INTERESTS_PATH} \
 --model ${MODEL} \

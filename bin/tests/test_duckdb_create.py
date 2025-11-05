@@ -265,10 +265,8 @@ class TestCreateArticlesTable:
             assert "url" in column_names
             assert "date" in column_names
             assert "doi" in column_names
-            assert "screening_decision" in column_names
-            assert "screening_reasoning" in column_names
-            assert "priority" in column_names
-            assert "priority_reasoning" in column_names
+            assert "score" in column_names
+            assert "score_reasoning" in column_names
 
     def test_create_articles_table_sequence_created(self, temp_db_with_sources):
         """Test that the article_id_seq sequence is created"""
@@ -282,42 +280,44 @@ class TestCreateArticlesTable:
             result = con.execute("SELECT NEXTVAL('article_id_seq')").fetchone()
             assert result[0] == 2
 
-    def test_create_articles_table_enum_type_created(self, temp_db_with_sources):
-        """Test that the priority_level ENUM type is created"""
+    def test_create_articles_table_score_accepts_integers(self, temp_db_with_sources):
+        """Test that score field accepts integer values"""
         create_articles_table(temp_db_with_sources)
 
         with duckdb.connect(temp_db_with_sources) as con:
-            # Try to insert valid enum values
+            # Try to insert valid integer scores
             con.execute("""
-                INSERT INTO articles (title, summary, url, date, priority)
-                VALUES ('Test', 'Summary', 'https://test.com', '2024-01-01', 'low')
+                INSERT INTO articles (title, summary, url, date, score)
+                VALUES ('Test1', 'Summary', 'https://test.com', '2024-01-01', 10)
             """)
 
             con.execute("""
-                INSERT INTO articles (title, summary, url, date, priority)
-                VALUES ('Test2', 'Summary2', 'https://test2.com', '2024-01-01', 'medium')
+                INSERT INTO articles (title, summary, url, date, score)
+                VALUES ('Test2', 'Summary2', 'https://test2.com', '2024-01-01', -3)
             """)
 
             con.execute("""
-                INSERT INTO articles (title, summary, url, date, priority)
-                VALUES ('Test3', 'Summary3', 'https://test3.com', '2024-01-01', 'high')
+                INSERT INTO articles (title, summary, url, date, score)
+                VALUES ('Test3', 'Summary3', 'https://test3.com', '2024-01-01', 0)
             """)
 
             count = con.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
             assert count == 3
 
-    def test_create_articles_table_invalid_priority_rejected(
-        self, temp_db_with_sources
-    ):
-        """Test that invalid priority values are rejected"""
+    def test_create_articles_table_score_null_allowed(self, temp_db_with_sources):
+        """Test that NULL is allowed for score values"""
         create_articles_table(temp_db_with_sources)
 
         with duckdb.connect(temp_db_with_sources) as con:
-            with pytest.raises(duckdb.ConversionException):
-                con.execute("""
-                    INSERT INTO articles (title, summary, url, date, priority)
-                    VALUES ('Test', 'Summary', 'https://test.com', '2024-01-01', 'invalid')
-                """)
+            con.execute("""
+                INSERT INTO articles (title, summary, url, date, score)
+                VALUES ('Test', 'Summary', 'https://test.com', '2024-01-01', NULL)
+            """)
+
+            result = con.execute(
+                "SELECT score FROM articles WHERE url = 'https://test.com'"
+            ).fetchone()
+            assert result[0] is None
 
     def test_create_articles_table_foreign_key_constraint(self, temp_db_with_sources):
         """Test that journal_name has a foreign key constraint to sources"""
@@ -400,16 +400,13 @@ class TestCreateArticlesTable:
             """)
 
             result = con.execute("""
-                SELECT doi, screening_decision, screening_reasoning,
-                       priority, priority_reasoning
+                SELECT doi, score, score_reasoning
                 FROM articles
             """).fetchone()
 
             assert result[0] is None  # doi
-            assert result[1] is None  # screening_decision
-            assert result[2] is None  # screening_reasoning
-            assert result[3] is None  # priority
-            assert result[4] is None  # priority_reasoning
+            assert result[1] is None  # score
+            assert result[2] is None  # score_reasoning
 
     def test_create_articles_table_id_auto_increments(self, temp_db_with_sources):
         """Test that id auto-increments using the sequence"""
@@ -470,15 +467,14 @@ class TestCreateArticlesTable:
         assert mock_logging.info.call_count >= 3
 
     def test_create_articles_table_full_article_insert(self, temp_db_with_sources):
-        """Test inserting a complete article with all fields"""
+        """Test inserting article with all fields populated"""
         create_articles_table(temp_db_with_sources)
 
         with duckdb.connect(temp_db_with_sources) as con:
             con.execute("""
                 INSERT INTO articles (
                     title, journal_name, summary, url, date, doi,
-                    screening_decision, screening_reasoning,
-                    priority, priority_reasoning
+                    score, score_reasoning
                 )
                 VALUES (
                     'Test Article',
@@ -487,10 +483,8 @@ class TestCreateArticlesTable:
                     'https://test.com/article',
                     '2024-01-01',
                     '10.1234/test',
-                    TRUE,
-                    'Relevant to research',
-                    'high',
-                    'Critical for current project'
+                    10,
+                    'High relevance with important findings'
                 )
             """)
 
@@ -501,7 +495,7 @@ class TestCreateArticlesTable:
             assert result[3] == "This is a test summary"  # summary
             assert result[4] == "https://test.com/article"  # url
             assert result[6] == "10.1234/test"  # doi
-            assert result[7] is True  # screening_decision
-            assert result[8] == "Relevant to research"  # screening_reasoning
-            assert result[9] == "high"  # priority
-            assert result[10] == "Critical for current project"  # priority_reasoning
+            assert result[7] == 10  # score
+            assert (
+                result[8] == "High relevance with important findings"
+            )  # score_reasoning

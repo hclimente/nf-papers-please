@@ -27,7 +27,7 @@ def llm_query(
     Args:
         articles (str): The articles to process (JSON string or list).
         system_prompt_path (str): The path to the system prompt file.
-        model (str): The model to use for screening. One of 'gemini-1.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'.
+        model (str): The model to use. One of 'gemini-1.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'.
         api_key (str): The Google API key for authentication.
         research_interests_path (str): The path to a text file containing the user's research interests. It will be inserted into the system prompt.
         tools (list): List of tools for the LLM to use.

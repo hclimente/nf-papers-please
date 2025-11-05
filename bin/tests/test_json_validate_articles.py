@@ -44,10 +44,8 @@ class TestValidateArticlesJson:
             "volume": 123,
             "issue": 4,
             "language": "en",
-            "screening_decision": True,
-            "screening_reasoning": "Relevant",
-            "priority_decision": "high",
-            "priority_reasoning": "Important",
+            "score": 10,
+            "reasoning": "High relevance and importance",
             "zotero_key": "ABC123",
         }
 
@@ -123,10 +121,8 @@ class TestValidateArticlesJson:
             assert "volume" not in result[0]
             assert "issue" not in result[0]
             assert "language" not in result[0]
-            assert "screening_decision" not in result[0]
-            assert "screening_reasoning" not in result[0]
-            assert "priority_decision" not in result[0]
-            assert "priority_reasoning" not in result[0]
+            assert "score" not in result[0]
+            assert "reasoning" not in result[0]
             assert "zotero_key" not in result[0]
 
     def test_validate_export_stage_full_article(self, full_article_data):
@@ -160,10 +156,8 @@ class TestValidateArticlesJson:
             assert result[0]["title"] == "Test Article"
             assert result[0]["doi"] == "10.1234/test"
             assert result[0]["summary"] == "Article summary"
-            assert result[0]["screening_decision"] is True
-            assert result[0]["screening_reasoning"] == "Relevant"
-            assert result[0]["priority_decision"] == "high"
-            assert result[0]["priority_reasoning"] == "Important"
+            assert result[0]["score"] == 10
+            assert result[0]["reasoning"] == "High relevance and importance"
 
             # Fields not required for export should be removed
             assert "authors" not in result[0]

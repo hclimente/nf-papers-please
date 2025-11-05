@@ -139,31 +139,18 @@
                     "help_text": "Path to markdown file containing instructions for the LLM to extract article metadata.",
                     "default": "${projectDir}/prompts/metadata_extraction.md"
                 },
-                "screening_model": {
+                "scoring_model": {
                     "type": "string",
-                    "description": "LLM model to use for screening articles",
+                    "description": "LLM model to use for scoring articles",
                     "help_text": "Gemini model identifier for determining article relevance based on research interests.",
                     "default": "gemini-2.5-flash-lite"
                 },
-                "screening_system_prompt": {
+                "scoring_system_prompt": {
                     "type": "string",
                     "format": "file-path",
-                    "description": "System prompt file for article screening",
+                    "description": "System prompt file for article scoring",
                     "help_text": "Path to markdown file containing instructions for the LLM to screen articles for relevance.",
-                    "default": "${projectDir}/prompts/screening.md"
-                },
-                "prioritization_model": {
-                    "type": "string",
-                    "description": "LLM model to use for prioritizing articles",
-                    "help_text": "Gemini model identifier for ranking articles by relevance to research interests.",
-                    "default": "gemini-2.5-flash-lite"
-                },
-                "prioritization_system_prompt": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "System prompt file for article prioritization",
-                    "help_text": "Path to markdown file containing instructions for the LLM to prioritize articles.",
-                    "default": "${projectDir}/prompts/prioritization.md"
+                    "default": "${projectDir}/prompts/scoring.md"
                 }
             }
         }

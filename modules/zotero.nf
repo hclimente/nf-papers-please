@@ -1,6 +1,7 @@
-process EXTRACT_MORE_METADATA {
+process ADVANCED_METADATA {
 
     container 'community.wave.seqera.io/library/pip_habanero_pydantic:3882895f50c53509'
+    secret 'USER_EMAIL'
 
     input:
     path ARTICLES_JSON

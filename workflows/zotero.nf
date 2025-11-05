@@ -1,4 +1,4 @@
-include { EXTRACT_MORE_METADATA; REMOVE_PROCESSED; SAVE } from '../modules/zotero'
+include { ADVANCED_METADATA; REMOVE_PROCESSED; SAVE } from '../modules/zotero'
 
 include { batchArticles; filterAndBatch } from '../modules/json'
 
@@ -28,9 +28,9 @@ workflow TO_ZOTERO {
         articles_json
 
     main:
-        EXTRACT_MORE_METADATA(articles_json)
+        ADVANCED_METADATA(articles_json)
         SAVE(
-            EXTRACT_MORE_METADATA.out,
+            ADVANCED_METADATA.out,
             params.zotero_user_id,
             params.zotero_collection_id,
             params.zotero_library_type
