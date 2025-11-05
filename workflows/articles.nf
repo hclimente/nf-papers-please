@@ -1,7 +1,7 @@
-include { BASIC_METADATA; SCORE } from '../modules/agentic'
+include { BASIC_METADATA; TAG } from '../modules/agentic'
 include { BASIC_METADATA as BASIC_METADATA_RETRY } from '../modules/agentic'
 include { ADVANCED_METADATA; REMOVE_PROCESSED; SAVE } from '../modules/zotero'
-include { SCORE as SCORE_RETRY } from '../modules/agentic'
+include { TAG as TAG_RETRY } from '../modules/agentic'
 
 include { batchArticles; filterAndBatch } from '../modules/json'
 
@@ -34,7 +34,7 @@ workflow PROCESS_ARTICLES {
 
         ADVANCED_METADATA(articles_with_doi.no_match)
 
-        SCORE(
+        TAG(
             ADVANCED_METADATA.out,
             file(params.scoring_system_prompt),
             file(params.research_interests),
@@ -43,8 +43,8 @@ workflow PROCESS_ARTICLES {
             params.debug
         )
 
-        SCORE_RETRY(
-            SCORE.out.fail,
+        TAG_RETRY(
+            TAG.out.fail,
             file(params.scoring_system_prompt),
             file(params.research_interests),
             params.scoring_model,
@@ -52,13 +52,13 @@ workflow PROCESS_ARTICLES {
             params.debug
         )
 
-        scored_articles = SCORE.out.pass
-            .concat(SCORE_RETRY.out.pass)
-        all_articles = scored_articles
-            .concat(SCORE_RETRY.out.fail)
+        tagged_articles = TAG.out.pass
+            .concat(TAG_RETRY.out.pass)
+        all_articles = tagged_articles
+            .concat(TAG_RETRY.out.fail)
         final_batches = batchArticles(all_articles, 100)
 
     emit:
-        scored_articles = scored_articles
+        tagged_articles = tagged_articles
         all_articles = final_batches
 }

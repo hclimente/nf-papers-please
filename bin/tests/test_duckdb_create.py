@@ -265,8 +265,8 @@ class TestCreateArticlesTable:
             assert "url" in column_names
             assert "date" in column_names
             assert "doi" in column_names
-            assert "score" in column_names
-            assert "score_reasoning" in column_names
+            assert "tags" in column_names
+            assert "reasoning" in column_names
 
     def test_create_articles_table_sequence_created(self, temp_db_with_sources):
         """Test that the article_id_seq sequence is created"""
@@ -280,42 +280,42 @@ class TestCreateArticlesTable:
             result = con.execute("SELECT NEXTVAL('article_id_seq')").fetchone()
             assert result[0] == 2
 
-    def test_create_articles_table_score_accepts_integers(self, temp_db_with_sources):
-        """Test that score field accepts integer values"""
+    def test_create_articles_table_tags_accepts_arrays(self, temp_db_with_sources):
+        """Test that tags field accepts text arrays"""
         create_articles_table(temp_db_with_sources)
 
         with duckdb.connect(temp_db_with_sources) as con:
-            # Try to insert valid integer scores
+            # Try to insert valid tag arrays
             con.execute("""
-                INSERT INTO articles (title, summary, url, date, score)
-                VALUES ('Test1', 'Summary', 'https://test.com', '2024-01-01', 10)
+                INSERT INTO articles (title, summary, url, date, tags)
+                VALUES ('Test1', 'Summary', 'https://test.com', '2024-01-01', ['Network Biology', 'Cancer Biology'])
             """)
 
             con.execute("""
-                INSERT INTO articles (title, summary, url, date, score)
-                VALUES ('Test2', 'Summary2', 'https://test2.com', '2024-01-01', -3)
+                INSERT INTO articles (title, summary, url, date, tags)
+                VALUES ('Test2', 'Summary2', 'https://test2.com', '2024-01-01', ['Review'])
             """)
 
             con.execute("""
-                INSERT INTO articles (title, summary, url, date, score)
-                VALUES ('Test3', 'Summary3', 'https://test3.com', '2024-01-01', 0)
+                INSERT INTO articles (title, summary, url, date, tags)
+                VALUES ('Test3', 'Summary3', 'https://test3.com', '2024-01-01', [])
             """)
 
             count = con.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
             assert count == 3
 
-    def test_create_articles_table_score_null_allowed(self, temp_db_with_sources):
-        """Test that NULL is allowed for score values"""
+    def test_create_articles_table_tags_null_allowed(self, temp_db_with_sources):
+        """Test that NULL is allowed for tags values"""
         create_articles_table(temp_db_with_sources)
 
         with duckdb.connect(temp_db_with_sources) as con:
             con.execute("""
-                INSERT INTO articles (title, summary, url, date, score)
+                INSERT INTO articles (title, summary, url, date, tags)
                 VALUES ('Test', 'Summary', 'https://test.com', '2024-01-01', NULL)
             """)
 
             result = con.execute(
-                "SELECT score FROM articles WHERE url = 'https://test.com'"
+                "SELECT tags FROM articles WHERE url = 'https://test.com'"
             ).fetchone()
             assert result[0] is None
 
@@ -400,13 +400,13 @@ class TestCreateArticlesTable:
             """)
 
             result = con.execute("""
-                SELECT doi, score, score_reasoning
+                SELECT doi, tags, reasoning
                 FROM articles
             """).fetchone()
 
             assert result[0] is None  # doi
-            assert result[1] is None  # score
-            assert result[2] is None  # score_reasoning
+            assert result[1] is None  # tags
+            assert result[2] is None  # reasoning
 
     def test_create_articles_table_id_auto_increments(self, temp_db_with_sources):
         """Test that id auto-increments using the sequence"""
@@ -474,7 +474,7 @@ class TestCreateArticlesTable:
             con.execute("""
                 INSERT INTO articles (
                     title, journal_name, summary, url, date, doi,
-                    score, score_reasoning
+                    tags, reasoning
                 )
                 VALUES (
                     'Test Article',
@@ -483,7 +483,7 @@ class TestCreateArticlesTable:
                     'https://test.com/article',
                     '2024-01-01',
                     '10.1234/test',
-                    10,
+                    ['Network Biology', 'Cancer Biology', 'Review'],
                     'High relevance with important findings'
                 )
             """)
@@ -495,7 +495,5 @@ class TestCreateArticlesTable:
             assert result[3] == "This is a test summary"  # summary
             assert result[4] == "https://test.com/article"  # url
             assert result[6] == "10.1234/test"  # doi
-            assert result[7] == 10  # score
-            assert (
-                result[8] == "High relevance with important findings"
-            )  # score_reasoning
+            assert result[7] == ["Network Biology", "Cancer Biology", "Review"]  # tags
+            assert result[8] == "High relevance with important findings"  # reasoning

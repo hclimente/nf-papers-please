@@ -43,7 +43,7 @@ class Article(BaseModel):
     language: str | None = None
 
     # LLM results
-    score: int | None = None
+    tags: list[str] | None = None
     reasoning: str | None = None
 
     # Raw and integration data
@@ -71,11 +71,11 @@ class MetadataResponse(BaseModel):
         return doi
 
 
-class ScoringResponse(BaseModel):
-    """Model for LLM response containing article scores."""
+class TaggingResponse(BaseModel):
+    """Model for LLM response containing article tags."""
 
     doi: str
-    score: int
+    tags: list[str]
     reasoning: str
 
 

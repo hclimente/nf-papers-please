@@ -57,7 +57,7 @@ def validate_articles_json(
             "title",
             "doi",
             "summary",
-            "score",
+            "tags",
             "reasoning",
         ]
     else:

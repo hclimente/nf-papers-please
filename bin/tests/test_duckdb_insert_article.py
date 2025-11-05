@@ -38,8 +38,8 @@ class TestInsertArticle:
                     journal_name TEXT NOT NULL,
                     date DATE NOT NULL,
                     doi TEXT,
-                    score INTEGER,
-                    score_reasoning TEXT,
+                    tags TEXT[],
+                    reasoning TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
                 """
@@ -77,7 +77,7 @@ class TestInsertArticle:
                 "journal_name": "Science",
                 "date": "2025-10-20",
                 "doi": "10.1234/test.doi",
-                "score": 10,
+                "tags": ["Network Biology", "Review"],
                 "reasoning": "Novel methodology with high relevance",
             }
         ]
@@ -101,7 +101,7 @@ class TestInsertArticle:
                 "journal_name": "Science",
                 "date": "2025-10-16",
                 "doi": "10.1234/second",
-                "score": -2,
+                "tags": ["Other application"],
                 "reasoning": "Not relevant to core interests",
             },
             {
@@ -111,7 +111,7 @@ class TestInsertArticle:
                 "journal_name": "Cell",
                 "date": "2025-10-17",
                 "doi": None,
-                "score": 3,
+                "tags": ["Computational Biology", "New Computational Method"],
                 "reasoning": "Limited but positive impact",
             },
         ]
@@ -138,8 +138,8 @@ class TestInsertArticle:
             assert article[4] == "Nature"  # journal_name
             assert str(article[5]) == "2025-10-15"  # date
             assert article[6] is None  # doi
-            assert article[7] is None  # score
-            assert article[8] is None  # score_reasoning
+            assert article[7] is None  # tags
+            assert article[8] is None  # reasoning
 
     def test_insert_full_article(self, temp_db, full_article_json, tmp_path):
         """Test inserting an article with all fields populated"""
@@ -162,7 +162,7 @@ class TestInsertArticle:
             assert article[4] == "Science"
             assert str(article[5]) == "2025-10-20"
             assert article[6] == "10.1234/test.doi"
-            assert article[7] == 10
+            assert article[7] == ["Network Biology", "Review"]
             assert article[8] == "Novel methodology with high relevance"
 
     def test_insert_multiple_articles(self, temp_db, multiple_articles_json, tmp_path):
@@ -188,23 +188,23 @@ class TestInsertArticle:
         """Test inserting articles where some have optional fields and others don't"""
         articles = [
             {
-                "title": "Article with score",
+                "title": "Article with tags",
                 "summary": "Summary",
                 "url": "https://example.com/1",
                 "journal_name": "Journal",
                 "date": "2025-10-15",
                 "doi": "10.1234/1",
-                "score": 8,
+                "tags": ["Network Biology", "Drug discovery"],
                 "reasoning": "Relevant to main interests",
             },
             {
-                "title": "Article with negative score",
+                "title": "Article with different tags",
                 "summary": "Summary",
                 "url": "https://example.com/2",
                 "journal_name": "Journal",
                 "date": "2025-10-16",
                 "doi": "10.1234/2",
-                "score": -3,
+                "tags": ["Other application"],
                 "reasoning": "Not relevant subfield",
             },
         ]
@@ -217,16 +217,16 @@ class TestInsertArticle:
         with duckdb.connect(temp_db) as con:
             # Check first article
             result1 = con.execute(
-                "SELECT score, score_reasoning FROM articles WHERE doi = '10.1234/1'"
+                "SELECT tags, reasoning FROM articles WHERE doi = '10.1234/1'"
             ).fetchone()
-            assert result1[0] == 8
+            assert result1[0] == ["Network Biology", "Drug discovery"]
             assert result1[1] == "Relevant to main interests"
 
             # Check second article
             result2 = con.execute(
-                "SELECT score, score_reasoning FROM articles WHERE doi = '10.1234/2'"
+                "SELECT tags, reasoning FROM articles WHERE doi = '10.1234/2'"
             ).fetchone()
-            assert result2[0] == -3
+            assert result2[0] == ["Other application"]
             assert result2[1] == "Not relevant subfield"
 
     def test_insert_article_with_none_doi(self, temp_db, tmp_path):

@@ -36,7 +36,7 @@ def insert_article(
             try:
                 con.execute(
                     """
-                    INSERT INTO articles (title, summary, url, journal_name, date, doi, score, score_reasoning)
+                    INSERT INTO articles (title, summary, url, journal_name, date, doi, tags, reasoning)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
@@ -46,7 +46,7 @@ def insert_article(
                         a["journal_name"],
                         a["date"],
                         a["doi"],
-                        a.get("score", None),
+                        a.get("tags", None),
                         a.get("reasoning", None),
                     ),
                 )

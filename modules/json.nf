@@ -71,11 +71,11 @@ process COLLECT_OUTPUTS {
     path "articles_*.json"
 
     output:
-    path "scored_articles.json"
+    path "tagged_articles.json"
 
     script:
     """
-    jq -s 'add' articles_*.json > scored_articles.json
+    jq -s 'add' articles_*.json > tagged_articles.json
     """
 
 }

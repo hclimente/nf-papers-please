@@ -80,8 +80,8 @@ def create_articles_table(db_path: str):
                 url TEXT NOT NULL,
                 date DATE NOT NULL,
                 doi TEXT DEFAULT NULL,
-                score INTEGER DEFAULT NULL,
-                score_reasoning TEXT DEFAULT NULL,
+                tags TEXT[] DEFAULT NULL,
+                reasoning TEXT DEFAULT NULL,
                 FOREIGN KEY (journal_name) REFERENCES sources(name),
                 PRIMARY KEY (url)
             )

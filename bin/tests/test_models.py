@@ -16,7 +16,7 @@ from common.models import (
     InstitutionalAuthor,
     Article,
     MetadataResponse,
-    ScoringResponse,
+    TaggingResponse,
     pprint,
 )
 
@@ -121,7 +121,7 @@ class TestArticle:
             issue=4,
             date=date(2024, 1, 15),
             language="en",
-            score=10,
+            tags=["Network Biology", "Cancer Biology"],
             reasoning="Important findings",
             access_date=date(2024, 1, 20),
             raw_contents="Full article content",
@@ -134,7 +134,7 @@ class TestArticle:
         assert article.volume == 123
         assert article.issue == 4
         assert article.language == "en"
-        assert article.score == 10
+        assert article.tags == ["Network Biology", "Cancer Biology"]
         assert article.reasoning == "Important findings"
         assert article.zotero_key == "ABC123"
 
@@ -173,7 +173,7 @@ class TestArticle:
         assert article.volume is None
         assert article.issue is None
         assert article.language is None
-        assert article.score is None
+        assert article.tags is None
         assert article.reasoning is None
         assert article.zotero_key is None
 
@@ -321,62 +321,80 @@ class TestMetadataResponse:
             assert "doi" in str(exc_info.value).lower()
 
 
-class TestScoringResponse:
-    """Test suite for ScoringResponse model"""
+class TestLabellingResponse:
+    """Test suite for LabellingResponse model"""
 
-    def test_create_scoring_response(self):
-        """Test creating a valid ScoringResponse"""
-        response = ScoringResponse(
-            doi="10.1234/test", score=10, reasoning="Important findings"
+    def test_create_labelling_response(self):
+        """Test creating a valid LabellingResponse"""
+        response = TaggingResponse(
+            doi="10.1234/test",
+            tags=["Network Biology", "Cancer Biology"],
+            reasoning="Important findings in network-based cancer research",
         )
         assert response.doi == "10.1234/test"
-        assert response.score == 10
-        assert response.reasoning == "Important findings"
-
-    def test_scoring_response_positive_score(self):
-        """Test ScoringResponse with positive score"""
-        response = ScoringResponse(
-            doi="10.1234/test", score=15, reasoning="High relevance"
+        assert response.tags == ["Network Biology", "Cancer Biology"]
+        assert (
+            response.reasoning == "Important findings in network-based cancer research"
         )
-        assert response.score == 15
 
-    def test_scoring_response_negative_score(self):
-        """Test ScoringResponse with negative score"""
-        response = ScoringResponse(
-            doi="10.1234/test", score=-3, reasoning="Not relevant subfield"
+    def test_labelling_response_single_tag(self):
+        """Test LabellingResponse with single tag"""
+        response = TaggingResponse(
+            doi="10.1234/test",
+            tags=["Review"],
+            reasoning="Comprehensive review article",
         )
-        assert response.score == -3
+        assert response.tags == ["Review"]
 
-    def test_scoring_response_zero_score(self):
-        """Test ScoringResponse with zero score"""
-        response = ScoringResponse(
-            doi="10.1234/test", score=0, reasoning="Neutral assessment"
+    def test_labelling_response_multiple_tags(self):
+        """Test LabellingResponse with multiple tags"""
+        response = TaggingResponse(
+            doi="10.1234/test",
+            tags=[
+                "Computational Biology",
+                "Network Biology",
+                "Drug discovery",
+                "Drug Target Discovery",
+                "Review",
+            ],
+            reasoning="Network-based drug discovery review",
         )
-        assert response.score == 0
+        assert len(response.tags) == 5
 
-    def test_scoring_response_requires_all_fields(self):
-        """Test that ScoringResponse requires all fields"""
+    def test_labelling_response_empty_tags(self):
+        """Test LabellingResponse with empty tags list"""
+        response = TaggingResponse(
+            doi="10.1234/test", tags=[], reasoning="No matching categories"
+        )
+        assert response.tags == []
+
+    def test_labelling_response_requires_all_fields(self):
+        """Test that LabellingResponse requires all fields"""
         with pytest.raises(ValidationError) as exc_info:
-            ScoringResponse(doi="10.1234/test", score=10)
+            TaggingResponse(doi="10.1234/test", tags=["Test"])
         assert "reasoning" in str(exc_info.value).lower()
 
         with pytest.raises(ValidationError) as exc_info:
-            ScoringResponse(doi="10.1234/test", reasoning="Test")
-        assert "score" in str(exc_info.value).lower()
+            TaggingResponse(doi="10.1234/test", reasoning="Test")
+        assert "tags" in str(exc_info.value).lower()
 
         with pytest.raises(ValidationError) as exc_info:
-            ScoringResponse(score=10, reasoning="Test")
+            TaggingResponse(tags=["Test"], reasoning="Test")
         assert "doi" in str(exc_info.value).lower()
 
-    def test_scoring_response_score_must_be_integer(self):
-        """Test that score must be an integer"""
-        # This should work - integer
-        response = ScoringResponse(doi="10.1234/test", score=10, reasoning="Test")
-        assert response.score == 10
+    def test_labelling_response_tags_must_be_list(self):
+        """Test that tags must be a list of strings"""
+        # This should work - list of strings
+        response = TaggingResponse(
+            doi="10.1234/test", tags=["Network Biology", "Review"], reasoning="Test"
+        )
+        assert response.tags == ["Network Biology", "Review"]
 
-        # This should also work - Pydantic coerces numeric strings to int
-        response2 = ScoringResponse(doi="10.1234/test", score="10", reasoning="Test")
-        assert response2.score == 10
+        # This should fail - not a list
+        with pytest.raises(ValidationError):
+            TaggingResponse(
+                doi="10.1234/test", tags="Network Biology", reasoning="Test"
+            )
 
 
 class TestPprint:
@@ -473,15 +491,17 @@ class TestPprint:
         assert parsed["title"] == "Test Article"
         assert parsed["doi"] == "10.1234/test"
 
-    def test_pprint_scoring_response(self):
-        """Test pprint with ScoringResponse"""
-        response = ScoringResponse(
-            doi="10.1234/test", score=10, reasoning="Important findings"
+    def test_pprint_labelling_response(self):
+        """Test pprint with LabellingResponse"""
+        response = TaggingResponse(
+            doi="10.1234/test",
+            tags=["Network Biology", "Review"],
+            reasoning="Important findings",
         )
         result = pprint(response)
         parsed = json.loads(result)
         assert parsed["doi"] == "10.1234/test"
-        assert parsed["score"] == 10
+        assert parsed["tags"] == ["Network Biology", "Review"]
         assert parsed["reasoning"] == "Important findings"
 
     def test_pprint_empty_list(self):

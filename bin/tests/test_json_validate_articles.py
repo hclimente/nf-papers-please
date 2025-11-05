@@ -44,7 +44,7 @@ class TestValidateArticlesJson:
             "volume": 123,
             "issue": 4,
             "language": "en",
-            "score": 10,
+            "tags": ["Network Biology", "Cancer Biology"],
             "reasoning": "High relevance and importance",
             "zotero_key": "ABC123",
         }
@@ -121,7 +121,7 @@ class TestValidateArticlesJson:
             assert "volume" not in result[0]
             assert "issue" not in result[0]
             assert "language" not in result[0]
-            assert "score" not in result[0]
+            assert "tags" not in result[0]
             assert "reasoning" not in result[0]
             assert "zotero_key" not in result[0]
 
@@ -156,7 +156,7 @@ class TestValidateArticlesJson:
             assert result[0]["title"] == "Test Article"
             assert result[0]["doi"] == "10.1234/test"
             assert result[0]["summary"] == "Article summary"
-            assert result[0]["score"] == 10
+            assert result[0]["tags"] == ["Network Biology", "Cancer Biology"]
             assert result[0]["reasoning"] == "High relevance and importance"
 
             # Fields not required for export should be removed

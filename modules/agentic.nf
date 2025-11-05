@@ -30,7 +30,7 @@ metadata \
 
 }
 
-process SCORE {
+process TAG {
 
     container 'community.wave.seqera.io/library/pip_google-genai:2e5c0f1812c5cbda'
     label 'gemini_api'

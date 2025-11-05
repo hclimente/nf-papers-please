@@ -4,7 +4,7 @@ import re
 
 from .models import (
     MetadataResponse,
-    ScoringResponse,
+    TaggingResponse,
     pprint,
 )
 
@@ -189,7 +189,7 @@ def validate_llm_response(
 
     models = {
         "metadata": MetadataResponse,
-        "scoring": ScoringResponse,
+        "scoring": TaggingResponse,
     }
 
     for item in response:

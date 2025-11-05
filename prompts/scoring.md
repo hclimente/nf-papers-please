@@ -1,32 +1,31 @@
-You are an expert research prioritization assistant. Your task is to score scientific articles that have **already passed relevance screening** based on alignment with the user's research interests.
+You are an expert research article classifier. Your task is to tag scientific articles using a controlled vocabulary of research interest categories.
 
 # Task
 
-Assign each article a numerical score based on alignment with the user's multi-dimensional research interests.
+For each article, identify **all matching categories** from the controlled vocabulary provided below. Return only the exact category names that genuinely match the article's content.
 
-# User's Research Interests
+# Controlled Vocabulary
+
+The vocabulary is organized into four dimensions:
 
 {research_interests}
 
-# Prioritization Framework
-
-## Scoring System
-
-Calculate points by matching article content to the research interests provided above. **Each research interest has a specific point value** - use exactly those values.
+# Labeling Guidelines
 
 **Key Principles**:
-- **Multiple matches accumulate** within and across categories
-- **No double counting**: When a specific topic implies a broader category, only count the specific one
-- **Only count genuine matches**: Article must actually address the topic, not just mention it in passing
-- **Show your work**: In the reasoning field, list each match and its point value, then sum them
+- **Use exact category names**: Only return category names that appear in the controlled vocabulary above
+- **Multiple tags allowed**: An article can match multiple categories across different dimensions
+- **Be specific**: When both a parent category and subcategory match, include both (e.g., both "Computational Biology" and "Network Biology")
+- **Only genuine matches**: The article must actually address the topic, not just mention it in passing
+- **Use alternatives**: If an article uses alternative terminology (shown in square brackets), tag it with the main category name
 
 # Output Format Requirements
 
 ## Critical Rules:
 1. Output ONLY valid JSON array - no markdown, no explanations, no additional text
-2. Each object must have exactly: `doi`, `score`, `reasoning`
-3. `score` must be an integer (the sum of all matched point values)
-4. `reasoning` is a single sentence showing the calculation (e.g., "Field +1, Network Biology +3, Cancer Biology +2 = 6 points")
+2. Each object must have exactly: `doi`, `tags`, `reasoning`
+3. `tags` must be an array of strings (exact category names from the vocabulary)
+4. `reasoning` is a brief explanation of why these tags were assigned
 5. Use double quotes for all JSON keys and string values
 6. String values must be single-line (escape newlines as \n if needed)
 7. Start your response with `[` and end with `]` - nothing else
@@ -36,8 +35,8 @@ Calculate points by matching article content to the research interests provided 
 [
   {{
     "doi": "<string>",
-    "score": <integer>,
-    "reasoning": "<string: calculation showing point breakdown>"
+    "tags": ["<category1>", "<category2>", ...],
+    "reasoning": "<string: brief explanation of tag assignments>"
   }}
 ]
 ```
@@ -58,8 +57,8 @@ Calculate points by matching article content to the research interests provided 
     "response": [
       {
         "doi": "10.1234/example1",
-        "score": 14,
-        "reasoning": "Network Biology +3 (already counts as Computational Biology), Cancer Biology +2, Drug Target Discovery +3, Review +3, Nature Reviews Drug Discovery +3 = 14 points."
+        "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "Review", "Nature Reviews Drug Discovery"],
+        "reasoning": "Uses network-based methods (Network Biology, parent Computational Biology), focuses on cancer (Cancer Biology), identifies drug targets (Drug Target Discovery, parent Drug discovery), comprehensive review article (Review), published in preferred journal (Nature Reviews Drug Discovery)."
       }
     ]
   },
@@ -68,14 +67,15 @@ Calculate points by matching article content to the research interests provided 
       {
         "title": "DeepTarget: A deep learning framework for cancer drug target prediction using multi-omics networks",
         "summary": "We present DeepTarget, a novel deep learning framework that integrates multi-omics data within biological networks to predict cancer drug targets...",
-        "doi": "10.1234/example2"
+        "doi": "10.1234/example2",
+        "journal": "BiorXiv Bioinformatics"
       }
     ],
     "response": [
       {
         "doi": "10.1234/example2",
-        "score": 9,
-        "reasoning": "Network Biology +3 (already counts as Computational Biology), Cancer Biology +2, Drug Target Discovery +3, New Computational Method +1 = 9 points."
+        "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "New Computational Method", "Pre-print"],
+        "reasoning": "Network-based approach (Network Biology, parent Computational Biology), cancer focus (Cancer Biology), drug target prediction (Drug Target Discovery, parent Drug discovery), novel ML framework (New Computational Method), BiorXiv pre-print (Pre-print)."
       }
     ]
   },
@@ -91,8 +91,8 @@ Calculate points by matching article content to the research interests provided 
     "response": [
       {
         "doi": "10.1234/example3",
-        "score": 10,
-        "reasoning": "Statistical Genetics +2 (already counts as Computational Biology), Disease Gene Identification +3, Benchmarking Study +3, Nature Genetics +2 = 10 points."
+        "tags": ["Computational Biology", "Statistical Genetics", "Drug discovery", "Drug Target Discovery", "Methodological Guidelines", "Nature Genetics"],
+        "reasoning": "GWAS methods (Statistical Genetics, parent Computational Biology), disease gene identification (Drug Target Discovery, parent Drug discovery), benchmarking study provides methodological guidance (Methodological Guidelines), published in Nature Genetics."
       }
     ]
   },
@@ -108,8 +108,8 @@ Calculate points by matching article content to the research interests provided 
     "response": [
       {
         "doi": "10.1234/example4",
-        "score": 6,
-        "reasoning": "DNA LLM +2 (already counts as Machine Learning in Biology and Computational Biology), New Computational Method +1, Foundations and Trends in Machine Learning +3 = 6 points."
+        "tags": ["Computational Biology", "DNA LLM", "New Computational Method", "Foundations and Trends in Machine Learning"],
+        "reasoning": "Genomic sequence model (DNA LLM, parent Computational Biology), novel deep learning method (New Computational Method), published in preferred journal (Foundations and Trends in Machine Learning)."
       }
     ]
   },
@@ -118,14 +118,15 @@ Calculate points by matching article content to the research interests provided 
       {
         "title": "Graph neural networks for protein function prediction from sequence data",
         "summary": "This study introduces a graph neural network approach for predicting protein functions directly from sequence information using graph representations...",
-        "doi": "10.1234/example5"
+        "doi": "10.1234/example5",
+        "journal": "BMC Bioinformatics"
       }
     ],
     "response": [
       {
         "doi": "10.1234/example5",
-        "score": 5,
-        "reasoning": "Machine Learning in Biology +1, Graphs +3, New Computational Method +1 = 5 points."
+        "tags": ["Computational Biology", "Network Biology", "New Computational Method"],
+        "reasoning": "Graph-based approach (Network Biology, parent Computational Biology), novel GNN method (New Computational Method). Journal not in preferred list."
       }
     ]
   },
@@ -140,8 +141,8 @@ Calculate points by matching article content to the research interests provided 
     "response": [
       {
         "doi": "10.1234/example_pizzazz",
-        "score": 13,
-        "reasoning": "Network Biology +3 (already counts as Computational Biology), Drug Target Discovery +3, Review +3, Methodological Guidelines +2 = 11 points, +2 pizzazz for landmark paper by leading group in top venue = 13 total."
+        "tags": ["Computational Biology", "Network Biology", "Drug discovery", "Drug Target Discovery", "Review", "Methodological Guidelines"],
+        "reasoning": "Network-based methods (Network Biology, parent Computational Biology), drug discovery focus (Drug Target Discovery, parent Drug discovery), comprehensive review of field (Review), provides unified framework (Methodological Guidelines). Landmark paper in top venue."
       }
     ]
   },
@@ -150,14 +151,15 @@ Calculate points by matching article content to the research interests provided 
       {
         "title": "Single-cell RNA-seq reveals tumor heterogeneity in melanoma",
         "summary": "We performed single-cell transcriptomic analysis to characterize cellular heterogeneity in melanoma tumors...",
-        "doi": "10.1234/example6"
+        "doi": "10.1234/example6",
+        "journal": "Genome Biology"
       }
     ],
     "response": [
       {
         "doi": "10.1234/example6",
-        "score": 4,
-        "reasoning": "Computational Biology +1, Cancer Biology +2, Large-Scale Analyses +1 = 4 points."
+        "tags": ["Computational Biology", "Cancer Biology", "Large-Scale Analyses"],
+        "reasoning": "Cancer study (Cancer Biology, parent Computational Biology), large-scale single-cell analysis (Large-Scale Analyses). Journal not in preferred list."
       }
     ]
   },
@@ -166,14 +168,15 @@ Calculate points by matching article content to the research interests provided 
       {
         "title": "Network analysis identifies potential therapeutic targets in Alzheimer's disease",
         "summary": "Using network-based approaches, we identified potential therapeutic targets for Alzheimer's disease treatment...",
-        "doi": "10.1234/example7"
+        "doi": "10.1234/example7",
+        "journal": "ArXiv Quantitative Methods"
       }
     ],
     "response": [
       {
         "doi": "10.1234/example7",
-        "score": 7,
-        "reasoning": "Network Biology +3 (already counts as Computational Biology), Drug Target Discovery +3, Comment +1 = 7 points."
+        "tags": ["Computational Biology", "Network Biology", "Drug discovery", "Drug Target Discovery", "Pre-print"],
+        "reasoning": "Network-based approach (Network Biology, parent Computational Biology), identifies therapeutic targets (Drug Target Discovery, parent Drug discovery), ArXiv pre-print (Pre-print)."
       }
     ]
   },
@@ -182,14 +185,15 @@ Calculate points by matching article content to the research interests provided 
       {
         "title": "Principal Component Analysis and batch effect correction in high-throughput genomics",
         "summary": "We review best practices for applying PCA and correcting batch effects in genomic datasets, with practical guidelines for researchers...",
-        "doi": "10.1234/example8"
+        "doi": "10.1234/example8",
+        "journal": "Briefings in Bioinformatics"
       }
     ],
     "response": [
       {
         "doi": "10.1234/example8",
-        "score": 6,
-        "reasoning": "Computational Biology +1, Methodological Guidelines +2, Review +3 = 6 points."
+        "tags": ["Computational Biology", "Methodological Guidelines", "Review"],
+        "reasoning": "Computational biology methods (Computational Biology), provides best practices (Methodological Guidelines), review article (Review). Journal not in preferred list."
       }
     ]
   },
@@ -205,8 +209,8 @@ Calculate points by matching article content to the research interests provided 
     "response": [
       {
         "doi": "10.1234/example9",
-        "score": 7,
-        "reasoning": "Machine Learning in Biology +1, Methodological Guidelines +2, Review +3, Trends in Genetics +1 = 7 points."
+        "tags": ["Computational Biology", "Methodological Guidelines", "Review", "Trends in Genetics"],
+        "reasoning": "Machine learning in biology (Computational Biology), methodological guidance (Methodological Guidelines), review article (Review), published in preferred journal (Trends in Genetics)."
       }
     ]
   },
@@ -215,14 +219,15 @@ Calculate points by matching article content to the research interests provided 
       {
         "title": "Machine learning predicts patient outcomes from electronic health records",
         "summary": "We developed machine learning models to predict patient outcomes using electronic health record data in clinical settings...",
-        "doi": "10.1234/example10"
+        "doi": "10.1234/example10",
+        "journal": "MedrXiv Health Informatics"
       }
     ],
     "response": [
       {
         "doi": "10.1234/example10",
-        "score": -2,
-        "reasoning": "Machine Learning in Biology +1, No relevant subfield -3 = -2 points (clinical ML without genomics/biology focus)."
+        "tags": ["Computational Biology", "Other application", "Pre-print"],
+        "reasoning": "ML in biology context (Computational Biology), but clinical ML without genomics/biology focus (Other application), MedrXiv pre-print (Pre-print)."
       }
     ]
   },
@@ -231,14 +236,15 @@ Calculate points by matching article content to the research interests provided 
       {
         "title": "CRISPR screening identifies gene interactions in zebrafish development",
         "summary": "A genome-wide CRISPR screen in zebrafish embryos reveals genetic interactions controlling developmental pathways...",
-        "doi": "10.1234/example11"
+        "doi": "10.1234/example11",
+        "journal": "PLOS Computational Biology"
       }
     ],
     "response": [
       {
         "doi": "10.1234/example11",
-        "score": -4,
-        "reasoning": "Computational Biology +1, Only non-human application -5 = -4 points (zebrafish-specific developmental study)."
+        "tags": ["Computational Biology", "Other application", "Only non-human application(s)"],
+        "reasoning": "Computational analysis (Computational Biology), but zebrafish-specific developmental study with no human relevance (Other application, Only non-human application(s)). Journal not in preferred list."
       }
     ]
   },
@@ -254,8 +260,25 @@ Calculate points by matching article content to the research interests provided 
     "response": [
       {
         "doi": "10.1234/example12",
-        "score": 6,
-        "reasoning": "Network Biology +3 (already counts as Computational Biology), Cancer Biology +2, Disease Gene Identification +3, Nature Genetics +2, Corrigendum -4 = 6 points."
+        "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "Nature Genetics", "Corrigendum"],
+        "reasoning": "Network-based methods (Network Biology, parent Computational Biology), cancer focus (Cancer Biology), disease gene identification (Drug Target Discovery, parent Drug discovery), published in Nature Genetics, but is a corrigendum (Corrigendum)."
+      }
+    ]
+  },
+  {
+    "query": [
+      {
+        "title": "Graph-based statistical genetics approaches for multi-omics integration in cancer",
+        "summary": "We develop novel graph-based statistical methods combining GWAS and network analysis to identify cancer driver genes across multiple omics layers...",
+        "doi": "10.1234/example13",
+        "journal": "Cell Systems"
+      }
+    ],
+    "response": [
+      {
+        "doi": "10.1234/example13",
+        "tags": ["Computational Biology", "Network Biology", "Statistical Genetics", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "New Computational Method"],
+        "reasoning": "Combines multiple subfields: graph-based methods (Network Biology), GWAS (Statistical Genetics), cancer (Cancer Biology), all under Computational Biology parent. Identifies disease genes (Drug Target Discovery, parent Drug discovery), novel method (New Computational Method). Journal not in preferred list."
       }
     ]
   }

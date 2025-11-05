@@ -154,7 +154,7 @@ class TestCreateZoteroArticle:
             issue=4,
             date=date(2025, 10, 15),
             language="en",
-            score=10,
+            tags=["Network Biology", "Cancer Biology"],
             reasoning="High relevance and importance",
             access_date=date(2025, 10, 31),
             raw_contents="Raw content",
@@ -173,9 +173,8 @@ class TestCreateZoteroArticle:
         assert result["accessDate"] == "2025-10-31"
         assert result["collections"] == [collection_id]
         assert result["creators"] == []
-        # Note: The code adds a tag even when score is None
-        assert len(result["tags"]) == 1
-        assert result["tags"][0]["tag"] == "llm_priority-None"
+        # No tags when article has no tags
+        assert len(result["tags"]) == 0
 
     def test_create_zotero_article_full(self, full_article, mock_zotero):
         """Test creating a Zotero article with all fields"""
@@ -201,20 +200,21 @@ class TestCreateZoteroArticle:
         assert result["creators"][0]["firstName"] == "John"
         assert result["creators"][1]["name"] == "MIT"
 
-        # Check tags (score of 10 becomes priority tag)
-        assert len(result["tags"]) == 1
-        assert result["tags"][0]["tag"] == "llm_priority-10"
+        # Check tags (article has Network Biology and Cancer Biology tags)
+        assert len(result["tags"]) == 2
+        assert result["tags"][0]["tag"] == "Network Biology"
         assert result["tags"][0]["type"] == 0
+        assert result["tags"][1]["tag"] == "Cancer Biology"
+        assert result["tags"][1]["type"] == 0
 
     def test_create_zotero_article_no_priority(self, minimal_article, mock_zotero):
-        """Test creating article without score (still adds tag with None)"""
+        """Test creating article without tags"""
         collection_id = "TEST123"
 
         result = create_zotero_article(minimal_article, collection_id, mock_zotero)
 
-        # The code adds a tag even when score is None
-        assert len(result["tags"]) == 1
-        assert result["tags"][0]["tag"] == "llm_priority-None"
+        # No tags when article has no tags
+        assert len(result["tags"]) == 0
 
     def test_create_zotero_article_calls_template(self, minimal_article, mock_zotero):
         """Test that item_template is called correctly"""
@@ -252,7 +252,7 @@ class TestCreateZoteroNote:
             access_date=date(2025, 10, 31),
             raw_contents="Raw content",
             zotero_key="ABC123",
-            score=10,
+            tags=["Machine Learning", "Systems Biology"],
             reasoning="High relevance due to novel findings in core research area",
         )
 
@@ -455,8 +455,8 @@ class TestInsertArticle:
                 "access_date": "2025-10-31",
                 "raw_contents": "Content 1",
                 "doi": "10.1234/test1",
-                "score": 10,
-                "reasoning": "High relevance - score 10",
+                "tags": ["Network Biology", "Cancer Biology"],
+                "reasoning": "High relevance to research interests",
             },
             {
                 "title": "Test Article 2",
@@ -466,8 +466,8 @@ class TestInsertArticle:
                 "access_date": "2025-10-31",
                 "raw_contents": "Content 2",
                 "doi": "10.1234/test2",
-                "score": 6,
-                "reasoning": "Medium relevance - score 6",
+                "tags": ["Machine Learning"],
+                "reasoning": "Medium relevance to research interests",
             },
         ]
 
@@ -560,6 +560,12 @@ class TestInsertArticle:
 
         # Create 75 articles (should result in 2 batches: 50 + 25)
         articles = []
+        tag_options = [
+            "Network Biology",
+            "Cancer Biology",
+            "Machine Learning",
+            "Systems Biology",
+        ]
         for i in range(75):
             articles.append(
                 {
@@ -570,8 +576,8 @@ class TestInsertArticle:
                     "access_date": "2025-10-31",
                     "raw_contents": f"Content {i}",
                     "doi": f"10.1234/test{i}",
-                    "score": i % 10,
-                    "reasoning": f"Score {i % 10} based on relevance analysis",
+                    "tags": [tag_options[i % len(tag_options)]],
+                    "reasoning": f"Relevance level {i % 10} based on analysis",
                 }
             )
 
