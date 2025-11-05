@@ -35,7 +35,7 @@ def llm_process_articles(
     Process articles using LLM based on the provided stage and prompt.
 
     Args:
-        stage (str): The processing stage (e.g., "metadata", "scoring").
+        stage (str): The processing stage (e.g., "metadata", "tagging").
         articles_json (str): Path to the JSON file containing the articles to process.
         system_prompt_path (str): The path to the system prompt file.
         research_interests_path (str): The path to a text file containing the user's research interests.
@@ -106,8 +106,8 @@ if __name__ == "__main__":
     metadata_parser = add_llm_arguments(
         metadata_parser, include_research_interests=False
     )
-    scoring_parser = subparsers.add_parser("scoring")
-    scoring_parser = add_llm_arguments(scoring_parser, include_research_interests=True)
+    tagging_parser = subparsers.add_parser("tagging")
+    tagging_parser = add_llm_arguments(tagging_parser, include_research_interests=True)
 
     args = parser.parse_args()
     try:

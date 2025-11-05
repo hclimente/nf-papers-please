@@ -139,18 +139,18 @@
                     "help_text": "Path to markdown file containing instructions for the LLM to extract article metadata.",
                     "default": "${projectDir}/prompts/metadata_extraction.md"
                 },
-                "scoring_model": {
+                "tagging_model": {
                     "type": "string",
-                    "description": "LLM model to use for scoring articles",
+                    "description": "LLM model to use for tagging articles",
                     "help_text": "Gemini model identifier for determining article relevance based on research interests.",
                     "default": "gemini-2.5-flash-lite"
                 },
-                "scoring_system_prompt": {
+                "tagging_system_prompt": {
                     "type": "string",
                     "format": "file-path",
-                    "description": "System prompt file for article scoring",
+                    "description": "System prompt file for article tagging",
                     "help_text": "Path to markdown file containing instructions for the LLM to screen articles for relevance.",
-                    "default": "${projectDir}/prompts/scoring.md"
+                    "default": "${projectDir}/prompts/tagging.md"
                 }
             }
         }

@@ -174,7 +174,7 @@ def validate_llm_response(
     Validate LLM response for a given processing stage.
 
     Args:
-        stage (str): The processing stage (e.g., "metadata", "scoring").
+        stage (str): The processing stage (e.g., "metadata", "tagging").
         response_text (str): The AI response text.
         merge_key (str): The key to use for merging articles with QC results.
         allow_qc_errors (bool): Whether to allow errors without failing the process.
@@ -189,7 +189,7 @@ def validate_llm_response(
 
     models = {
         "metadata": MetadataResponse,
-        "scoring": TaggingResponse,
+        "tagging": TaggingResponse,
     }
 
     for item in response:
@@ -225,7 +225,7 @@ def save_validated_responses(
         articles (list): List of articles to validate.
         response_pass (dict): Articles that passed validation.
         allow_qc_errors (bool): Whether to allow errors without failing the process.
-        stage (str): The processing stage (e.g., "scoring").
+        stage (str): The processing stage (e.g., "tagging").
         **kwargs: Additional keyword arguments passed to split_by_qc.
     """
 

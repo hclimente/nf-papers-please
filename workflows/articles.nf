@@ -36,18 +36,18 @@ workflow PROCESS_ARTICLES {
 
         TAG(
             ADVANCED_METADATA.out,
-            file(params.scoring_system_prompt),
+            file(params.tagging_system_prompt),
             file(params.research_interests),
-            params.scoring_model,
+            params.tagging_model,
             true,
             params.debug
         )
 
         TAG_RETRY(
             TAG.out.fail,
-            file(params.scoring_system_prompt),
+            file(params.tagging_system_prompt),
             file(params.research_interests),
-            params.scoring_model,
+            params.tagging_model,
             false,
             params.debug
         )

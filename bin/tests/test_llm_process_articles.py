@@ -91,10 +91,10 @@ class TestLLMProcessArticles:
             mock_save.assert_called_once()
             mock_write.assert_called_once_with(mock_response)
 
-    def test_scoring_stage_with_research_interests(
+    def test_tagging_stage_with_research_interests(
         self, sample_articles, mock_env, tmp_path
     ):
-        """Test scoring stage with research interests"""
+        """Test tagging stage with research interests"""
         # Setup
         articles_json = tmp_path / "articles.json"
         articles_json.write_text(ArticleList.dump_json(sample_articles).decode())
@@ -118,7 +118,7 @@ class TestLLMProcessArticles:
 
                 # Execute
                 llm_process_articles(
-                    stage="scoring",
+                    stage="tagging",
                     articles_json=str(articles_json),
                     system_prompt_path=str(system_prompt),
                     research_interests_path=str(research_interests),
@@ -132,14 +132,14 @@ class TestLLMProcessArticles:
                 assert call_kwargs["research_interests_path"] == str(research_interests)
                 assert call_kwargs["model"] == "gemini-2.5-flash-lite"
 
-                assert mock_validate.call_args[1]["stage"] == "scoring"
+                assert mock_validate.call_args[1]["stage"] == "tagging"
                 assert mock_validate.call_args[1]["merge_key"] == "doi"
                 assert mock_validate.call_args[1]["allow_qc_errors"] is True
         finally:
             # Cleanup: Remove generated JSON files
             from pathlib import Path
 
-            for pattern in ["scoring_pass.json", "scoring_fail.json"]:
+            for pattern in ["tagging_pass.json", "tagging_fail.json"]:
                 file_path = Path(pattern)
                 if file_path.exists():
                     file_path.unlink()
@@ -378,7 +378,7 @@ class TestLLMProcessArticles:
             mock_validate.return_value = {}
 
             # Test each stage
-            for stage in ["metadata", "scoring"]:
+            for stage in ["metadata", "tagging"]:
                 # Execute
                 llm_process_articles(
                     stage=stage,

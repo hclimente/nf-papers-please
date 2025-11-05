@@ -47,15 +47,15 @@ process TAG {
     val DEBUG
 
     output:
-    path "scoring_pass.json", emit: pass, optional: true
-    path "scoring_fail.json", emit: fail, optional: true
+    path "tagging_pass.json", emit: pass, optional: true
+    path "tagging_fail.json", emit: fail, optional: true
 
     script:
     """
     llm_process_articles.py \
 --articles_json ${ARTICLES_JSON} \
 ${DEBUG ? '--debug' : ''} \
-scoring \
+tagging \
 --system_prompt_path ${SYSTEM_PROMPT} \
 --research_interests_path ${RESEARCH_INTERESTS_PATH} \
 --model ${MODEL} \

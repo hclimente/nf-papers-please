@@ -555,8 +555,8 @@ class TestValidateLlmResponse:
         assert mock_info.called
 
     @patch("common.validation.logging.info")
-    def test_validate_scoring_response(self, mock_info):
-        """Test validating scoring stage response"""
+    def test_validate_tagging_response(self, mock_info):
+        """Test validating tagging stage response"""
         response_text = json.dumps(
             [
                 {
@@ -568,7 +568,7 @@ class TestValidateLlmResponse:
         )
 
         result = validate_llm_response(
-            stage="scoring",
+            stage="tagging",
             response_text=response_text,
             merge_key="doi",
             allow_qc_errors=False,
@@ -592,7 +592,7 @@ class TestValidateLlmResponse:
         )
 
         result = validate_llm_response(
-            stage="scoring",
+            stage="tagging",
             response_text=response_text,
             merge_key="doi",
             allow_qc_errors=True,
@@ -638,7 +638,7 @@ class TestValidateLlmResponse:
         )
 
         result = validate_llm_response(
-            stage="scoring",
+            stage="tagging",
             response_text=response_text,
             merge_key="doi",
             allow_qc_errors=False,
