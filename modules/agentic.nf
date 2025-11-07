@@ -62,3 +62,25 @@ tagging \
 --allow_qc_errors ${ALLOW_QC_ERRORS}
     """
 }
+
+process SCORE {
+
+    container 'community.wave.seqera.io/library/pip_pyyaml_pydantic:4cafb834b00f8d86'
+
+    input:
+    path ARTICLES_JSON
+    path RESEARCH_INTERESTS_PATH
+    val DEBUG
+
+    output:
+    path "scored_articles.json"
+
+    script:
+    """
+    compute_article_score.py \
+--articles_json ${ARTICLES_JSON} \
+--research_interests_path ${RESEARCH_INTERESTS_PATH} \
+--out scored_articles.json \
+${DEBUG ? '--debug' : ''}
+    """
+}

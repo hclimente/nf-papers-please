@@ -45,6 +45,7 @@ class Article(BaseModel):
     # LLM results
     tags: list[str] | None = None
     reasoning: str | None = None
+    score: int | None = None
 
     # Raw and integration data
     access_date: date

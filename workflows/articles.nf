@@ -1,4 +1,4 @@
-include { BASIC_METADATA; TAG } from '../modules/agentic'
+include { BASIC_METADATA; TAG; SCORE } from '../modules/agentic'
 include { BASIC_METADATA as BASIC_METADATA_RETRY } from '../modules/agentic'
 include { ADVANCED_METADATA; REMOVE_PROCESSED; SAVE } from '../modules/zotero'
 include { TAG as TAG_RETRY } from '../modules/agentic'
@@ -54,11 +54,18 @@ workflow PROCESS_ARTICLES {
 
         tagged_articles = TAG.out.pass
             .concat(TAG_RETRY.out.pass)
-        all_articles = tagged_articles
+
+        SCORE(
+            tagged_articles,
+            file(params.research_interests),
+            params.debug
+        )
+
+        all_articles = SCORE.out
             .concat(TAG_RETRY.out.fail)
         final_batches = batchArticles(all_articles, 100)
 
     emit:
-        tagged_articles = tagged_articles
+        scored_articles = SCORE.out
         all_articles = final_batches
 }
