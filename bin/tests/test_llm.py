@@ -875,7 +875,7 @@ class TestEmbed:
 
         mock_response = Mock()
         mock_response.embeddings = [mock_embedding1, mock_embedding2]
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Execute
         texts = ["First text to embed", "Second text to embed"]
@@ -887,7 +887,7 @@ class TestEmbed:
 
         # Verify
         mock_client_class.assert_called_once_with(api_key="test-api-key")  # noqa: S106  # pragma: allowlist secret
-        mock_client.models.generate_embeddings.assert_called_once()
+        mock_client.models.embed_content.assert_called_once()
         assert len(result) == 2
         assert result[0] == mock_embedding1
         assert result[1] == mock_embedding2
@@ -906,7 +906,7 @@ class TestEmbed:
 
         mock_response = Mock()
         mock_response.embeddings = [mock_embedding]
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Execute
         result = embed(
@@ -930,7 +930,7 @@ class TestEmbed:
 
         mock_response = Mock()
         mock_response.embeddings = []
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Execute
         result = embed(
@@ -955,7 +955,7 @@ class TestEmbed:
         mock_embedding = Mock()
         mock_response = Mock()
         mock_response.embeddings = [mock_embedding]
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Execute with custom task
         _ = embed(
@@ -966,7 +966,7 @@ class TestEmbed:
         )
 
         # Verify task type was passed correctly
-        call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+        call_kwargs = mock_client.models.embed_content.call_args[1]
         assert call_kwargs["config"].task_type == "RETRIEVAL_QUERY"
 
     @patch("common.llm.genai.Client")
@@ -981,7 +981,7 @@ class TestEmbed:
         mock_embedding = Mock()
         mock_response = Mock()
         mock_response.embeddings = [mock_embedding]
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Execute without specifying task
         embed(
@@ -991,7 +991,7 @@ class TestEmbed:
         )
 
         # Verify default task type
-        call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+        call_kwargs = mock_client.models.embed_content.call_args[1]
         assert call_kwargs["config"].task_type == "CLASSIFICATION"
 
     @patch("common.llm.genai.Client")
@@ -1005,7 +1005,7 @@ class TestEmbed:
 
         mock_response = Mock()
         mock_response.embeddings = []
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Execute
         embed(
@@ -1015,7 +1015,7 @@ class TestEmbed:
         )
 
         # Verify
-        call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+        call_kwargs = mock_client.models.embed_content.call_args[1]
         assert call_kwargs["model"] == "text-embedding-004"
 
     @patch("common.llm.genai.Client")
@@ -1029,7 +1029,7 @@ class TestEmbed:
 
         mock_response = Mock()
         mock_response.embeddings = []
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Execute
         texts = ["First text", "Second text", "Third text"]
@@ -1040,7 +1040,7 @@ class TestEmbed:
         )
 
         # Verify
-        call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+        call_kwargs = mock_client.models.embed_content.call_args[1]
         assert call_kwargs["contents"] == texts
 
     @patch("common.llm.genai.Client")
@@ -1055,7 +1055,7 @@ class TestEmbed:
         mock_embeddings = [Mock() for _ in range(3)]
         mock_response = Mock()
         mock_response.embeddings = mock_embeddings
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Execute with long texts
         long_texts = [
@@ -1084,7 +1084,7 @@ class TestEmbed:
         mock_embedding = Mock()
         mock_response = Mock()
         mock_response.embeddings = [mock_embedding]
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Execute with special characters
         texts = ["Text with émojis 🎉 and spëcial çharacters!"]
@@ -1096,7 +1096,7 @@ class TestEmbed:
 
         # Verify
         assert len(result) == 1
-        call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+        call_kwargs = mock_client.models.embed_content.call_args[1]
         assert call_kwargs["contents"] == texts
 
     @patch("common.llm.genai.Client")
@@ -1112,7 +1112,7 @@ class TestEmbed:
         mock_embeddings = [Mock(), Mock(), Mock()]
         mock_response = Mock()
         mock_response.embeddings = mock_embeddings
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Execute
         embed(
@@ -1137,7 +1137,7 @@ class TestEmbed:
 
         mock_response = Mock()
         mock_response.embeddings = [Mock()]
-        mock_client.models.generate_embeddings.return_value = mock_response
+        mock_client.models.embed_content.return_value = mock_response
 
         # Test different model names
         models_to_test = [
@@ -1147,7 +1147,7 @@ class TestEmbed:
         ]
 
         for model_name in models_to_test:
-            mock_client.models.generate_embeddings.reset_mock()
+            mock_client.models.embed_content.reset_mock()
 
             embed(
                 texts=["Test"],
@@ -1155,5 +1155,5 @@ class TestEmbed:
                 api_key="test-api-key",  # pragma: allowlist secret
             )
 
-            call_kwargs = mock_client.models.generate_embeddings.call_args[1]
+            call_kwargs = mock_client.models.embed_content.call_args[1]
             assert call_kwargs["model"] == model_name

@@ -22,48 +22,48 @@ def sample_research_interests():
     return {
         "field": [
             {
-                "category": "Computational Biology",
+                "name": "Computational Biology",
                 "aliases": ["Machine Learning in Biology"],
                 "points": 1,
                 "subcategories": [
                     {
-                        "category": "Network Biology",
+                        "name": "Network Biology",
                         "aliases": ["Graphs"],
                         "points": 3,
                     },
                     {
-                        "category": "Statistical Genetics",
+                        "name": "Statistical Genetics",
                         "points": 2,
                     },
                     {
-                        "category": "Cancer Biology",
+                        "name": "Cancer Biology",
                         "points": 2,
                     },
                 ],
             },
             {
-                "category": "No relevant field or subfield",
+                "name": "No relevant field or subfield",
                 "points": -3,
             },
         ],
         "applications": [
             {
-                "category": "Drug discovery",
+                "name": "Drug discovery",
                 "points": 1,
                 "subcategories": [
                     {
-                        "category": "Drug Target Discovery",
+                        "name": "Drug Target Discovery",
                         "aliases": ["Disease Gene Identification"],
                         "points": 3,
                     },
                 ],
             },
             {
-                "category": "Other application",
+                "name": "Other application",
                 "points": -2,
                 "subcategories": [
                     {
-                        "category": "Only non-human application(s)",
+                        "name": "Only non-human application(s)",
                         "points": -5,
                     }
                 ],
@@ -71,15 +71,15 @@ def sample_research_interests():
         ],
         "preferred_article_types": [
             {
-                "category": "Review",
+                "name": "Review",
                 "points": 3,
             },
             {
-                "category": "New Computational Method",
+                "name": "New Computational Method",
                 "points": 1,
             },
             {
-                "category": "Pre-print",
+                "name": "Pre-print",
                 "points": -1,
             },
         ],
