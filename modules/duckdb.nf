@@ -14,7 +14,7 @@ process CREATE_ARTICLES_DB {
 
     script:
     """
-    duckdb_create.py \
+    db_create.py duckdb \
 --journals_tsv ${JOURNALS_TSV} \
 --db_path ${DUCKDB_FILENAME} \
 --global_cutoff_date ${GLOBAL_CUTOFF_DATE}
@@ -34,11 +34,11 @@ process FETCH_JOURNALS {
 
     script:
     """
-    duckdb_extract_fields.py \
+    db_extract_fields.py duckdb \
 --db_path ${DUCKDB_PATH} \
 --table sources \
 --columns "name, feed_url, last_checked" \
---output_tsv journals.tsv
+--out journals.tsv
     """
 
 }
@@ -56,10 +56,10 @@ process REMOVE_PROCESSED {
 
     script:
     """
-    duckdb_remove_processed.py \
+    db_remove_processed.py duckdb \
 --db_path ${DUCKDB_PATH} \
 --articles_json ${ARTICLES_JSON} \
---output_json unprocessed_articles.json
+--out unprocessed_articles.json
     """
 
 }
@@ -78,7 +78,7 @@ process SAVE {
 
     script:
     """
-    duckdb_insert_article.py \
+    db_insert_article.py duckdb \
 --db_path ${DUCKDB_PATH} \
 --articles_json ${ARTICLES_JSON}
     """
