@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import logging
 
 import duckdb
 
@@ -20,8 +21,17 @@ def update_duckdb_field(db_path: str, table: str, set_clause: str, where_clause:
         None
     """
     with duckdb.connect(db_path) as con:
-        query = f"UPDATE {table} SET {set_clause} WHERE {where_clause}"
-        con.execute(query)
+        logging.info(
+            f"⌛ Began updating {table} with {set_clause} where {where_clause}..."
+        )
+        con.execute(
+            f"""
+            UPDATE {table}
+            SET {set_clause}
+            WHERE {where_clause}
+        """
+        )
+        logging.info("✅ Done updating field")
 
 
 if __name__ == "__main__":

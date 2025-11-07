@@ -14,6 +14,7 @@ from common.parsers import (
     add_output_argument,
     add_debug_argument,
     add_duckdb_arguments,
+    add_postgresql_arguments,
     add_llm_arguments,
 )
 
@@ -186,6 +187,66 @@ class TestAddDuckdbArguments:
         # Should not raise error when not provided
         args = parser.parse_args([])
         assert hasattr(args, "db_path")
+
+
+class TestAddPostgresqlArguments:
+    """Test suite for add_postgresql_arguments function"""
+
+    def test_adds_connection_string_argument(self):
+        """Test that connection_string argument is added to parser"""
+        parser = argparse.ArgumentParser()
+        result = add_postgresql_arguments(parser)
+
+        # Check that it returns the parser
+        assert result is parser
+
+        # Parse with the argument
+        args = parser.parse_args(
+            [
+                "--connection-string",
+                "postgresql://user:pass@localhost/db",  # pragma: allowlist secret
+            ]
+        )
+        assert (
+            args.connection_string == "postgresql://user:pass@localhost/db"  # noqa: S106  # pragma: allowlist secret
+        )
+
+    def test_connection_string_is_required(self):
+        """Test that connection_string argument is required"""
+        parser = argparse.ArgumentParser()
+        add_postgresql_arguments(parser)
+
+        # Should raise error when not provided
+        with pytest.raises(SystemExit):
+            parser.parse_args([])
+
+    def test_connection_string_accepts_various_formats(self):
+        """Test that connection_string accepts various PostgreSQL URI formats"""
+        parser = argparse.ArgumentParser()
+        add_postgresql_arguments(parser)
+
+        test_strings = [
+            "postgresql://user:pass@localhost/db",  # pragma: allowlist secret
+            "postgresql://user@localhost/db",
+            "postgresql://localhost/db",
+            "postgresql://host:5432/database",
+            "postgresql://user:pass@remote.host.com:5432/production_db",  # noqa: S106 # pragma: allowlist secret
+            "postgresql://user:pass@localhost/db?sslmode=require",  # noqa: S106 # pragma: allowlist secret
+        ]
+
+        for conn_str in test_strings:
+            args = parser.parse_args(["--connection-string", conn_str])
+            assert args.connection_string == conn_str
+
+    def test_connection_string_attribute_name(self):
+        """Test that the attribute name uses underscores"""
+        parser = argparse.ArgumentParser()
+        add_postgresql_arguments(parser)
+
+        args = parser.parse_args(["--connection-string", "postgresql://localhost/db"])
+        # The attribute should be connection_string (with underscore)
+        assert hasattr(args, "connection_string")
+        assert args.connection_string == "postgresql://localhost/db"
 
 
 class TestAddLlmArguments:

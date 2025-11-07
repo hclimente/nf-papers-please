@@ -5,6 +5,7 @@ import logging
 
 import duckdb
 
+from common.db import extract_article_fields, get_insert_article_sql
 from common.parsers import (
     add_input_articles_json_argument,
     add_duckdb_arguments,
@@ -29,27 +30,15 @@ def insert_article(
     articles = json.load(open(articles_json, "r"))
     logging.info(f"Loaded {len(articles)} articles from {articles_json}.")
 
+    insert_sql = get_insert_article_sql(db_type="duckdb")
+
     for a in articles:
         logging.info(f"Inserting article: {a['title'][:50]}...")
 
         with duckdb.connect(db_path) as con:
             try:
-                con.execute(
-                    """
-                    INSERT INTO articles (title, summary, url, journal_name, date, doi, tags, reasoning)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        a["title"],
-                        a["summary"],
-                        a["url"],
-                        a["journal_name"],
-                        a["date"],
-                        a["doi"],
-                        a.get("tags", None),
-                        a.get("reasoning", None),
-                    ),
-                )
+                article_values = extract_article_fields(a)
+                con.execute(insert_sql, article_values)
                 logging.info("✅ Article inserted successfully")
             except Exception as e:
                 logging.error(f"❌ Failed to insert article: {e}")

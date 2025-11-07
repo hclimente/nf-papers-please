@@ -5,6 +5,9 @@ import logging
 
 import duckdb
 
+from common.db import (
+    get_select_unprocessed_sql,
+)
 from common.parsers import (
     add_input_articles_json_argument,
     add_duckdb_arguments,
@@ -59,13 +62,7 @@ def remove_unprocessed_articles(
             [(url,) for url in urls],
         )
 
-        result = con.execute("""
-            SELECT a.url
-            FROM tmp_articles a
-            LEFT JOIN articles p
-            ON a.url = p.url
-            WHERE p.title IS NULL;
-        """).fetchall()
+        result = con.execute(get_select_unprocessed_sql()).fetchall()
         logging.info(f"Found {len(result)} unprocessed articles.")
 
     unprocessed_articles = [a for a in articles if (a["url"],) in result]

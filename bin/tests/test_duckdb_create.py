@@ -440,10 +440,13 @@ class TestCreateArticlesTable:
                 VALUES ('Test', 'Summary', 'https://test.com', '2024-01-01')
             """)
 
-        # Create table second time - will fail because sequence already exists
-        # This is a limitation of the current implementation
-        with pytest.raises(duckdb.CatalogException):
-            create_articles_table(temp_db_with_sources)
+        # Create table second time - should succeed with IF NOT EXISTS
+        # Data should still be there
+        create_articles_table(temp_db_with_sources)
+
+        with duckdb.connect(temp_db_with_sources) as con:
+            result = con.execute("SELECT COUNT(*) FROM articles").fetchone()
+            assert result[0] == 1  # Data should still be there
 
     def test_create_articles_table_journal_name_can_be_null(self, temp_db_with_sources):
         """Test that journal_name can be NULL"""
