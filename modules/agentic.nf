@@ -84,3 +84,28 @@ process SCORE {
 ${DEBUG ? '--debug' : ''}
     """
 }
+
+process EMBED {
+
+    container 'community.wave.seqera.io/library/pip_google-genai:2e5c0f1812c5cbda'
+    label 'gemini_api'
+    secret 'GOOGLE_API_KEY'
+
+    input:
+    path ARTICLES_JSON
+    val MODEL
+    val DEBUG
+
+    output:
+    path "embeddings.json"
+
+    script:
+    """
+    llm_embed_articles.py \
+--articles_json ${ARTICLES_JSON} \
+--model ${MODEL} \
+--task SEMANTIC_SIMILARITY \
+--out embeddings.json \
+${DEBUG ? '--debug' : ''}
+    """
+}

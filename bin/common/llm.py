@@ -131,7 +131,7 @@ def embed(
 
     client = genai.Client(api_key=api_key)
 
-    response = client.models.generate_embeddings(
+    response = client.models.embed_content(
         model=model,
         contents=texts,
         config=types.EmbedContentConfig(task_type=task),

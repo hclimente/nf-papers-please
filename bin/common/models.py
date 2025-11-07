@@ -15,11 +15,17 @@ class Author(BaseModel):
     first_name: str
     last_name: str
 
+    def __str__(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
 
 class InstitutionalAuthor(BaseModel):
     """Model representing an institutional author of a scientific article."""
 
     name: str
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Article(BaseModel):
@@ -46,6 +52,7 @@ class Article(BaseModel):
     tags: list[str] | None = None
     reasoning: str | None = None
     score: int | None = None
+    embedding: list[float] | None = None
 
     # Raw and integration data
     access_date: date

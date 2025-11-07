@@ -1,4 +1,4 @@
-include { BASIC_METADATA; TAG; SCORE } from '../modules/agentic'
+include { BASIC_METADATA; TAG; SCORE; EMBED } from '../modules/agentic'
 include { BASIC_METADATA as BASIC_METADATA_RETRY } from '../modules/agentic'
 include { ADVANCED_METADATA; REMOVE_PROCESSED; SAVE } from '../modules/zotero'
 include { TAG as TAG_RETRY } from '../modules/agentic'
@@ -58,6 +58,12 @@ workflow PROCESS_ARTICLES {
         SCORE(
             tagged_articles,
             file(params.research_interests),
+            params.debug
+        )
+
+        EMBED(
+            tagged_articles,
+            params.embedding_model,
             params.debug
         )
 
