@@ -104,7 +104,7 @@ def update_field(
             )
             logging.info("✅ Done updating field")
 
-    elif db_type == "postgresql":
+    elif db_type == "pg":
         try:
             import psycopg2
         except ImportError:

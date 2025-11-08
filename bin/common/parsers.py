@@ -97,12 +97,6 @@ def add_postgresql_arguments(parser: argparse.ArgumentParser):
         help="PostgreSQL username",
     )
     parser.add_argument(
-        "--password",
-        type=str,
-        required=True,
-        help="PostgreSQL password",  # pragma: allowlist secret
-    )
-    parser.add_argument(
         "--host",
         type=str,
         required=True,

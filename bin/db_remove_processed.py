@@ -108,7 +108,7 @@ def remove_unprocessed_articles(
             result = con.execute(get_select_unprocessed_sql()).fetchall()
             logging.info(f"Found {len(result)} unprocessed articles.")
 
-    elif db_type == "postgresql":
+    elif db_type == "pg":
         try:
             import psycopg2
             from psycopg2.extras import execute_values

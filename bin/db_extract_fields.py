@@ -76,7 +76,7 @@ def extract_fields(
             query = f"SELECT {columns} FROM {table} {where_clause}"
             result = con.execute(query).fetchall()
 
-    elif db_type == "postgresql":
+    elif db_type == "pg":
         try:
             import psycopg2
         except ImportError:

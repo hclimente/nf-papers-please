@@ -167,7 +167,7 @@ class TestExtractFieldsPostgreSQL:
             table="articles",
             columns="title, summary",
             out="output.tsv",
-            db_type="postgresql",
+            db_type="pg",
             connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
         )
 
@@ -196,7 +196,7 @@ class TestExtractFieldsPostgreSQL:
             table="articles",
             columns="title, summary",
             out="output.tsv",
-            db_type="postgresql",
+            db_type="pg",
             connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
             where_clause="date > '2025-01-01'",
         )
@@ -224,7 +224,7 @@ class TestExtractFieldsPostgreSQL:
             table="articles",
             columns="title, summary",
             out="output.tsv",
-            db_type="postgresql",
+            db_type="pg",
             connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
         )
 

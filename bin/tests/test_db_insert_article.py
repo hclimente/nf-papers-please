@@ -119,9 +119,7 @@ class TestInsertArticlePostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        insert_article(
-            "articles.json", "postgresql", connection_string=TEST_PG_CONN_STRING
-        )
+        insert_article("articles.json", "pg", connection_string=TEST_PG_CONN_STRING)
 
         # Check that execute was called once
         assert mock_cursor.execute.call_count == 1
@@ -147,9 +145,7 @@ class TestInsertArticlePostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        insert_article(
-            "articles.json", "postgresql", connection_string=TEST_PG_CONN_STRING
-        )
+        insert_article("articles.json", "pg", connection_string=TEST_PG_CONN_STRING)
 
         # Check that execute was called twice (once per article)
         assert mock_cursor.execute.call_count == 2
@@ -173,9 +169,7 @@ class TestInsertArticlePostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        insert_article(
-            "articles.json", "postgresql", connection_string=TEST_PG_CONN_STRING
-        )
+        insert_article("articles.json", "pg", connection_string=TEST_PG_CONN_STRING)
 
         assert mock_conn.commit.called
 
@@ -200,9 +194,7 @@ class TestInsertArticlePostgreSQL:
         mock_connect.return_value = mock_conn
 
         with pytest.raises(Exception):
-            insert_article(
-                "articles.json", "postgresql", connection_string=TEST_PG_CONN_STRING
-            )
+            insert_article("articles.json", "pg", connection_string=TEST_PG_CONN_STRING)
 
         assert mock_conn.rollback.called
 
@@ -221,6 +213,7 @@ class TestArticleInsertFields:
             "doi",
             "tags",
             "reasoning",
+            "embedding",
         ]
         assert ARTICLE_INSERT_FIELDS == expected
 
@@ -239,6 +232,7 @@ class TestExtractArticleFields:
             "doi": "10.1234/test",
             "tags": ["tag1", "tag2"],
             "reasoning": "Test reasoning",
+            "embedding": list(range(3096)),
         }
 
         fields = extract_article_fields(article)
@@ -251,6 +245,7 @@ class TestExtractArticleFields:
             "10.1234/test",
             ["tag1", "tag2"],
             "Test reasoning",
+            list(range(3096)),
         )
 
     def test_extract_optional_fields_none(self):
@@ -267,6 +262,7 @@ class TestExtractArticleFields:
         fields = extract_article_fields(article)
         assert fields[6] is None  # tags
         assert fields[7] is None  # reasoning
+        assert fields[8] is None  # embedding
 
     def test_extract_custom_fields(self):
         """Test extracting custom field list."""
@@ -287,12 +283,18 @@ class TestGetInsertArticleSql:
         """Test DuckDB uses ? placeholders."""
         sql = get_insert_article_sql(db_type="duckdb")
         assert "INSERT INTO articles" in sql
-        assert "(title, summary, url, journal_name, date, doi, tags, reasoning)" in sql
-        assert "VALUES (?, ?, ?, ?, ?, ?, ?, ?)" in sql
+        assert (
+            "(title, summary, url, journal_name, date, doi, tags, reasoning, embedding)"
+            in sql
+        )
+        assert "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)" in sql
 
     def test_postgresql_uses_percent_s(self):
         """Test PostgreSQL uses %s placeholders."""
-        sql = get_insert_article_sql(db_type="postgresql")
+        sql = get_insert_article_sql(db_type="pg")
         assert "INSERT INTO articles" in sql
-        assert "(title, summary, url, journal_name, date, doi, tags, reasoning)" in sql
-        assert "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)" in sql
+        assert (
+            "(title, summary, url, journal_name, date, doi, tags, reasoning, embedding)"
+            in sql
+        )
+        assert "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)" in sql

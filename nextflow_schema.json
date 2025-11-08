@@ -181,6 +181,12 @@
                     "description": "System prompt file for article tagging",
                     "help_text": "Path to markdown file containing instructions for the LLM to screen articles for relevance.",
                     "default": "${projectDir}/prompts/tagging.md"
+                },
+                "embedding_model": {
+                    "type": "string",
+                    "description": "LLM model to use for embedding articles",
+                    "help_text": "Gemini model identifier for computing article embeddings.",
+                    "default": "gemini-embedding-001"
                 }
             }
         }

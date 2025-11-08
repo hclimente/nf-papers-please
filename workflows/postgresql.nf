@@ -9,7 +9,6 @@ workflow FROM_POSTGRESQL {
         journals_tsv
 
     main:
-        // Check if database tables exist, if not create them
         if ( params.from_pg_create_tables ) {
             println "Creating PostgreSQL database tables."
 

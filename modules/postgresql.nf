@@ -14,7 +14,7 @@ process CREATE_ARTICLES_DB {
 
     script:
     """
-    db_create.py postgresql \
+    db_create.py pg \
 --journals_tsv ${JOURNALS_TSV} \
 --user "${USER}" \
 --host "${HOST}" \
@@ -37,7 +37,7 @@ process FETCH_JOURNALS {
 
     script:
     """
-    db_extract_fields.py postgresql \
+    db_extract_fields.py pg \
 --user "${USER}" \
 --host "${HOST}" \
 --table sources \
@@ -62,7 +62,7 @@ process REMOVE_PROCESSED {
 
     script:
     """
-    db_remove_processed.py postgresql \
+    db_remove_processed.py pg \
 --user "${USER}" \
 --host "${HOST}" \
 --articles_json ${ARTICLES_JSON} \
@@ -87,7 +87,7 @@ process SAVE {
 
     script:
     """
-    db_insert_article.py postgresql \
+    db_insert_article.py pg \
 --user "${USER}" \
 --host "${HOST}" \
 --articles_json ${ARTICLES_JSON}
@@ -111,7 +111,7 @@ process UPDATE_TIMESTAMPS {
     script:
     today = new Date().format("yyyy-MM-dd")
     """
-    db_update_field.py postgresql \
+    db_update_field.py pg \
 --user "${USER}" \
 --host "${HOST}" \
 --table sources \
@@ -120,4 +120,3 @@ process UPDATE_TIMESTAMPS {
     """
 
 }
-}}

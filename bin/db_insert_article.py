@@ -21,6 +21,7 @@ ARTICLE_INSERT_FIELDS = [
     "doi",
     "tags",
     "reasoning",
+    "embedding",
 ]
 
 
@@ -40,8 +41,7 @@ def extract_article_fields(article: Dict, fields: List[str] = None) -> Tuple:
 
     values = []
     for field in fields:
-        if field in ["tags", "reasoning"]:
-            # These fields might not exist, use get() with None default
+        if field in ["tags", "reasoning", "embedding"]:
             values.append(article.get(field, None))
         else:
             values.append(article[field])
@@ -59,12 +59,12 @@ def get_insert_article_sql(db_type: str = "duckdb") -> str:
         SQL INSERT statement with appropriate placeholder style
     """
     placeholders = (
-        "?, ?, ?, ?, ?, ?, ?, ?"
+        "?, ?, ?, ?, ?, ?, ?, ?, ?"
         if db_type == "duckdb"
-        else "%s, %s, %s, %s, %s, %s, %s, %s"
+        else "%s, %s, %s, %s, %s, %s, %s, %s, %s"
     )
     return f"""
-        INSERT INTO articles (title, summary, url, journal_name, date, doi, tags, reasoning)
+        INSERT INTO articles (title, summary, url, journal_name, date, doi, tags, reasoning, embedding)
         VALUES ({placeholders})
     """
 
@@ -110,7 +110,7 @@ def insert_article(
                     logging.error(f"❌ Failed to insert article: {e}")
                     raise
 
-    elif db_type == "postgresql":
+    elif db_type == "pg":
         try:
             import psycopg2
         except ImportError:

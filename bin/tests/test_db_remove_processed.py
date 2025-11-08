@@ -153,7 +153,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
         remove_unprocessed_articles(
             "articles.json",
             "output.json",
-            "postgresql",
+            "pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -189,7 +189,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
         remove_unprocessed_articles(
             "articles.json",
             "output.json",
-            "postgresql",
+            "pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -228,7 +228,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
         remove_unprocessed_articles(
             "articles.json",
             "output.json",
-            "postgresql",
+            "pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -254,7 +254,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
         remove_unprocessed_articles(
             "articles.json",
             "output.json",
-            "postgresql",
+            "pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -286,6 +286,6 @@ class TestGetCreateTempArticlesTableSql:
 
     def test_postgresql_uses_temp(self):
         """Test PostgreSQL uses TEMP keyword."""
-        sql = get_create_temp_articles_table_sql(db_type="postgresql")
+        sql = get_create_temp_articles_table_sql(db_type="pg")
         assert "CREATE TEMP TABLE tmp_articles" in sql
         assert "url TEXT" in sql

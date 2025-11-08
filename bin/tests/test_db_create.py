@@ -114,7 +114,7 @@ class TestCreateJournalTablePostgreSQL:
         create_journal_table(
             "journals.tsv",
             "2025-01-01",
-            "postgresql",
+            "pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -144,7 +144,7 @@ class TestCreateJournalTablePostgreSQL:
         create_journal_table(
             "journals.tsv",
             "2025-01-01",
-            "postgresql",
+            "pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -176,7 +176,7 @@ class TestCreateJournalTablePostgreSQL:
         create_journal_table(
             "journals.tsv",
             "2025-01-01",
-            "postgresql",
+            "pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -240,7 +240,7 @@ class TestCreateArticlesTablePostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        create_articles_table("postgresql", connection_string=TEST_PG_CONN_STRING)
+        create_articles_table("pg", connection_string=TEST_PG_CONN_STRING)
 
         # Check that CREATE TABLE was called
         assert mock_cursor.execute.called
@@ -261,7 +261,7 @@ class TestCreateArticlesTablePostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        create_articles_table("postgresql", connection_string=TEST_PG_CONN_STRING)
+        create_articles_table("pg", connection_string=TEST_PG_CONN_STRING)
 
         create_call = mock_cursor.execute.call_args[0][0]
         assert "SERIAL" in create_call or "serial" in create_call
@@ -310,14 +310,14 @@ class TestGetArticlesTableSchema:
 
     def test_postgresql_schema_uses_serial(self):
         """Test PostgreSQL schema uses SERIAL for id generation."""
-        schema = get_articles_table_schema(db_type="postgresql")
+        schema = get_articles_table_schema(db_type="pg")
         assert "id SERIAL PRIMARY KEY" in schema
         assert "url TEXT NOT NULL UNIQUE" in schema
         assert "CREATE SEQUENCE" not in schema  # SERIAL handles this
 
     def test_postgresql_schema_contains_all_columns(self):
         """Test PostgreSQL schema contains all required columns."""
-        schema = get_articles_table_schema(db_type="postgresql")
+        schema = get_articles_table_schema(db_type="pg")
         assert "CREATE TABLE IF NOT EXISTS articles" in schema
         assert "title TEXT NOT NULL" in schema
         assert "journal_name TEXT" in schema
@@ -386,7 +386,7 @@ class TestGetInsertSourcesSql:
 
     def test_postgresql_uses_on_conflict(self):
         """Test PostgreSQL uses ON CONFLICT syntax."""
-        sql = get_insert_sources_sql(db_type="postgresql")
+        sql = get_insert_sources_sql(db_type="pg")
         assert "INSERT INTO sources" in sql
         assert "(name, feed_url, last_checked)" in sql
         assert "VALUES (%s, %s, %s)" in sql

@@ -192,8 +192,8 @@ class TestAddDuckdbArguments:
 class TestAddPostgresqlArguments:
     """Test suite for add_postgresql_arguments function"""
 
-    def test_adds_user_password_host_arguments(self):
-        """Test that user, password, and host arguments are added to parser"""
+    def test_adds_user_host_arguments(self):
+        """Test that user and host arguments are added to parser"""
         parser = argparse.ArgumentParser()
         result = add_postgresql_arguments(parser)
 
@@ -205,18 +205,15 @@ class TestAddPostgresqlArguments:
             [
                 "--user",
                 "testuser",
-                "--password",
-                "testpass",
                 "--host",
                 "localhost/db",
             ]
         )
         assert args.user == "testuser"
-        assert args.password == "testpass"  # pragma: allowlist secret
         assert args.host == "localhost/db"
 
     def test_arguments_are_required(self):
-        """Test that user, password, and host arguments are required"""
+        """Test that user and host arguments are required"""
         parser = argparse.ArgumentParser()
         add_postgresql_arguments(parser)
 
@@ -237,9 +234,7 @@ class TestAddPostgresqlArguments:
         ]
 
         for host in test_hosts:
-            args = parser.parse_args(
-                ["--user", "user", "--password", "pass", "--host", host]
-            )
+            args = parser.parse_args(["--user", "user", "--host", host])
             assert args.host == host
 
     def test_attribute_names(self):
@@ -247,16 +242,12 @@ class TestAddPostgresqlArguments:
         parser = argparse.ArgumentParser()
         add_postgresql_arguments(parser)
 
-        args = parser.parse_args(
-            ["--user", "myuser", "--password", "mypass", "--host", "myhost/mydb"]
-        )
+        args = parser.parse_args(["--user", "myuser", "--host", "myhost/mydb"])
 
         # Check attribute names
         assert hasattr(args, "user")
-        assert hasattr(args, "password")
         assert hasattr(args, "host")
         assert args.user == "myuser"
-        assert args.password == "mypass"  # pragma: allowlist secret
         assert args.host == "myhost/mydb"
 
 

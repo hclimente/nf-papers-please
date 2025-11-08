@@ -79,11 +79,12 @@ def get_articles_table_schema(db_type: str = "duckdb") -> str:
                 doi TEXT DEFAULT NULL,
                 tags TEXT[] DEFAULT NULL,
                 reasoning TEXT DEFAULT NULL,
+                embedding FLOAT[3072] DEFAULT NULL,
                 FOREIGN KEY (journal_name) REFERENCES sources(name),
                 PRIMARY KEY (url)
             )
         """
-    elif db_type == "postgresql":
+    elif db_type == "pg":
         return """
             CREATE TABLE IF NOT EXISTS articles (
                 id SERIAL PRIMARY KEY,
@@ -129,7 +130,7 @@ def get_insert_sources_sql(db_type: str = "duckdb") -> str:
     Get SQL template for inserting sources with conflict handling.
 
     Args:
-        db_type: Either 'duckdb' or 'postgresql'
+        db_type: Either 'duckdb' or 'pg'
 
     Returns:
         SQL INSERT statement with appropriate placeholder style
@@ -139,7 +140,7 @@ def get_insert_sources_sql(db_type: str = "duckdb") -> str:
             INSERT OR IGNORE INTO sources (name, feed_url, last_checked)
             VALUES (?, ?, ?)
         """
-    elif db_type == "postgresql":
+    elif db_type == "pg":
         return """
             INSERT INTO sources (name, feed_url, last_checked)
             VALUES (%s, %s, %s)
@@ -161,7 +162,7 @@ def install_extensions(db_type: str = "duckdb") -> str:
     """
     if db_type == "duckdb":
         pass
-    elif db_type == "postgresql":
+    elif db_type == "pg":
         return "CREATE EXTENSION vector;"
     else:
         raise ValueError(f"Unknown db_type: {db_type}")
@@ -206,7 +207,7 @@ def create_journal_table(
             con.executemany(get_insert_sources_sql(db_type="duckdb"), sources)
             logging.info("✅ Done inserting journal sources")
 
-    elif db_type == "postgresql":
+    elif db_type == "pg":
         try:
             import psycopg2
         except ImportError:
@@ -223,14 +224,14 @@ def create_journal_table(
                 logging.info("✅ Done creating sources table")
 
                 logging.info("⌛ Began inserting journal sources...")
-                insert_sql = get_insert_sources_sql(db_type="postgresql")
+                insert_sql = get_insert_sources_sql(db_type="pg")
                 for source in sources:
                     cur.execute(insert_sql, source)
                 conn.commit()
                 logging.info("✅ Done inserting journal sources")
 
                 logging.info("⌛ Installing extensions...")
-                cur.execute(install_extensions(db_type="postgresql"))
+                cur.execute(install_extensions(db_type="pg"))
                 conn.commit()
                 logging.info("✅ Done installing extensions")
 
@@ -259,7 +260,7 @@ def create_articles_table(
             con.execute(get_articles_table_schema(db_type="duckdb"))
             logging.info("✅ Done creating articles table")
 
-    elif db_type == "postgresql":
+    elif db_type == "pg":
         try:
             import psycopg2
         except ImportError:
@@ -271,7 +272,7 @@ def create_articles_table(
         with psycopg2.connect(connection_string) as conn:
             with conn.cursor() as cur:
                 logging.info("⌛ Began creating articles table...")
-                cur.execute(get_articles_table_schema(db_type="postgresql"))
+                cur.execute(get_articles_table_schema(db_type="pg"))
                 conn.commit()
                 logging.info("✅ Done creating articles table")
 
@@ -296,18 +297,18 @@ if __name__ == "__main__":
     duckdb_parser = add_common_db_arguments(duckdb_parser)
 
     # PostgreSQL subcommand
-    postgresql_parser = subparsers.add_parser(
-        "postgresql", help="Use PostgreSQL as the database backend"
+    pg_parser = subparsers.add_parser(
+        "pg", help="Use PostgreSQL as the database backend"
     )
-    postgresql_parser = add_postgresql_arguments(postgresql_parser)
-    postgresql_parser = add_common_db_arguments(postgresql_parser)
+    pg_parser = add_postgresql_arguments(pg_parser)
+    pg_parser = add_common_db_arguments(pg_parser)
 
     args = parser.parse_args()
 
     # Build connection string for PostgreSQL
     connection_string = None
     db_path = None
-    if args.db_type == "postgresql":
+    if args.db_type == "pg":
         connection_string = build_pg_connection_string(args.user, args.host)
     else:  # duckdb
         db_path = args.db_path

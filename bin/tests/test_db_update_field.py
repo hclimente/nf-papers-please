@@ -100,7 +100,7 @@ class TestUpdateFieldPostgreSQL:
             table="articles",
             set_clause="tags = 'biology'",
             where_clause="doi = '10.1234/test'",
-            db_type="postgresql",
+            db_type="pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -129,7 +129,7 @@ class TestUpdateFieldPostgreSQL:
             table="articles",
             set_clause="tags = 'biology'",
             where_clause="doi = '10.1234/test'",
-            db_type="postgresql",
+            db_type="pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -153,7 +153,7 @@ class TestUpdateFieldPostgreSQL:
             table="articles",
             set_clause="tags = 'biology', reasoning = 'relevant'",
             where_clause="doi = '10.1234/test'",
-            db_type="postgresql",
+            db_type="pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -178,7 +178,7 @@ class TestUpdateFieldPostgreSQL:
             table="articles",
             set_clause="tags = 'biology'",
             where_clause="date > '2025-01-01' AND journal_name = 'Nature'",
-            db_type="postgresql",
+            db_type="pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
@@ -198,7 +198,7 @@ class TestGetUpdateFieldSql:
 
     def test_postgresql_update_sql(self):
         """Test PostgreSQL UPDATE statement generation."""
-        sql = get_update_field_sql("articles", "tags", "doi", db_type="postgresql")
+        sql = get_update_field_sql("articles", "tags", "doi", db_type="pg")
         assert "UPDATE articles" in sql
         assert "SET tags = %s" in sql
         assert "WHERE doi = %s" in sql
