@@ -93,7 +93,7 @@ def fetch_metadata(articles_json: str, error_strategy: str) -> None:
         journal_short_name = getattr(metadata, "short_container_title", [[None]])[0]
 
         if journal_short_name:
-            article.journal_short_name = journal_short_name[0][0]
+            article.journal_short_name = journal_short_name[0]
 
         article.volume = getattr(metadata, "volume", [None])[0]
         article.issue = getattr(metadata, "issue", [None])[0]

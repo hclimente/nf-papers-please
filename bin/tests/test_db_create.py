@@ -193,14 +193,14 @@ class TestCreateArticlesTableDuckDB:
     @patch("duckdb.connect")
     def test_creates_articles_table(self, mock_connect):
         """Test that articles table is created."""
-        from db_create import create_articles_table
+        from db_create import create_article_table
 
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
         mock_conn.__exit__ = MagicMock(return_value=False)
         mock_connect.return_value = mock_conn
 
-        create_articles_table("duckdb", db_path="test.duckdb")
+        create_article_table("duckdb", db_path="test.duckdb")
 
         # Check that CREATE TABLE was called
         assert mock_conn.execute.called
@@ -210,14 +210,14 @@ class TestCreateArticlesTableDuckDB:
     @patch("duckdb.connect")
     def test_uses_sequence_for_id(self, mock_connect):
         """Test that DuckDB uses a sequence for the id field."""
-        from db_create import create_articles_table
+        from db_create import create_article_table
 
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
         mock_conn.__exit__ = MagicMock(return_value=False)
         mock_connect.return_value = mock_conn
 
-        create_articles_table("duckdb", db_path="test.duckdb")
+        create_article_table("duckdb", db_path="test.duckdb")
 
         create_call = mock_conn.execute.call_args[0][0]
         assert "CREATE SEQUENCE" in create_call
@@ -229,7 +229,7 @@ class TestCreateArticlesTablePostgreSQL:
     @patch("psycopg2.connect")
     def test_creates_articles_table(self, mock_connect):
         """Test that articles table is created."""
-        from db_create import create_articles_table
+        from db_create import create_article_table
 
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -240,7 +240,7 @@ class TestCreateArticlesTablePostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        create_articles_table("pg", connection_string=TEST_PG_CONN_STRING)
+        create_article_table("pg", connection_string=TEST_PG_CONN_STRING)
 
         # Check that CREATE TABLE was called
         assert mock_cursor.execute.called
@@ -250,7 +250,7 @@ class TestCreateArticlesTablePostgreSQL:
     @patch("psycopg2.connect")
     def test_uses_serial_for_id(self, mock_connect):
         """Test that PostgreSQL uses SERIAL for the id field."""
-        from db_create import create_articles_table
+        from db_create import create_article_table
 
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -261,7 +261,7 @@ class TestCreateArticlesTablePostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        create_articles_table("pg", connection_string=TEST_PG_CONN_STRING)
+        create_article_table("pg", connection_string=TEST_PG_CONN_STRING)
 
         create_call = mock_cursor.execute.call_args[0][0]
         assert "SERIAL" in create_call or "serial" in create_call

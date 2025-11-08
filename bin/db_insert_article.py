@@ -1,72 +1,20 @@
 #!/usr/bin/env python
 import argparse
-import json
 import logging
-from typing import Dict, List, Tuple
+import pathlib
 
+from sqlmodel import Session, create_engine
+
+from common.models import ArticleList
 from common.parsers import (
     add_input_articles_json_argument,
     add_duckdb_arguments,
     add_postgresql_arguments,
 )
-from common.utils import build_pg_connection_string
-
-# Field names for insertion (excluding auto-generated id)
-ARTICLE_INSERT_FIELDS = [
-    "title",
-    "summary",
-    "url",
-    "journal_name",
-    "date",
-    "doi",
-    "tags",
-    "reasoning",
-    "embedding",
-]
-
-
-def extract_article_fields(article: Dict, fields: List[str] = None) -> Tuple:
-    """
-    Extract fields from an article dictionary for database insertion.
-
-    Args:
-        article: Dictionary containing article data
-        fields: List of field names to extract (defaults to ARTICLE_INSERT_FIELDS)
-
-    Returns:
-        Tuple of field values in the same order as fields
-    """
-    if fields is None:
-        fields = ARTICLE_INSERT_FIELDS
-
-    values = []
-    for field in fields:
-        if field in ["tags", "reasoning", "embedding"]:
-            values.append(article.get(field, None))
-        else:
-            values.append(article[field])
-    return tuple(values)
-
-
-def get_insert_article_sql(db_type: str = "duckdb") -> str:
-    """
-    Get SQL template for inserting an article.
-
-    Args:
-        db_type: Either 'duckdb' or 'postgresql'
-
-    Returns:
-        SQL INSERT statement with appropriate placeholder style
-    """
-    placeholders = (
-        "?, ?, ?, ?, ?, ?, ?, ?, ?"
-        if db_type == "duckdb"
-        else "%s, %s, %s, %s, %s, %s, %s, %s, %s"
-    )
-    return f"""
-        INSERT INTO articles (title, summary, url, journal_name, date, doi, tags, reasoning, embedding)
-        VALUES ({placeholders})
-    """
+from common.db import (
+    build_connection_string,
+    setup_db,
+)
 
 
 def insert_article(
@@ -90,49 +38,14 @@ def insert_article(
         None
     """
 
-    articles = json.load(open(articles_json, "r"))
-    logging.info(f"Loaded {len(articles)} articles from {articles_json}.")
+    json_string = pathlib.Path(articles_json).read_text()
+    articles = ArticleList.validate_json(json_string)
 
-    insert_sql = get_insert_article_sql(db_type=db_type)
+    engine = create_engine(connection_string, echo=True)
 
-    if db_type == "duckdb":
-        import duckdb
-
-        for a in articles:
-            logging.info(f"Inserting article: {a['title'][:50]}...")
-
-            with duckdb.connect(db_path) as con:
-                try:
-                    article_values = extract_article_fields(a)
-                    con.execute(insert_sql, article_values)
-                    logging.info("✅ Article inserted successfully")
-                except Exception as e:
-                    logging.error(f"❌ Failed to insert article: {e}")
-                    raise
-
-    elif db_type == "pg":
-        try:
-            import psycopg2
-        except ImportError:
-            raise ImportError(
-                "psycopg2 is required for PostgreSQL support. "
-                "Install it with: pip install psycopg2-binary"
-            )
-
-        for a in articles:
-            logging.info(f"Inserting article: {a['title'][:50]}...")
-
-            with psycopg2.connect(connection_string) as conn:
-                with conn.cursor() as cur:
-                    try:
-                        article_values = extract_article_fields(a)
-                        cur.execute(insert_sql, article_values)
-                        conn.commit()
-                        logging.info("✅ Article inserted successfully")
-                    except Exception as e:
-                        conn.rollback()
-                        logging.error(f"❌ Failed to insert article: {e}")
-                        raise
+    with Session(engine) as session:
+        session.add_all(articles)
+        session.commit()
 
 
 if __name__ == "__main__":
@@ -164,9 +77,11 @@ if __name__ == "__main__":
     connection_string = None
     db_path = None
     if args.db_type == "pg":
-        connection_string = build_pg_connection_string(args.user, args.host)
+        connection_string = build_connection_string(args.user, args.host)
     else:  # duckdb
         db_path = args.db_path
+
+    setup_db(connection_string)
 
     insert_article(
         articles_json=args.articles_json,

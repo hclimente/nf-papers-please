@@ -10,7 +10,7 @@ from common.parsers import (
     add_postgresql_arguments,
     add_output_argument,
 )
-from common.utils import build_pg_connection_string
+from common.utils import build_connection_string
 
 
 def add_common_db_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     connection_string = None
     db_path = None
     if args.db_type == "pg":
-        connection_string = build_pg_connection_string(args.user, args.host)
+        connection_string = build_connection_string(args.user, args.host)
     else:  # duckdb
         db_path = args.db_path
 

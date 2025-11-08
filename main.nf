@@ -1,8 +1,8 @@
 include { validateParameters } from 'plugin/nf-schema'
 
-include { FROM_DUCKDB; REMOVE_ARTICLES_IN_DUCKDB; TO_DUCKDB } from './workflows/duckdb'
+include { REMOVE_ARTICLES_IN_DUCKDB; TO_DUCKDB } from './workflows/duckdb'
 include { FROM_JSON; TO_JSON } from './workflows/json'
-include { FROM_POSTGRESQL; REMOVE_ARTICLES_IN_POSTGRESQL; TO_POSTGRESQL } from './workflows/postgresql'
+include { REMOVE_ARTICLES_IN_POSTGRESQL; TO_POSTGRESQL } from './workflows/postgresql'
 include { FROM_TABULAR } from './workflows/tabular'
 include { COLLECTION_CHECK; TO_ZOTERO } from './workflows/zotero'
 

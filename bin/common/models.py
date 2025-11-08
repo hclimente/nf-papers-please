@@ -1,7 +1,11 @@
 from __future__ import annotations
 from datetime import date
 import re
+from typing import List
 
+from sqlmodel import Column, Field, JSON, SQLModel
+
+from pgvector.sqlalchemy import Vector
 from pydantic import (
     BaseModel,
     field_validator,
@@ -29,15 +33,17 @@ class InstitutionalAuthor(BaseModel):
         return self.name
 
 
-class Article(BaseModel):
+class Article(SQLModel, table=True):
     """Model representing a scientific article with metadata and processing results."""
 
     # Core metadata fields
+    doi: str | None = Field(primary_key=True)
     title: str | None = None
-    authors: list[Author | InstitutionalAuthor] | None = None
+    authors: list[Author | InstitutionalAuthor] | None = Field(
+        default=None, sa_column=Column(JSON)
+    )
     summary: str | None = None
-    doi: str | None = None
-    url: HttpUrl
+    url: str
 
     # Publication information
     journal_name: str
@@ -50,16 +56,23 @@ class Article(BaseModel):
     language: str | None = None
 
     # LLM results
-    tags: list[str] | None = None
+    tags: str | None = None
     reasoning: str | None = None
     score: int | None = None
-    embedding: list[float] | None = None
-    nearest_neighbors: list[Article] | None = None
+    embedding: List[float] = Field(sa_column=Column(Vector(3072)))
 
     # Raw and integration data
     access_date: date
     raw_contents: str
     zotero_key: str | None = None
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url(cls, v):
+        """Validate URL format using Pydantic's HttpUrl."""
+        if isinstance(v, str):
+            HttpUrl(v)
+        return v
 
 
 ArticleList = TypeAdapter(list[Article])
@@ -70,7 +83,7 @@ class MetadataResponse(BaseModel):
 
     title: str
     summary: str
-    url: HttpUrl
+    url: str
     doi: str
 
     @field_validator("doi", mode="after")
@@ -79,6 +92,14 @@ class MetadataResponse(BaseModel):
         if not re.match(r"^10\.\d{4,}/[^\s]+$", doi):
             raise ValueError(f"Invalid DOI format: {doi}")
         return doi
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def validate_url(cls, v):
+        """Validate URL format using Pydantic's HttpUrl."""
+        if isinstance(v, str):
+            HttpUrl(v)
+        return v
 
 
 class TaggingResponse(BaseModel):

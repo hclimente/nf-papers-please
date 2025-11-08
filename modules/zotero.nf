@@ -1,6 +1,6 @@
 process ADVANCED_METADATA {
 
-    container 'community.wave.seqera.io/library/pip_habanero_pydantic:3882895f50c53509'
+    container 'community.wave.seqera.io/library/pip_habanero_pgvector_sqlmodel:98d2da5778775e0e'
     secret 'USER_EMAIL'
 
     input:
@@ -20,7 +20,7 @@ process ADVANCED_METADATA {
 
 process REMOVE_PROCESSED {
 
-    container 'community.wave.seqera.io/library/pip_pydantic_pyzotero:ba16c1f9d97e42dc'
+    container 'community.wave.seqera.io/library/pip_pgvector_pyzotero_sqlmodel:e830732bfc803843'
     secret 'ZOTERO_API_KEY'
 
     input:
@@ -46,7 +46,7 @@ process REMOVE_PROCESSED {
 
 process SAVE {
 
-    container 'community.wave.seqera.io/library/pip_pydantic_pyzotero:ba16c1f9d97e42dc'
+    container 'community.wave.seqera.io/library/pip_pgvector_pyzotero_sqlmodel:e830732bfc803843'
     secret 'ZOTERO_API_KEY'
 
     input:

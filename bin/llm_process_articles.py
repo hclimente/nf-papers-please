@@ -4,7 +4,7 @@ import logging
 import pathlib
 
 from common.llm import chat
-from common.models import ArticleList, pprint
+from common.models import ArticleList
 from common.parsers import (
     add_input_articles_json_argument,
     add_debug_argument,
@@ -57,7 +57,7 @@ def llm_process_articles(
     json_string = pathlib.Path(articles_json).read_text()
     articles = ArticleList.validate_json(json_string)
     logging.info(f"Loaded {len(articles)} articles.")
-    logging.debug(f"Articles: {pprint(articles)}")
+    # logging.debug(f"Articles: {pprint(articles)}")
 
     response_text = chat(
         articles=articles,

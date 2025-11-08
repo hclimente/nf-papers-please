@@ -1,15 +1,20 @@
 #!/usr/bin/env python
 import argparse
-import json
 import logging
+import pathlib
 
+from common.models import ArticleList, Article, pprint
 from common.parsers import (
     add_input_articles_json_argument,
     add_duckdb_arguments,
     add_postgresql_arguments,
     add_output_argument,
 )
-from common.utils import build_pg_connection_string
+from common.utils import build_connection_string
+
+
+from sqlalchemy import Table, Column, String, text
+from sqlmodel import Session, create_engine
 
 
 def get_select_unprocessed_sql() -> str:
@@ -81,71 +86,60 @@ def remove_unprocessed_articles(
     logging.info(f"db_type       : {db_type}")
     logging.info("-" * 20)
 
-    articles = json.load(open(articles_json, "r"))
+    json_string = pathlib.Path(articles_json).read_text()
+    articles = ArticleList.validate_json(json_string)
     logging.info(f"Loaded {len(articles)} articles from {articles_json}.")
 
-    urls = [a["url"] for a in articles]
+    article_table = Article.__table__
 
-    # Handle empty articles list
-    if not urls:
-        logging.info("No articles to process.")
-        return
+    metadata = article_table.metadata
 
-    if db_type == "duckdb":
-        import duckdb
+    # Create a temporary table with only the url column
+    tmp_table = Table(
+        "tmp_articles",
+        metadata,
+        Column("url", String, nullable=False),
+        prefixes=["TEMPORARY"],
+    )
 
-        with duckdb.connect(db_path) as con:
-            con.execute(
-                """
-                CREATE TEMPORARY TABLE tmp_articles (
-                    url TEXT,
-                );
-            """
-            )
+    engine = create_engine(connection_string)
 
-            con.executemany(
-                """
-                INSERT INTO tmp_articles (url)
-                VALUES (?);
-            """,
-                [(url,) for url in urls],
-            )
+    with Session(engine) as session:
+        # This executes the CREATE TEMPORARY TABLE statement
+        tmp_table.create(bind=session.bind, checkfirst=True)
+        print("Temporary table created in the current session.")
 
-            result = con.execute(get_select_unprocessed_sql()).fetchall()
-            logging.info(f"Found {len(result)} unprocessed articles.")
+        # insert only the urls
+        session.execute(
+            tmp_table.insert(),
+            [{"url": article.url} for article in articles],
+        )
+        logging.info(f"Inserted {len(articles)} articles into the temporary table.")
 
-    elif db_type == "pg":
-        try:
-            import psycopg2
-            from psycopg2.extras import execute_values
-        except ImportError:
-            raise ImportError(
-                "psycopg2 is required for PostgreSQL support. "
-                "Install it with: pip install psycopg2-binary"
-            )
+        # left join to find unprocessed articles (those not in the article table)
+        result = session.exec(
+            text("""
+            SELECT a.url
+            FROM tmp_articles a
+            LEFT JOIN article p
+            ON a.url = p.url
+            WHERE p.url IS NULL
+            """)
+        ).all()
 
-        with psycopg2.connect(connection_string) as conn:
-            with conn.cursor() as cur:
-                cur.execute(get_create_temp_articles_table_sql(db_type="pg"))
+        logging.info(f"Found {len(result)} unprocessed articles.")
 
-                # Clear any leftover data from previous use of this pooled session
-                cur.execute("TRUNCATE TABLE tmp_articles")
+        session.commit()
 
-                # Use execute_values for efficient batch insert
-                execute_values(
-                    cur,
-                    "INSERT INTO tmp_articles (url) VALUES %s",
-                    [(url,) for url in urls],
-                )
+        # Drop the temporary table to ensure cleanup
+        tmp_table.drop(bind=session.bind, checkfirst=True)
 
-                cur.execute(get_select_unprocessed_sql())
-                result = cur.fetchall()
-                logging.info(f"Found {len(result)} unprocessed articles.")
+    # Extract URLs from result tuples
+    unprocessed_urls = {url for (url,) in result}
+    unprocessed_articles = [a for a in articles if a.url in unprocessed_urls]
 
-    unprocessed_articles = [a for a in articles if (a["url"],) in result]
-
-    if unprocessed_articles:
-        json.dump(unprocessed_articles, open(output_json, "w"), indent=2)
+    with open(output_json, "w") as f:
+        f.write(pprint(unprocessed_articles))
 
 
 if __name__ == "__main__":
@@ -180,7 +174,7 @@ if __name__ == "__main__":
     connection_string = None
     db_path = None
     if args.db_type == "pg":
-        connection_string = build_pg_connection_string(args.user, args.host)
+        connection_string = build_connection_string(args.user, args.host)
     else:  # duckdb
         db_path = args.db_path
 

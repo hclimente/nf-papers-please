@@ -28,9 +28,9 @@ zotero_library_type:  "user"
 from:                      "articles_json"
 from_json_input:           "train_articles.json"
 # from_duckdb_input:         "papers_please.duckdb"
-# from_pg_user:              "neondb_owner"
-# from_pg_host:              "ep-lingering-tree-a4l7zn7a-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-# from_pg_create_tables:     false
+from_pg_user:              "neondb_owner"
+from_pg_host:              "ep-lingering-tree-a4l7zn7a-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+
 to:                        "pg"
 # to_json_outdir:            "./results"
 to_pg_user:                "neondb_owner"

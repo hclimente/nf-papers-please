@@ -1,31 +1,6 @@
-process CREATE_ARTICLES_DB {
-
-    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
-    secret 'PGPASSWORD'
-
-    input:
-    path JOURNALS_TSV
-    val USER
-    val HOST
-    val GLOBAL_CUTOFF_DATE
-
-    output:
-    val true
-
-    script:
-    """
-    db_create.py pg \
---journals_tsv ${JOURNALS_TSV} \
---user "${USER}" \
---host "${HOST}" \
---global_cutoff_date ${GLOBAL_CUTOFF_DATE}
-    """
-
-}
-
 process FETCH_JOURNALS {
 
-    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
+    container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
     secret 'PGPASSWORD'
 
     input:
@@ -49,7 +24,7 @@ process FETCH_JOURNALS {
 
 process REMOVE_PROCESSED {
 
-    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
+    container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
     secret 'PGPASSWORD'
 
     input:
@@ -74,7 +49,7 @@ process REMOVE_PROCESSED {
 
 process SAVE {
 
-    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
+    container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
     secret 'PGPASSWORD'
 
     input:
@@ -97,7 +72,7 @@ process SAVE {
 
 process UPDATE_TIMESTAMPS {
 
-    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
+    container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
     secret 'PGPASSWORD'
 
     input:
@@ -123,7 +98,7 @@ process UPDATE_TIMESTAMPS {
 
 process FETCH_NEAREST_NEIGHBORS {
 
-    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
+    container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
     secret 'PGPASSWORD'
 
     input:

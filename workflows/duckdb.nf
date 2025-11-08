@@ -3,38 +3,6 @@ include { CREATE_ARTICLES_DB; FETCH_JOURNALS; REMOVE_PROCESSED; SAVE; UPDATE_TIM
 
 include { batchArticles; filterAndBatch } from '../modules/json'
 
-workflow FROM_DUCKDB {
-
-    take:
-        journals_tsv
-
-    main:
-        db = file(params.from_duckdb_input)
-
-        if ( !db.exists() ) {
-            println "Articles database not found. Creating a new one at: ${db}."
-
-            global_cutoff_date = new Date(System.currentTimeMillis() - params.days_back * 24 * 60 * 60 * 1000).format("yyyy-MM-dd")
-            println "Global cutoff date set to ${params.days_back} days back (${global_cutoff_date})."
-
-            db_filename = db.name
-            db_parent_dir = db.parent
-            CREATE_ARTICLES_DB(file(params.journals_tsv), db_filename, db_parent_dir, global_cutoff_date)
-            db = CREATE_ARTICLES_DB.out
-        }
-
-        FETCH_JOURNALS(db)
-
-        journals = FETCH_JOURNALS.out
-            .splitCsv(header: true, sep: '\t')
-
-        FETCH_ARTICLES(journals, 50)
-
-    emit:
-        FETCH_ARTICLES.out
-
-}
-
 workflow REMOVE_ARTICLES_IN_DUCKDB {
 
     take:

@@ -14,7 +14,7 @@ import pytest
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from db_create import create_articles_table, create_journal_table
+from db_create import create_article_table, create_journal_table
 from db_extract_fields import extract_fields
 from db_insert_article import insert_article
 from db_remove_processed import remove_unprocessed_articles
@@ -74,7 +74,7 @@ class TestDuckDBIntegration:
         """Test the complete workflow: create tables, insert, query, update, extract."""
         # 1. Create tables
         create_journal_table(journals_tsv, "2025-01-01", "duckdb", db_path=temp_db)
-        create_articles_table("duckdb", db_path=temp_db)
+        create_article_table("duckdb", db_path=temp_db)
 
         # 2. Verify tables were created
         with duckdb.connect(temp_db) as con:
@@ -126,7 +126,7 @@ class TestDuckDBIntegration:
         """Test removing already-processed articles."""
         # Create database and insert articles
         create_journal_table(journals_tsv, "2025-01-01", "duckdb", db_path=temp_db)
-        create_articles_table("duckdb", db_path=temp_db)
+        create_article_table("duckdb", db_path=temp_db)
         insert_article(articles_json, "duckdb", db_path=temp_db)
 
         # Create a new articles file with one new and one existing article
@@ -161,7 +161,7 @@ class TestDuckDBIntegration:
     def test_primary_key_constraint(self, temp_db, journals_tsv, articles_json):
         """Test that URL primary key constraint is enforced."""
         create_journal_table(journals_tsv, "2025-01-01", "duckdb", db_path=temp_db)
-        create_articles_table("duckdb", db_path=temp_db)
+        create_article_table("duckdb", db_path=temp_db)
         insert_article(articles_json, "duckdb", db_path=temp_db)
 
         # Try to insert duplicate (should fail due to PK constraint)
@@ -195,7 +195,7 @@ class TestDuckDBIntegration:
     def test_null_values_handling(self, temp_db, journals_tsv, tmp_path):
         """Test handling of null values in articles."""
         create_journal_table(journals_tsv, "2025-01-01", "duckdb", db_path=temp_db)
-        create_articles_table("duckdb", db_path=temp_db)
+        create_article_table("duckdb", db_path=temp_db)
 
         # Insert article with null optional fields
         articles_json = tmp_path / "articles.json"
@@ -262,7 +262,7 @@ class TestDuckDBIntegration:
     def test_update_multiple_records(self, temp_db, journals_tsv, articles_json):
         """Test updating multiple records at once."""
         create_journal_table(journals_tsv, "2025-01-01", "duckdb", db_path=temp_db)
-        create_articles_table("duckdb", db_path=temp_db)
+        create_article_table("duckdb", db_path=temp_db)
         insert_article(articles_json, "duckdb", db_path=temp_db)
 
         update_field(
@@ -284,7 +284,7 @@ class TestDuckDBIntegration:
     ):
         """Test extracting fields with WHERE clause."""
         create_journal_table(journals_tsv, "2025-01-01", "duckdb", db_path=temp_db)
-        create_articles_table("duckdb", db_path=temp_db)
+        create_article_table("duckdb", db_path=temp_db)
         insert_article(articles_json, "duckdb", db_path=temp_db)
 
         output_tsv = tmp_path / "filtered.tsv"
@@ -306,7 +306,7 @@ class TestDuckDBIntegration:
     def test_auto_increment_id(self, temp_db, journals_tsv, articles_json):
         """Test that article IDs auto-increment correctly."""
         create_journal_table(journals_tsv, "2025-01-01", "duckdb", db_path=temp_db)
-        create_articles_table("duckdb", db_path=temp_db)
+        create_article_table("duckdb", db_path=temp_db)
         insert_article(articles_json, "duckdb", db_path=temp_db)
 
         with duckdb.connect(temp_db) as con:

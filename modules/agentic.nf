@@ -1,6 +1,6 @@
 process BASIC_METADATA {
 
-    container 'community.wave.seqera.io/library/pip_google-genai:2e5c0f1812c5cbda'
+    container 'community.wave.seqera.io/library/pip_google-genai_pgvector_sqlmodel:852aa324a19aa1fc'
     label 'gemini_api'
     secret 'GOOGLE_API_KEY'
     secret 'SPRINGER_META_API_KEY'
@@ -32,7 +32,7 @@ metadata \
 
 process TAG {
 
-    container 'community.wave.seqera.io/library/pip_google-genai:2e5c0f1812c5cbda'
+    container 'community.wave.seqera.io/library/pip_google-genai_pgvector_sqlmodel:852aa324a19aa1fc'
     label 'gemini_api'
     secret 'GOOGLE_API_KEY'
     secret 'SPRINGER_META_API_KEY'
@@ -87,7 +87,7 @@ ${DEBUG ? '--debug' : ''}
 
 process EMBED {
 
-    container 'community.wave.seqera.io/library/pip_google-genai:2e5c0f1812c5cbda'
+    container 'community.wave.seqera.io/library/pip_google-genai_pgvector_sqlmodel:852aa324a19aa1fc'
     label 'gemini_api'
     secret 'GOOGLE_API_KEY'
 
