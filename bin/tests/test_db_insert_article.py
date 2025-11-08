@@ -9,6 +9,9 @@ from db_insert_article import (
     get_insert_article_sql,
 )
 
+# Test connection string for PostgreSQL tests
+TEST_PG_CONN_STRING = "postgresql://user:pass@localhost/db"  # pragma: allowlist secret
+
 
 class TestInsertArticleDuckDB:
     """Test insert_article function with DuckDB."""
@@ -117,9 +120,7 @@ class TestInsertArticlePostgreSQL:
         mock_connect.return_value = mock_conn
 
         insert_article(
-            "articles.json",
-            "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+            "articles.json", "postgresql", connection_string=TEST_PG_CONN_STRING
         )
 
         # Check that execute was called once
@@ -147,9 +148,7 @@ class TestInsertArticlePostgreSQL:
         mock_connect.return_value = mock_conn
 
         insert_article(
-            "articles.json",
-            "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+            "articles.json", "postgresql", connection_string=TEST_PG_CONN_STRING
         )
 
         # Check that execute was called twice (once per article)
@@ -175,9 +174,7 @@ class TestInsertArticlePostgreSQL:
         mock_connect.return_value = mock_conn
 
         insert_article(
-            "articles.json",
-            "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+            "articles.json", "postgresql", connection_string=TEST_PG_CONN_STRING
         )
 
         assert mock_conn.commit.called
@@ -204,9 +201,7 @@ class TestInsertArticlePostgreSQL:
 
         with pytest.raises(Exception):
             insert_article(
-                "articles.json",
-                "postgresql",
-                connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+                "articles.json", "postgresql", connection_string=TEST_PG_CONN_STRING
             )
 
         assert mock_conn.rollback.called

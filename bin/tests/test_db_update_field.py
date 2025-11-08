@@ -4,6 +4,9 @@ from unittest.mock import MagicMock, patch
 
 from db_update_field import get_update_field_sql
 
+# Test connection string for PostgreSQL tests
+TEST_PG_CONN_STRING = "postgresql://user:pass@localhost/db"  # pragma: allowlist secret
+
 
 class TestUpdateFieldDuckDB:
     """Test update_field function with DuckDB."""
@@ -98,7 +101,7 @@ class TestUpdateFieldPostgreSQL:
             set_clause="tags = 'biology'",
             where_clause="doi = '10.1234/test'",
             db_type="postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         # Check that UPDATE query was executed
@@ -127,7 +130,7 @@ class TestUpdateFieldPostgreSQL:
             set_clause="tags = 'biology'",
             where_clause="doi = '10.1234/test'",
             db_type="postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         assert mock_conn.commit.called
@@ -151,7 +154,7 @@ class TestUpdateFieldPostgreSQL:
             set_clause="tags = 'biology', reasoning = 'relevant'",
             where_clause="doi = '10.1234/test'",
             db_type="postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         query = mock_cursor.execute.call_args[0][0]
@@ -176,7 +179,7 @@ class TestUpdateFieldPostgreSQL:
             set_clause="tags = 'biology'",
             where_clause="date > '2025-01-01' AND journal_name = 'Nature'",
             db_type="postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         query = mock_cursor.execute.call_args[0][0]

@@ -7,6 +7,9 @@ from db_remove_processed import (
     get_select_unprocessed_sql,
 )
 
+# Test connection string for PostgreSQL tests
+TEST_PG_CONN_STRING = "postgresql://user:pass@localhost/db"  # pragma: allowlist secret
+
 
 class TestRemoveUnprocessedArticlesDuckDB:
     """Test remove_unprocessed_articles function with DuckDB."""
@@ -151,7 +154,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
             "articles.json",
             "output.json",
             "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         # Check that CREATE TEMP TABLE was called
@@ -187,7 +190,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
             "articles.json",
             "output.json",
             "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         # Check that execute_values was called
@@ -226,7 +229,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
             "articles.json",
             "output.json",
             "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         # Check that json.dump was called with only unprocessed article
@@ -252,7 +255,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
             "articles.json",
             "output.json",
             "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         # Should not try to connect to database

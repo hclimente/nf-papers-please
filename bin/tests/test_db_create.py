@@ -10,6 +10,9 @@ from db_create import (
     parse_journals_tsv,
 )
 
+# Test connection string for PostgreSQL tests
+TEST_PG_CONN_STRING = "postgresql://user:pass@localhost/db"  # pragma: allowlist secret
+
 
 class TestCreateJournalTableDuckDB:
     """Test create_journal_table function with DuckDB."""
@@ -112,7 +115,7 @@ class TestCreateJournalTablePostgreSQL:
             "journals.tsv",
             "2025-01-01",
             "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         # Check that CREATE TABLE was called
@@ -142,7 +145,7 @@ class TestCreateJournalTablePostgreSQL:
             "journals.tsv",
             "2025-01-01",
             "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         # Check that INSERT statements were called (2 journals)
@@ -174,7 +177,7 @@ class TestCreateJournalTablePostgreSQL:
             "journals.tsv",
             "2025-01-01",
             "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
+            connection_string=TEST_PG_CONN_STRING,
         )
 
         # Check that ON CONFLICT is in the INSERT statement
@@ -237,10 +240,7 @@ class TestCreateArticlesTablePostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        create_articles_table(
-            "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
-        )
+        create_articles_table("postgresql", connection_string=TEST_PG_CONN_STRING)
 
         # Check that CREATE TABLE was called
         assert mock_cursor.execute.called
@@ -261,10 +261,7 @@ class TestCreateArticlesTablePostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        create_articles_table(
-            "postgresql",
-            connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
-        )
+        create_articles_table("postgresql", connection_string=TEST_PG_CONN_STRING)
 
         create_call = mock_cursor.execute.call_args[0][0]
         assert "SERIAL" in create_call or "serial" in create_call

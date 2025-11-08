@@ -24,7 +24,7 @@ class TestExtractFieldsDuckDB:
         extract_fields(
             table="articles",
             columns="title, summary",
-            output_tsv="output.tsv",
+            out="output.tsv",
             db_type="duckdb",
             db_path="test.duckdb",
         )
@@ -51,7 +51,7 @@ class TestExtractFieldsDuckDB:
         extract_fields(
             table="articles",
             columns="title, summary",
-            output_tsv="output.tsv",
+            out="output.tsv",
             db_type="duckdb",
             db_path="test.duckdb",
             where_clause="date > '2025-01-01'",
@@ -77,7 +77,7 @@ class TestExtractFieldsDuckDB:
         extract_fields(
             table="articles",
             columns="title, summary",
-            output_tsv="output.tsv",
+            out="output.tsv",
             db_type="duckdb",
             db_path="test.duckdb",
         )
@@ -104,7 +104,7 @@ class TestExtractFieldsDuckDB:
         extract_fields(
             table="articles",
             columns="title, summary",
-            output_tsv="output.tsv",
+            out="output.tsv",
             db_type="duckdb",
             db_path="test.duckdb",
         )
@@ -130,7 +130,7 @@ class TestExtractFieldsDuckDB:
         extract_fields(
             table="articles",
             columns="title, summary",
-            output_tsv="output.tsv",
+            out="output.tsv",
             db_type="duckdb",
             db_path="test.duckdb",
             sep=",",
@@ -166,7 +166,7 @@ class TestExtractFieldsPostgreSQL:
         extract_fields(
             table="articles",
             columns="title, summary",
-            output_tsv="output.tsv",
+            out="output.tsv",
             db_type="postgresql",
             connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
         )
@@ -195,7 +195,7 @@ class TestExtractFieldsPostgreSQL:
         extract_fields(
             table="articles",
             columns="title, summary",
-            output_tsv="output.tsv",
+            out="output.tsv",
             db_type="postgresql",
             connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
             where_clause="date > '2025-01-01'",
@@ -223,7 +223,7 @@ class TestExtractFieldsPostgreSQL:
         extract_fields(
             table="articles",
             columns="title, summary",
-            output_tsv="output.tsv",
+            out="output.tsv",
             db_type="postgresql",
             connection_string="postgresql://user:pass@localhost/db",  # noqa: F402 # pragma: allowlist secret
         )

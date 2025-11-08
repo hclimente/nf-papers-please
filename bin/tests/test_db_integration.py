@@ -110,7 +110,7 @@ class TestDuckDBIntegration:
         extract_fields(
             table="articles",
             columns="title, doi",
-            output_tsv=str(output_tsv),
+            out=str(output_tsv),
             db_type="duckdb",
             db_path=temp_db,
         )
@@ -291,7 +291,7 @@ class TestDuckDBIntegration:
         extract_fields(
             table="articles",
             columns="title, doi",
-            output_tsv=str(output_tsv),
+            out=str(output_tsv),
             db_type="duckdb",
             db_path=temp_db,
             where_clause="journal_name = 'Nature'",

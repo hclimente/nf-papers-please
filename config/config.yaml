@@ -8,9 +8,15 @@ journals_tsv:         "${projectDir}/config/journals.tsv"
 metadata_extraction_system_prompt: "${projectDir}/prompts/metadata_extraction.md"
 tagging_system_prompt:             "${projectDir}/prompts/tagging.md"
 
+# Zotero Configuration
 zotero_user_id:       "1508765"
 zotero_collection_id: "U3T98NSQ"
 zotero_library_type:  "user"
+
+# PostgreSQL Configuration
+# Set the password as a Nextflow secret:
+#   nextflow secrets set PGPASSWORD "npg_fazJWkPw8BL4"
+# The connection string will use ${PGPASSWORD} at runtime
 
 # ===========================
 # OTHER PARAMETERS
@@ -21,8 +27,13 @@ zotero_library_type:  "user"
 # from:               "journals_tsv"
 # from_json_input:    "articles.json"
 # from_duckdb_input:  "papers_please.duckdb"
+from_pg_user: "neondb_owner"
+from_pg_host: "ep-lingering-tree-a4l7zn7a-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+from_pg_create_tables:     false
 # to:                 "articles_json"
 # to_json_outdir:     "./results"
+to_pg_user:   "neondb_owner"
+to_pg_host:   "ep-lingering-tree-a4l7zn7a-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # days_back: 8
 

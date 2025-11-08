@@ -82,7 +82,7 @@ def add_duckdb_arguments(parser: argparse.ArgumentParser):
 
 def add_postgresql_arguments(parser: argparse.ArgumentParser):
     """
-    Add PostgreSQL connection string argument to an argument parser.
+    Add PostgreSQL connection arguments to an argument parser.
 
     Args:
         parser (argparse.ArgumentParser): The argument parser to add arguments to.
@@ -91,10 +91,22 @@ def add_postgresql_arguments(parser: argparse.ArgumentParser):
         argparse.ArgumentParser: The modified parser.
     """
     parser.add_argument(
-        "--connection-string",
+        "--user",
         type=str,
         required=True,
-        help="PostgreSQL connection string. Format: postgresql://user:password@host:port/database",  # pragma: allowlist secret
+        help="PostgreSQL username",
+    )
+    parser.add_argument(
+        "--password",
+        type=str,
+        required=True,
+        help="PostgreSQL password",  # pragma: allowlist secret
+    )
+    parser.add_argument(
+        "--host",
+        type=str,
+        required=True,
+        help="PostgreSQL host with port and database. Format: host:port/database or full connection details",
     )
 
     return parser

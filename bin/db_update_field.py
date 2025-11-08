@@ -6,6 +6,7 @@ from common.parsers import (
     add_duckdb_arguments,
     add_postgresql_arguments,
 )
+from common.utils import build_pg_connection_string
 
 
 def add_common_db_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -152,11 +153,19 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Build connection string for PostgreSQL
+    connection_string = None
+    db_path = None
+    if args.db_type == "pg":
+        connection_string = build_pg_connection_string(args.user, args.host)
+    else:  # duckdb
+        db_path = args.db_path
+
     update_field(
         table=args.table,
         set_clause=args.set_clause,
         where_clause=args.where_clause,
         db_type=args.db_type,
-        db_path=getattr(args, "db_path", None),
-        connection_string=getattr(args, "connection_string", None),
+        db_path=db_path,
+        connection_string=connection_string,
     )

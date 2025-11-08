@@ -3,7 +3,11 @@ import argparse
 import logging
 from typing import List, Tuple
 
-from common.parsers import add_duckdb_arguments, add_postgresql_arguments
+from common.parsers import (
+    add_duckdb_arguments,
+    add_postgresql_arguments,
+)
+from common.utils import build_pg_connection_string
 
 
 def add_common_db_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -91,6 +95,7 @@ def get_articles_table_schema(db_type: str = "duckdb") -> str:
                 doi TEXT DEFAULT NULL,
                 tags TEXT[] DEFAULT NULL,
                 reasoning TEXT DEFAULT NULL,
+                embedding VECTOR(3072),
                 FOREIGN KEY (journal_name) REFERENCES sources(name)
             )
         """
@@ -140,6 +145,24 @@ def get_insert_sources_sql(db_type: str = "duckdb") -> str:
             VALUES (%s, %s, %s)
             ON CONFLICT (name) DO NOTHING
         """
+    else:
+        raise ValueError(f"Unknown db_type: {db_type}")
+
+
+def install_extensions(db_type: str = "duckdb") -> str:
+    """
+    Get SQL to install necessary extensions.
+
+    Args:
+        db_type: Either 'duckdb' or 'postgresql'
+
+    Returns:
+        SQL statement to install extensions
+    """
+    if db_type == "duckdb":
+        pass
+    elif db_type == "postgresql":
+        return "CREATE EXTENSION vector;"
     else:
         raise ValueError(f"Unknown db_type: {db_type}")
 
@@ -205,6 +228,11 @@ def create_journal_table(
                     cur.execute(insert_sql, source)
                 conn.commit()
                 logging.info("✅ Done inserting journal sources")
+
+                logging.info("⌛ Installing extensions...")
+                cur.execute(install_extensions(db_type="postgresql"))
+                conn.commit()
+                logging.info("✅ Done installing extensions")
 
 
 def create_articles_table(
@@ -276,15 +304,23 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Build connection string for PostgreSQL
+    connection_string = None
+    db_path = None
+    if args.db_type == "postgresql":
+        connection_string = build_pg_connection_string(args.user, args.host)
+    else:  # duckdb
+        db_path = args.db_path
+
     create_journal_table(
         journals_tsv=args.journals_tsv,
         global_cutoff_date=args.global_cutoff_date,
         db_type=args.db_type,
-        db_path=getattr(args, "db_path", None),
-        connection_string=getattr(args, "connection_string", None),
+        db_path=db_path,
+        connection_string=connection_string,
     )
     create_articles_table(
         db_type=args.db_type,
-        db_path=getattr(args, "db_path", None),
-        connection_string=getattr(args, "connection_string", None),
+        db_path=db_path,
+        connection_string=connection_string,
     )
