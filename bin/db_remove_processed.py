@@ -35,14 +35,20 @@ def get_create_temp_articles_table_sql(db_type: str = "duckdb") -> str:
     Get SQL to create temporary table for articles.
 
     Args:
-        db_type: Either 'duckdb' or 'postgresql'
+        db_type: Either 'duckdb' or 'pg'
 
     Returns:
         SQL CREATE TABLE statement
     """
-    table_type = "TEMPORARY" if db_type == "duckdb" else "TEMP"
-    return f"""
-        CREATE {table_type} TABLE tmp_articles (
+    if db_type == "duckdb":
+        return """
+        CREATE TEMPORARY TABLE tmp_articles (
+            url TEXT
+        )
+    """
+    elif db_type == "pg":
+        return """
+        CREATE TEMP TABLE IF NOT EXISTS tmp_articles (
             url TEXT
         )
     """
@@ -61,9 +67,9 @@ def remove_unprocessed_articles(
     Args:
         articles_json (str): Path to the JSON file containing articles.
         output_json (str): Path to the output JSON file containing unprocessed articles.
-        db_type (str): Database type ("duckdb" or "postgresql").
+        db_type (str): Database type ("duckdb" or "pg").
         db_path (str): Path to the DuckDB database file (required for duckdb).
-        connection_string (str): PostgreSQL connection string (required for postgresql).
+        connection_string (str): PostgreSQL connection string (required for pg).
 
     Returns:
         None
@@ -120,7 +126,10 @@ def remove_unprocessed_articles(
 
         with psycopg2.connect(connection_string) as conn:
             with conn.cursor() as cur:
-                cur.execute(get_create_temp_articles_table_sql(db_type="postgresql"))
+                cur.execute(get_create_temp_articles_table_sql(db_type="pg"))
+
+                # Clear any leftover data from previous use of this pooled session
+                cur.execute("TRUNCATE TABLE tmp_articles")
 
                 # Use execute_values for efficient batch insert
                 execute_values(

@@ -1,3 +1,4 @@
+from __future__ import annotations  # Add at top of file
 from datetime import date
 import re
 
@@ -53,6 +54,7 @@ class Article(BaseModel):
     reasoning: str | None = None
     score: int | None = None
     embedding: list[float] | None = None
+    nearest_neighbors: list[Article] | None = None
 
     # Raw and integration data
     access_date: date

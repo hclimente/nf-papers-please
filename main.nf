@@ -6,34 +6,23 @@ include { FROM_POSTGRESQL; REMOVE_ARTICLES_IN_POSTGRESQL; TO_POSTGRESQL } from '
 include { FROM_TABULAR } from './workflows/tabular'
 include { COLLECTION_CHECK; TO_ZOTERO } from './workflows/zotero'
 
-include { PROCESS_ARTICLES } from './workflows/articles'
+include { EMBED_ARTICLES; SCREEN_ARTICLES } from './workflows/articles'
 
 include { batchArticles; filterAndBatch } from './modules/json'
 
-workflow {
+workflow LEARN {
 
-    validateParameters()
-
-    if (params.from == "duckdb") {
-        FROM_DUCKDB(file(params.journals_tsv))
-        fetched_articles = FROM_DUCKDB.out
-    } else if (params.from == "journals_tsv") {
-        FROM_TABULAR(file(params.journals_tsv))
-        fetched_articles = FROM_TABULAR.out
-    } else if (params.from == "articles_json") {
+    if (params.from == "articles_json") {
         FROM_JSON(file(params.from_json_input))
         fetched_articles = FROM_JSON.out
-    } else if (params.from == "pg") {
-        FROM_POSTGRESQL(file(params.journals_tsv))
-        fetched_articles = FROM_POSTGRESQL.out
+    } else if (params.from == "zotero") {
+        // FROM_POSTGRESQL(file(params.journals_tsv))
+        // fetched_articles = FROM_POSTGRESQL.out
     } else {
-        error "Unsupported from: ${params.from}. Supported backends: 'articles_json', 'duckdb', 'journals_tsv', 'pg'."
+        error "Unsupported from: ${params.from}. Supported backends: 'articles_json', 'zotero'."
     }
 
-    if (params.to == "zotero") {
-        COLLECTION_CHECK(fetched_articles)
-        articles_to_process = COLLECTION_CHECK.out.filtered_articles
-    } else if (params.to == "duckdb") {
+    if (params.to == "duckdb") {
         REMOVE_ARTICLES_IN_DUCKDB(fetched_articles)
         articles_to_process = REMOVE_ARTICLES_IN_DUCKDB.out.all_articles
     } else if (params.to == "pg") {
@@ -43,18 +32,57 @@ workflow {
         articles_to_process = fetched_articles
     }
 
-    PROCESS_ARTICLES(articles_to_process)
+    EMBED_ARTICLES(articles_to_process)
 
     if (params.to == "duckdb") {
-        TO_DUCKDB(PROCESS_ARTICLES.out.all_articles)
-    } else if (params.to == "zotero") {
-        TO_ZOTERO(batchArticles(PROCESS_ARTICLES.out.scored_articles, 10))
-    } else if (params.to == "articles_json") {
-        TO_JSON(batchArticles(PROCESS_ARTICLES.out.all_articles, 1000))
+        TO_DUCKDB(EMBED_ARTICLES.out.all_articles)
     } else if (params.to == "pg") {
-        TO_POSTGRESQL(PROCESS_ARTICLES.out.all_articles)
+        TO_POSTGRESQL(EMBED_ARTICLES.out.all_articles)
     } else {
-        error "Unsupported to: ${params.to}. Supported backends: 'articles_json' 'duckdb', 'pg', 'zotero'."
+        error "Unsupported to: ${params.to}. Supported backends: 'duckdb', 'pg'."
+    }
+
+}
+
+workflow SCREEN {
+
+    if (params.from == "articles_json") {
+        FROM_JSON(file(params.from_json_input))
+        fetched_articles = FROM_JSON.out
+    } else if (params.from == "journals_tsv") {
+        FROM_TABULAR(file(params.journals_tsv))
+        fetched_articles = FROM_TABULAR.out
+    } else {
+        error "Unsupported from: ${params.from}. Supported backends: 'articles_json', 'journals_tsv'."
+    }
+
+    if (params.to == "duckdb") {
+        REMOVE_ARTICLES_IN_DUCKDB(fetched_articles)
+        articles_to_process = REMOVE_ARTICLES_IN_DUCKDB.out.all_articles
+    } else if (params.to == "pg") {
+        REMOVE_ARTICLES_IN_POSTGRESQL(fetched_articles)
+        articles_to_process = REMOVE_ARTICLES_IN_POSTGRESQL.out
+    } else {
+        articles_to_process = fetched_articles
+    }
+
+    EMBED_ARTICLES(articles_to_process)
+    SCREEN_ARTICLES(EMBED_ARTICLES.out.all_articles)
+
+    // TO_ZOTERO(batchArticles(SCREEN_ARTICLES.out, 10))
+
+}
+
+workflow {
+
+    validateParameters()
+
+    if (params.mode == "learn") {
+        LEARN()
+    } else if (params.mode == "screen") {
+        SCREEN()
+    } else {
+        error "Unsupported mode: ${params.mode}. Supported modes: 'learn', 'screen'."
     }
 
 }

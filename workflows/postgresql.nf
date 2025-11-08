@@ -46,8 +46,8 @@ workflow REMOVE_ARTICLES_IN_POSTGRESQL {
     main:
         REMOVE_PROCESSED(
             batchArticles(articles_json, 1000),
-            params.from_pg_user,
-            params.from_pg_host
+            params.to_pg_user,
+            params.to_pg_host
         )
 
         filtered_articles = batchArticles(REMOVE_PROCESSED.out, params.batch_size)
@@ -69,11 +69,13 @@ workflow TO_POSTGRESQL {
             params.to_pg_host
         )
 
-        UPDATE_TIMESTAMPS(
-            SAVE.out.collect(),
-            params.to_pg_user,
-            params.to_pg_host
-        )
+        if (params.from == 'pg') {
+            UPDATE_TIMESTAMPS(
+                SAVE.out.collect(),
+                params.from_pg_user,
+                params.from_pg_host
+            )
+        }
 
     emit:
         true

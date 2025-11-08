@@ -2,6 +2,7 @@
 # MAIN PARAMETERS
 # ===========================
 # These are the main parameters you'll want to customize
+mode:                 "screen"  # Options: "learn", "screen"
 research_interests:   "${projectDir}/config/research_interests.md"
 journals_tsv:         "${projectDir}/config/journals.tsv"
 
@@ -24,16 +25,16 @@ zotero_library_type:  "user"
 # ===========================
 # Backend Configuration
 # ===========================
-# from:                      "journals_tsv"
-# from_json_input:           "articles.json"
+from:                      "articles_json"
+from_json_input:           "train_articles.json"
 # from_duckdb_input:         "papers_please.duckdb"
 # from_pg_user:              "neondb_owner"
 # from_pg_host:              "ep-lingering-tree-a4l7zn7a-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 # from_pg_create_tables:     false
-# to:                        "articles_json"
+to:                        "pg"
 # to_json_outdir:            "./results"
-# to_pg_user:                "neondb_owner"
-# to_pg_host:                "ep-lingering-tree-a4l7zn7a-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+to_pg_user:                "neondb_owner"
+to_pg_host:                "ep-lingering-tree-a4l7zn7a-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # days_back: 8
 

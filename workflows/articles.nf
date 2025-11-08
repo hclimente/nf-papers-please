@@ -3,9 +3,11 @@ include { BASIC_METADATA as BASIC_METADATA_RETRY } from '../modules/agentic'
 include { ADVANCED_METADATA; REMOVE_PROCESSED; SAVE } from '../modules/zotero'
 include { TAG as TAG_RETRY } from '../modules/agentic'
 
+include { FETCH_NEAREST_NEIGHBORS } from '../modules/postgresql'
+
 include { batchArticles; filterAndBatch } from '../modules/json'
 
-workflow PROCESS_ARTICLES {
+workflow EMBED_ARTICLES {
 
     take:
         articles_json
@@ -55,23 +57,56 @@ workflow PROCESS_ARTICLES {
         tagged_articles = TAG.out.pass
             .concat(TAG_RETRY.out.pass)
 
-        SCORE(
-            tagged_articles,
-            file(params.research_interests),
-            params.debug
-        )
-
         EMBED(
             tagged_articles,
             params.embedding_model,
             params.debug
         )
 
-        all_articles = SCORE.out
+        all_articles = EMBED.out
             .concat(TAG_RETRY.out.fail)
         final_batches = batchArticles(all_articles, 100)
 
     emit:
-        scored_articles = SCORE.out
+        embedded_articles = EMBED.out
         all_articles = final_batches
+}
+
+workflow SCREEN_ARTICLES {
+
+    take:
+        articles_json
+
+    main:
+
+        FETCH_NEAREST_NEIGHBORS(
+            batchArticles(articles_json, params.batch_size),
+            params.to_pg_user,
+            params.to_pg_host
+        )
+
+    //     KNN(
+    //         batchArticles(articles_json, params.batch_size),
+    //         file(params.screening_system_prompt),
+    //         params.screening_model,
+    //         true,
+    //         params.debug
+    //     )
+
+    //     failed_screening = batchArticles(KNN.out.fail, params.batch_size)
+    //     KNN_RETRY(
+    //         failed_screening,
+    //         file(params.screening_system_prompt),
+    //         params.screening_model,
+    //         false,
+    //         params.debug
+    //     )
+
+    //     screened_articles = KNN.out.pass
+    //         .concat(KNN_RETRY.out.pass)
+    //     final_batches = batchArticles(screened_articles, 100)
+
+    // emit:
+    //     screened_articles = KNN.out.pass
+    //     all_articles = final_batches
 }

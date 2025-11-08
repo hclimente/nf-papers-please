@@ -1,6 +1,6 @@
 process CREATE_ARTICLES_DB {
 
-    container 'community.wave.seqera.io/library/pip_psycopg2-binary:6f4dafaf446c4354'
+    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
     secret 'PGPASSWORD'
 
     input:
@@ -25,7 +25,7 @@ process CREATE_ARTICLES_DB {
 
 process FETCH_JOURNALS {
 
-    container 'community.wave.seqera.io/library/pip_psycopg2-binary:6f4dafaf446c4354'
+    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
     secret 'PGPASSWORD'
 
     input:
@@ -49,7 +49,7 @@ process FETCH_JOURNALS {
 
 process REMOVE_PROCESSED {
 
-    container 'community.wave.seqera.io/library/pip_psycopg2-binary:6f4dafaf446c4354'
+    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
     secret 'PGPASSWORD'
 
     input:
@@ -74,7 +74,7 @@ process REMOVE_PROCESSED {
 
 process SAVE {
 
-    container 'community.wave.seqera.io/library/pip_psycopg2-binary:6f4dafaf446c4354'
+    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
     secret 'PGPASSWORD'
 
     input:
@@ -97,7 +97,7 @@ process SAVE {
 
 process UPDATE_TIMESTAMPS {
 
-    container 'community.wave.seqera.io/library/pip_psycopg2-binary:6f4dafaf446c4354'
+    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
     secret 'PGPASSWORD'
 
     input:
@@ -117,6 +117,33 @@ process UPDATE_TIMESTAMPS {
 --table sources \
 --set_clause "last_checked = '${today}'" \
 --where_clause "1=1"
+    """
+
+}
+
+process FETCH_NEAREST_NEIGHBORS {
+
+    container 'community.wave.seqera.io/library/duckdb_psycopg2-binary_pydantic:6dd85f24e38db26f'
+    secret 'PGPASSWORD'
+
+    input:
+    path ARTICLES_JSON
+    val USER
+    val HOST
+
+    output:
+    path "knn.json"
+
+    script:
+    """
+    db_extract_fields.py pg \
+--articles_json ${ARTICLES_JSON} \
+--user "${USER}" \
+--host "${HOST}" \
+--table articles \
+--columns doi \
+--clause "ORDER BY embedding <-> '{embedding}' LIMIT 5" \
+--out knn.json
     """
 
 }

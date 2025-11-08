@@ -10,6 +10,13 @@
             "type": "object",
             "description": "Parameters for defining input sources and article retrieval",
             "properties": {
+                "mode": {
+                    "type": "string",
+                    "enum": ["learn", "screen"],
+                    "description": "Mode of operation",
+                    "help_text": "Select the mode of operation. 'learn' learns your interests from your Zotero library, 'screen' uses your learnt tastes to prioritize new articles.",
+                    "default": "learn"
+                },
                 "journals_tsv": {
                     "type": "string",
                     "format": "file-path",
