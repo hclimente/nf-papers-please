@@ -27,7 +27,7 @@ workflow {
         FROM_POSTGRESQL(file(params.journals_tsv))
         fetched_articles = FROM_POSTGRESQL.out
     } else {
-        error "Unsupported from: ${params.from}. Supported backends: 'articles_json', 'duckdb', 'journals_tsv'."
+        error "Unsupported from: ${params.from}. Supported backends: 'articles_json', 'duckdb', 'journals_tsv', 'pg'."
     }
 
     if (params.to == "zotero") {
@@ -48,13 +48,13 @@ workflow {
     if (params.to == "duckdb") {
         TO_DUCKDB(PROCESS_ARTICLES.out.all_articles)
     } else if (params.to == "zotero") {
-        TO_ZOTERO(batchArticles(PROCESS_ARTICLES.out.prioritized_articles, 10))
+        TO_ZOTERO(batchArticles(PROCESS_ARTICLES.out.scored_articles, 10))
     } else if (params.to == "articles_json") {
         TO_JSON(batchArticles(PROCESS_ARTICLES.out.all_articles, 1000))
     } else if (params.to == "pg") {
         TO_POSTGRESQL(PROCESS_ARTICLES.out.all_articles)
     } else {
-        error "Unsupported to: ${params.to}. Supported backends: 'articles_json' 'duckdb', 'zotero'."
+        error "Unsupported to: ${params.to}. Supported backends: 'articles_json' 'duckdb', 'pg', 'zotero'."
     }
 
 }

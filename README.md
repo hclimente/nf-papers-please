@@ -20,6 +20,7 @@ Papers, Please is an agentic workflow that helps researchers stay up-to-date wit
     - Optional, for additional capabilities:
         - `SPRINGER_META_API_KEY`, from [Springer](https://dev.springernature.com/). Used to get article metadata.
         - `ZOTERO_API_KEY`, from the [Zotero settings](https://www.zotero.org/settings/keys). Used to save articles directly to your Zotero library. It requires [additional configuration](config/config.yaml).
+        - `PGPASSWORD`, the password to your PostgreSQL database, if you want to use it as a backend to store articles.
 
 <details>
 
