@@ -30,9 +30,9 @@
                 },
                 "from": {
                     "type": "string",
-                    "enum": ["articles_json", "duckdb", "journals_tsv"],
+                    "enum": ["articles_json", "duckdb", "journals_tsv", "pg"],
                     "description": "Source backend for fetching articles",
-                    "help_text": "Select where to fetch articles from: 'journals_tsv' for RSS feeds, 'duckdb' for existing database, or 'articles_json' for JSON file.",
+                    "help_text": "Select where to fetch articles from: 'journals_tsv' for RSS feeds, 'duckdb' for existing database, 'postgresql' for PostgreSQL database, or 'articles_json' for JSON file.",
                     "default": "journals_tsv"
                 },
                 "from_json_input": {
@@ -51,6 +51,24 @@
                     "help_text": "Path to DuckDB database file. Only used when 'from' is set to 'duckdb'.",
                     "default": "papers_please.duckdb"
                 },
+                "from_pg_user": {
+                    "type": ["string", "null"],
+                    "description": "PostgreSQL username when using 'postgresql' as source backend",
+                    "help_text": "Username for PostgreSQL connection. Only used when 'from' is set to 'postgresql'.",
+                    "default": null
+                },
+                "from_pg_host": {
+                    "type": ["string", "null"],
+                    "description": "PostgreSQL host and database when using 'postgresql' as source backend",
+                    "help_text": "Host and database in format: hostname:port/database or hostname/database. Password should be set via Nextflow secret PGPASSWORD. Only used when 'from' is set to 'postgresql'.",
+                    "default": null
+                },
+                "from_pg_create_tables": {
+                    "type": "boolean",
+                    "description": "Whether to create PostgreSQL tables if they don't exist",
+                    "help_text": "Set to true to automatically create database tables when using PostgreSQL as source. Only used when 'from' is set to 'postgresql'.",
+                    "default": false
+                },
                 "days_back": {
                     "type": "integer",
                     "minimum": 1,
@@ -68,9 +86,9 @@
             "properties": {
                 "to": {
                     "type": "string",
-                    "enum": ["articles_json", "duckdb", "zotero"],
+                    "enum": ["articles_json", "duckdb", "pg", "zotero"],
                     "description": "Output backend for storing processed articles",
-                    "help_text": "Select where to save processed articles: 'articles_json' for JSON output, 'duckdb' for database storage, or 'zotero' for direct Zotero import.",
+                    "help_text": "Select where to save processed articles: 'articles_json' for JSON output, 'duckdb' for database storage, 'postgresql' for PostgreSQL database, or 'zotero' for direct Zotero import.",
                     "default": "articles_json"
                 },
                 "to_json_outdir": {
@@ -79,6 +97,18 @@
                     "description": "Output directory when using 'articles_json' as output backend",
                     "help_text": "Directory where processed articles will be saved as JSON. Only used when 'to' is set to 'articles_json'.",
                     "default": "./results"
+                },
+                "to_pg_user": {
+                    "type": ["string", "null"],
+                    "description": "PostgreSQL username when using 'postgresql' as output backend",
+                    "help_text": "Username for PostgreSQL connection. Only used when 'to' is set to 'postgresql'.",
+                    "default": null
+                },
+                "to_pg_host": {
+                    "type": ["string", "null"],
+                    "description": "PostgreSQL host and database when using 'postgresql' as output backend",
+                    "help_text": "Host and database in format: hostname:port/database or hostname/database. Password should be set via Nextflow secret PGPASSWORD. Only used when 'to' is set to 'postgresql'.",
+                    "default": null
                 },
                 "zotero_user_id": {
                     "type": ["string", "null"],
@@ -139,31 +169,24 @@
                     "help_text": "Path to markdown file containing instructions for the LLM to extract article metadata.",
                     "default": "${projectDir}/prompts/metadata_extraction.md"
                 },
-                "screening_model": {
+                "tagging_model": {
                     "type": "string",
-                    "description": "LLM model to use for screening articles",
+                    "description": "LLM model to use for tagging articles",
                     "help_text": "Gemini model identifier for determining article relevance based on research interests.",
                     "default": "gemini-2.5-flash-lite"
                 },
-                "screening_system_prompt": {
+                "tagging_system_prompt": {
                     "type": "string",
                     "format": "file-path",
-                    "description": "System prompt file for article screening",
+                    "description": "System prompt file for article tagging",
                     "help_text": "Path to markdown file containing instructions for the LLM to screen articles for relevance.",
-                    "default": "${projectDir}/prompts/screening.md"
+                    "default": "${projectDir}/prompts/tagging.md"
                 },
-                "prioritization_model": {
+                "embedding_model": {
                     "type": "string",
-                    "description": "LLM model to use for prioritizing articles",
-                    "help_text": "Gemini model identifier for ranking articles by relevance to research interests.",
-                    "default": "gemini-2.5-flash-lite"
-                },
-                "prioritization_system_prompt": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "System prompt file for article prioritization",
-                    "help_text": "Path to markdown file containing instructions for the LLM to prioritize articles.",
-                    "default": "${projectDir}/prompts/prioritization.md"
+                    "description": "LLM model to use for embedding articles",
+                    "help_text": "Gemini model identifier for computing article embeddings.",
+                    "default": "gemini-embedding-001"
                 }
             }
         }

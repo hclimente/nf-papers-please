@@ -13,21 +13,21 @@ from .models import (
 )
 
 
-def llm_query(
+def chat(
     articles: str,
     system_prompt_path: str,
     model: str,
     api_key: str,
     research_interests_path: str = None,
     tools: list = [],
-):
+) -> str:
     """
-    Query LLM to process articles based on user research interests.
+    Obtain chat responses about the articles.
 
     Args:
         articles (str): The articles to process (JSON string or list).
         system_prompt_path (str): The path to the system prompt file.
-        model (str): The model to use for screening. One of 'gemini-1.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'.
+        model (str): The model to use. One of 'gemini-1.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'.
         api_key (str): The Google API key for authentication.
         research_interests_path (str): The path to a text file containing the user's research interests. It will be inserted into the system prompt.
         tools (list): List of tools for the LLM to use.
@@ -102,3 +102,41 @@ Example of a user query:
     response_text = response.text.strip()
     logging.debug(f"✅ LLM Response: {response_text}")
     return response_text
+
+
+def embed(
+    texts: list[str],
+    model: str,
+    api_key: str,
+    task: str = "CLASSIFICATION",
+) -> list:
+    """
+    Obtain embeddings for the given texts.
+
+    Args:
+        texts (list[str]): List of texts to embed.
+        model (str): The embedding model to use.
+        api_key (str): The Google API key for authentication.
+        task (str): The type of embedding task. Default is "CLASSIFICATION".
+
+    Returns:
+        list: List of embeddings.
+    """
+
+    if not api_key:
+        raise ValueError(
+            "GOOGLE_API_KEY environment variable not found. "
+            "Did you remember to `nextflow secrets set GOOGLE_API_KEY '<YOUR-KEY'`?"
+        )
+
+    client = genai.Client(api_key=api_key)
+
+    response = client.models.embed_content(
+        model=model,
+        contents=texts,
+        config=types.EmbedContentConfig(task_type=task),
+    )
+
+    embeddings = [e for e in response.embeddings]
+    logging.debug(f"✅ Obtained {len(embeddings)} embeddings.")
+    return embeddings

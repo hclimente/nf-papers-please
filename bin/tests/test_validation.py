@@ -555,57 +555,44 @@ class TestValidateLlmResponse:
         assert mock_info.called
 
     @patch("common.validation.logging.info")
-    def test_validate_screening_response(self, mock_info):
-        """Test validating screening stage response"""
-        response_text = json.dumps(
-            [{"doi": "10.1234/test", "decision": True, "reasoning": "Relevant article"}]
-        )
-
-        result = validate_llm_response(
-            stage="screening",
-            response_text=response_text,
-            merge_key="doi",
-            allow_qc_errors=False,
-        )
-
-        assert "10.1234/test" in result
-        assert result["10.1234/test"].screening_decision is True
-
-    @patch("common.validation.logging.info")
-    def test_validate_priority_response(self, mock_info):
-        """Test validating priority stage response"""
+    def test_validate_tagging_response(self, mock_info):
+        """Test validating tagging stage response"""
         response_text = json.dumps(
             [
                 {
                     "doi": "10.1234/test",
-                    "decision": "high",
-                    "reasoning": "Important findings",
+                    "tags": ["Network Biology"],
+                    "reasoning": "High relevance article",
                 }
             ]
         )
 
         result = validate_llm_response(
-            stage="priority",
+            stage="tagging",
             response_text=response_text,
             merge_key="doi",
             allow_qc_errors=False,
         )
 
         assert "10.1234/test" in result
-        assert result["10.1234/test"].priority_decision == "high"
+        assert result["10.1234/test"].tags == ["Network Biology"]
 
     @patch("common.validation.logging.info")
     def test_validate_response_with_invalid_item(self, mock_info):
         """Test validation with invalid item (allow errors)"""
         response_text = json.dumps(
             [
-                {"doi": "10.1234/valid", "decision": "high", "reasoning": "Good"},
+                {
+                    "doi": "10.1234/valid",
+                    "tags": ["Cancer Biology"],
+                    "reasoning": "Good",
+                },
                 {"doi": "10.1234/invalid"},  # Missing required fields
             ]
         )
 
         result = validate_llm_response(
-            stage="priority",
+            stage="tagging",
             response_text=response_text,
             merge_key="doi",
             allow_qc_errors=True,
@@ -637,17 +624,21 @@ class TestValidateLlmResponse:
         """Test validation with multiple valid items"""
         response_text = json.dumps(
             [
-                {"doi": "10.1234/test1", "decision": True, "reasoning": "Relevant"},
+                {
+                    "doi": "10.1234/test1",
+                    "tags": ["Network Biology"],
+                    "reasoning": "Relevant",
+                },
                 {
                     "doi": "10.1234/test2",
-                    "decision": False,
+                    "tags": [],
                     "reasoning": "Not relevant",
                 },
             ]
         )
 
         result = validate_llm_response(
-            stage="screening",
+            stage="tagging",
             response_text=response_text,
             merge_key="doi",
             allow_qc_errors=False,
@@ -716,13 +707,13 @@ class TestSaveValidatedResponses:
             articles=articles,
             response_pass=response_pass,
             allow_qc_errors=False,
-            stage="priority",
+            stage="tagging",
             merge_key="doi",
         )
 
         # Should only open pass file
         assert mock_open_func.call_count == 1
-        mock_open_func.assert_called_with("priority_pass.json", "w")
+        mock_open_func.assert_called_with("tagging_pass.json", "w")
 
     @patch("common.validation.logging.info")
     @patch("common.validation.logging.debug")
@@ -761,7 +752,7 @@ class TestSaveValidatedResponses:
             articles=articles,
             response_pass=response_pass,
             allow_qc_errors=True,
-            stage="screening",
+            stage="tagging",
             merge_key="doi",
         )
 
