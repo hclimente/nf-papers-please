@@ -1,4 +1,4 @@
-from sqlmodel import create_engine, SQLModel
+from sqlmodel import create_engine, SQLModel, text
 
 from .utils import get_env_variable
 
@@ -37,10 +37,9 @@ def setup_db(connection_string: str) -> None:
     """
     engine = create_engine(connection_string, echo=True)
 
-    # Install extensions if using PostgreSQL
     if connection_string.startswith("postgresql://"):
         with engine.connect() as conn:
-            conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
             conn.commit()
 
     # Create all tables

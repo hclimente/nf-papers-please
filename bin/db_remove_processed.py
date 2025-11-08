@@ -6,64 +6,22 @@ import pathlib
 from common.models import ArticleList, Article, pprint
 from common.parsers import (
     add_input_articles_json_argument,
-    add_duckdb_arguments,
     add_postgresql_arguments,
     add_output_argument,
 )
-from common.utils import build_connection_string
+from common.db import (
+    build_connection_string,
+    setup_db,
+)
 
 
 from sqlalchemy import Table, Column, String, text
 from sqlmodel import Session, create_engine
 
 
-def get_select_unprocessed_sql() -> str:
-    """
-    Get SQL to find unprocessed articles using a temporary table join.
-
-    This query is identical for both DuckDB and PostgreSQL.
-
-    Returns:
-        SQL SELECT statement
-    """
-    return """
-        SELECT a.url
-        FROM tmp_articles a
-        LEFT JOIN articles p
-        ON a.url = p.url
-        WHERE p.title IS NULL
-    """
-
-
-def get_create_temp_articles_table_sql(db_type: str = "duckdb") -> str:
-    """
-    Get SQL to create temporary table for articles.
-
-    Args:
-        db_type: Either 'duckdb' or 'pg'
-
-    Returns:
-        SQL CREATE TABLE statement
-    """
-    if db_type == "duckdb":
-        return """
-        CREATE TEMPORARY TABLE tmp_articles (
-            url TEXT
-        )
-    """
-    elif db_type == "pg":
-        return """
-        CREATE TEMP TABLE IF NOT EXISTS tmp_articles (
-            url TEXT
-        )
-    """
-
-
-def remove_unprocessed_articles(
+def remove_processed_articles(
     articles_json: str,
     output_json: str,
-    db_type: str,
-    db_path: str = None,
     connection_string: str = None,
 ) -> None:
     """
@@ -73,7 +31,6 @@ def remove_unprocessed_articles(
         articles_json (str): Path to the JSON file containing articles.
         output_json (str): Path to the output JSON file containing unprocessed articles.
         db_type (str): Database type ("duckdb" or "pg").
-        db_path (str): Path to the DuckDB database file (required for duckdb).
         connection_string (str): PostgreSQL connection string (required for pg).
 
     Returns:
@@ -83,7 +40,6 @@ def remove_unprocessed_articles(
     logging.info("-" * 20)
     logging.info(f"articles_json : {articles_json}")
     logging.info(f"output_json   : {output_json}")
-    logging.info(f"db_type       : {db_type}")
     logging.info("-" * 20)
 
     json_string = pathlib.Path(articles_json).read_text()
@@ -154,13 +110,6 @@ if __name__ == "__main__":
         dest="db_type", required=True, help="Database backend to use"
     )
 
-    duckdb_parser = subparsers.add_parser(
-        "duckdb", help="Use DuckDB as the database backend"
-    )
-    duckdb_parser = add_duckdb_arguments(duckdb_parser)
-    duckdb_parser = add_input_articles_json_argument(duckdb_parser)
-    duckdb_parser = add_output_argument(duckdb_parser)
-
     pg_parser = subparsers.add_parser(
         "pg", help="Use PostgreSQL as the database backend"
     )
@@ -170,18 +119,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Build connection string for PostgreSQL
-    connection_string = None
-    db_path = None
-    if args.db_type == "pg":
-        connection_string = build_connection_string(args.user, args.host)
-    else:  # duckdb
-        db_path = args.db_path
+    connection_string = build_connection_string(args.user, args.host)
+    setup_db(connection_string)
 
-    remove_unprocessed_articles(
+    remove_processed_articles(
         articles_json=args.articles_json,
         output_json=args.out,
-        db_type=args.db_type,
-        db_path=db_path,
         connection_string=connection_string,
     )

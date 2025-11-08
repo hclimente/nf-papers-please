@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from db_create import create_article_table, create_journal_table
 from db_extract_fields import extract_fields
 from db_insert_article import insert_article
-from db_remove_processed import remove_unprocessed_articles
+from db_remove_processed import remove_processed_articles
 from db_update_field import update_field
 
 
@@ -145,7 +145,7 @@ class TestDuckDBIntegration:
 
         # Remove processed articles
         output_json = tmp_path / "unprocessed.json"
-        remove_unprocessed_articles(
+        remove_processed_articles(
             str(new_articles_json),
             str(output_json),
             "duckdb",

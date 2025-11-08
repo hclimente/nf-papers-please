@@ -1,5 +1,5 @@
 include { FETCH_ARTICLES } from '../modules/rss'
-include { CREATE_ARTICLES_DB; FETCH_JOURNALS; REMOVE_PROCESSED; SAVE; UPDATE_TIMESTAMPS } from '../modules/postgresql'
+include { FETCH_JOURNALS; REMOVE_PROCESSED; SAVE; UPDATE_TIMESTAMPS } from '../modules/postgresql'
 
 include { batchArticles; filterAndBatch } from '../modules/json'
 

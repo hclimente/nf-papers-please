@@ -22,7 +22,7 @@ class TestRemoveUnprocessedArticlesDuckDB:
     )
     def test_creates_temp_table(self, mock_file, mock_connect):
         """Test that temporary table is created."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
@@ -32,7 +32,7 @@ class TestRemoveUnprocessedArticlesDuckDB:
         ]
         mock_connect.return_value = mock_conn
 
-        remove_unprocessed_articles(
+        remove_processed_articles(
             "articles.json", "output.json", "duckdb", db_path="test.duckdb"
         )
 
@@ -52,7 +52,7 @@ class TestRemoveUnprocessedArticlesDuckDB:
     )
     def test_inserts_urls_to_temp_table(self, mock_file, mock_connect):
         """Test that URLs are inserted into temporary table."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
@@ -62,7 +62,7 @@ class TestRemoveUnprocessedArticlesDuckDB:
         ]
         mock_connect.return_value = mock_conn
 
-        remove_unprocessed_articles(
+        remove_processed_articles(
             "articles.json", "output.json", "duckdb", db_path="test.duckdb"
         )
 
@@ -79,7 +79,7 @@ class TestRemoveUnprocessedArticlesDuckDB:
         self, mock_file, mock_dump, mock_load, mock_connect
     ):
         """Test that unprocessed articles are written to output file."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
         mock_load.return_value = [
             {"url": "https://example1.com", "title": "Article 1"},
@@ -95,7 +95,7 @@ class TestRemoveUnprocessedArticlesDuckDB:
         ]
         mock_connect.return_value = mock_conn
 
-        remove_unprocessed_articles(
+        remove_processed_articles(
             "articles.json", "output.json", "duckdb", db_path="test.duckdb"
         )
 
@@ -113,12 +113,12 @@ class TestRemoveUnprocessedArticlesDuckDB:
     )
     def test_handles_empty_articles_list(self, mock_file, mock_connect):
         """Test that empty articles list is handled."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        remove_unprocessed_articles(
+        remove_processed_articles(
             "articles.json", "output.json", "duckdb", db_path="test.duckdb"
         )
 
@@ -138,7 +138,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
     )
     def test_creates_temp_table(self, mock_file, mock_execute_values, mock_connect):
         """Test that temporary table is created."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -150,7 +150,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        remove_unprocessed_articles(
+        remove_processed_articles(
             "articles.json",
             "output.json",
             "pg",
@@ -174,7 +174,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
     )
     def test_uses_execute_values(self, mock_file, mock_execute_values, mock_connect):
         """Test that execute_values is used for batch insert."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -186,7 +186,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        remove_unprocessed_articles(
+        remove_processed_articles(
             "articles.json",
             "output.json",
             "pg",
@@ -207,7 +207,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
         self, mock_file, mock_dump, mock_load, mock_execute_values, mock_connect
     ):
         """Test that unprocessed articles are written to output file."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
         mock_load.return_value = [
             {"url": "https://example1.com", "title": "Article 1"},
@@ -225,7 +225,7 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        remove_unprocessed_articles(
+        remove_processed_articles(
             "articles.json",
             "output.json",
             "pg",
@@ -246,12 +246,12 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
     )
     def test_handles_empty_articles_list(self, mock_file, mock_connect):
         """Test that empty articles list is handled."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        remove_unprocessed_articles(
+        remove_processed_articles(
             "articles.json",
             "output.json",
             "pg",

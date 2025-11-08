@@ -74,13 +74,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Build connection string for PostgreSQL
-    connection_string = None
     db_path = None
-    if args.db_type == "pg":
-        connection_string = build_connection_string(args.user, args.host)
-    else:  # duckdb
-        db_path = args.db_path
-
+    connection_string = build_connection_string(args.user, args.host)
     setup_db(connection_string)
 
     insert_article(
