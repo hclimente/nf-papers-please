@@ -80,7 +80,7 @@ papers_please/
 │   ├── compute_article_score.py # Score articles based on tags
 │   ├── json_validate_articles.py # JSON schema validation
 │   ├── crossref_annotate_doi.py # Annotate articles with CrossRef metadata
-│   ├── db_*.py               # Database operations (insert, update, remove, extract)
+│   ├── db_*.py               # Database operations (insert, update, remove, find_nearest_neighbors)
 │   └── zotero_*.py          # Zotero operations
 │
 ├── prompts/                   # LLM system prompts
@@ -107,9 +107,10 @@ papers_please/
 **Screen Mode** (`--mode screen`):
 - Input: New articles from RSS feeds or other sources
 - Goal: Prioritize new articles based on learned interests
-- Processing: Extract metadata → Tag articles → Generate embeddings → k-NN search
-- Output: Ranked list of relevant articles
+- Processing: Extract metadata → Tag articles → Generate embeddings → Find k-nearest neighbors from database
+- Output: Articles with their nearest neighbors from the learned library
 - Use case: Weekly screening of new publications
+- Note: Requires PostgreSQL backend with existing embedded articles
 
 ### 2. **Four-Stage Processing Pipeline**
 
@@ -230,8 +231,9 @@ Input (from JSON/Zotero) → Remove duplicates (if outputting to DB) → EMBED_A
 
 **SCREEN Workflow**:
 ```nextflow
-Input (from RSS/JSON) → Remove duplicates (if outputting to DB) → EMBED_ARTICLES → SCREEN_ARTICLES (k-NN) → Output
+Input (from RSS/JSON) → Remove duplicates (if outputting to DB) → EMBED_ARTICLES → SCREEN_ARTICLES (k-NN via PostgreSQL) → Output
 ```
+Note: The SCREEN workflow currently uses `FETCH_NEAREST_NEIGHBORS` to query the PostgreSQL database for similar articles. The full screening pipeline with retry logic is partially implemented.
 
 **EMBED_ARTICLES Workflow** (in `workflows/articles.nf`):
 ```nextflow
@@ -370,6 +372,25 @@ All Python processes run in Wave containers:
 4. **Update `setup_db()`** in `bin/common/db.py` if special initialization needed
 5. **Run migration**: The schema is auto-created via `SQLModel.metadata.create_all(engine)`
 
+### Database Scripts
+
+The project includes several `db_*.py` scripts for database operations:
+
+- **`db_insert_article.py`**: Insert articles into PostgreSQL or DuckDB
+- **`db_update_field.py`**: Update specific fields in database records
+- **`db_remove_processed.py`**: Remove duplicate/already-processed articles from input
+- **`db_find_nearest_neighbors.py`**: Find k-nearest neighbors using vector similarity
+  - Uses pgvector's `cosine_distance` function for similarity search
+  - Adds `nearest_neighbors` field to each article with formatted text of similar articles
+  - Example usage:
+    ```bash
+    db_find_nearest_neighbors.py pg \
+        --articles_json input.json \
+        --user myuser \
+        --host localhost:5432/mydb \
+        --out output.json
+    ```
+
 ### Testing Changes
 
 **Python Unit Tests:**
@@ -488,6 +509,25 @@ with Session(engine) as session:
 with Session(engine) as session:
     statement = select(ArticleTable).where(ArticleTable.doi == "10.1234/example")
     article = session.exec(statement).first()
+
+# Find k-nearest neighbors using vector similarity
+with Session(engine) as session:
+    statement = (
+        select(ArticleTable)
+        .order_by(ArticleTable.embedding.cosine_distance(target_embedding))
+        .limit(5)
+    )
+    neighbors = session.exec(statement).all()
+```
+
+### Python: Article Text Representation
+
+```python
+from common.utils import article_to_text
+
+# Convert article to text for embedding or display
+text = article_to_text(article)
+# Returns formatted text with title, journal, authors, summary, and tags
 ```
 
 ### Python: Article Manipulation
