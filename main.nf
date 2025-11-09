@@ -24,7 +24,7 @@ workflow LEARN {
 
     if (params.to == "duckdb") {
         REMOVE_ARTICLES_IN_DUCKDB(fetched_articles)
-        articles_to_process = REMOVE_ARTICLES_IN_DUCKDB.out.all_articles
+        articles_to_process = REMOVE_ARTICLES_IN_DUCKDB.out
     } else if (params.to == "pg") {
         REMOVE_ARTICLES_IN_POSTGRESQL(fetched_articles)
         articles_to_process = REMOVE_ARTICLES_IN_POSTGRESQL.out
@@ -58,7 +58,7 @@ workflow SCREEN {
 
     if (params.to == "duckdb") {
         REMOVE_ARTICLES_IN_DUCKDB(fetched_articles)
-        articles_to_process = REMOVE_ARTICLES_IN_DUCKDB.out.all_articles
+        articles_to_process = REMOVE_ARTICLES_IN_DUCKDB.out
     } else if (params.to == "pg") {
         REMOVE_ARTICLES_IN_POSTGRESQL(fetched_articles)
         articles_to_process = REMOVE_ARTICLES_IN_POSTGRESQL.out

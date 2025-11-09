@@ -1,7 +1,8 @@
 # AGENTS.md - Code Assistant Guide
 
-**Last Updated:** November 7, 2025
+**Last Updated:** November 9, 2025
 **Project:** Papers, Please - Agentic Literature Screening Workflow
+**Current Branch:** feat/modelsql
 
 ---
 
@@ -13,7 +14,8 @@
 - **Language Stack**: Nextflow (workflow orchestration) + Python (data processing/LLM interaction)
 - **Architecture**: Modular, containerized pipeline with separate concerns
 - **Execution**: Can run locally, on HPC clusters, or via GitHub Actions (weekly automation)
-- **Data Flow**: RSS feeds → Metadata extraction → Tagging → Scoring → Output (JSON/Zotero/DuckDB)
+- **Modes**: Two operational modes - "learn" (from Zotero library) and "screen" (prioritize new articles)
+- **Data Flow**: RSS feeds → Basic metadata → Advanced metadata → Tagging → Embedding → Output (JSON/PostgreSQL/DuckDB)
 
 ---
 
@@ -21,12 +23,15 @@
 
 ### High-Level Flow
 ```
-Input Sources          Processing Pipeline            Output Destinations
-┌─────────────┐       ┌──────────────────┐          ┌─────────────┐
-│ RSS Feeds   │──────>│ Metadata Extract │─────────>│ JSON File   │
-│ JSON File   │       │ Tag Articles     │          │ Zotero API  │
-│ DuckDB      │       │ Score Articles   │          │ DuckDB      │
-└─────────────┘       └──────────────────┘          └─────────────┘
+Input Sources              Processing Pipeline                  Output Destinations
+┌─────────────┐           ┌──────────────────┐                ┌─────────────┐
+│ RSS Feeds   │──────────>│ Basic Metadata   │───────────────>│ JSON File   │
+│ JSON File   │           │ Advanced Metadata│                │ PostgreSQL  │
+│ DuckDB      │           │ Tag Articles     │                │ DuckDB      │
+│ PostgreSQL  │           │ Embed Articles   │                │             │
+└─────────────┘           └──────────────────┘                └─────────────┘
+                                    │
+                          (Screen mode: k-NN search)
 ```
 
 ### Directory Structure
@@ -38,31 +43,34 @@ papers_please/
 ├── nextflow_schema.json       # Parameter validation schema
 │
 ├── config/                    # User configuration
-│   ├── config.yaml           # Main config (journals, interests, Zotero)
+│   ├── config.yaml           # Main config (can override nextflow.config)
 │   ├── journals.tsv          # Journal list with RSS URLs
-│   └── research_interests.md # User's research interests (input to LLM)
+│   └── research_interests.md # User's research interests (hierarchical YAML structure)
 │
 ├── workflows/                 # High-level workflow definitions
 │   ├── articles.nf           # Main article processing pipeline
 │   ├── duckdb.nf             # DuckDB input/output workflows
 │   ├── json.nf               # JSON input/output workflows
-│   ├── tabular.nf            # TSV/CSV input workflows
+│   ├── postgresql.nf         # PostgreSQL input/output workflows
+│   ├── tabular.nf            # TSV/CSV input workflows (RSS feeds)
 │   └── zotero.nf             # Zotero integration workflows
 │
 ├── modules/                   # Nextflow process definitions
-│   ├── agentic.nf            # LLM processes (metadata extraction, tagging)
-│   ├── db.nf                 # Database operations
+│   ├── agentic.nf            # LLM processes (metadata extraction, tagging, embedding)
+│   ├── duckdb.nf             # DuckDB operations
 │   ├── json.nf               # JSON manipulation utilities
+│   ├── postgresql.nf         # PostgreSQL operations
 │   ├── rss.nf                # RSS feed fetching
 │   └── zotero.nf             # Zotero API operations
 │
 ├── bin/                       # Python scripts (automatically in PATH)
 │   ├── pyproject.toml        # Python dependencies (uv/pip)
 │   ├── common/               # Shared Python modules
-│   │   ├── models.py         # Pydantic data models
+│   │   ├── models.py         # Pydantic/SQLModel data models
 │   │   ├── llm.py            # LLM interaction logic
 │   │   ├── validation.py     # Response validation
 │   │   ├── parsers.py        # CLI argument parsers
+│   │   ├── db.py             # Database connection utilities
 │   │   └── utils.py          # Utility functions
 │   ├── tests/                # Python unit tests (pytest)
 │   ├── tools/                # Helper tools for metadata enrichment
@@ -72,7 +80,7 @@ papers_please/
 │   ├── compute_article_score.py # Score articles based on tags
 │   ├── json_validate_articles.py # JSON schema validation
 │   ├── crossref_annotate_doi.py # Annotate articles with CrossRef metadata
-│   ├── duckdb_*.py          # DuckDB operations
+│   ├── db_*.py               # Database operations (insert, update, remove, extract)
 │   └── zotero_*.py          # Zotero operations
 │
 ├── prompts/                   # LLM system prompts
@@ -87,57 +95,121 @@ papers_please/
 
 ## 🔑 Core Concepts
 
-### 1. **Four-Stage Processing Pipeline**
+### 1. **Two Operational Modes**
 
-Each article goes through four processing stages:
+**Learn Mode** (`--mode learn`):
+- Input: Articles from your Zotero library or JSON file
+- Goal: Learn from articles you've already curated
+- Processing: Extract metadata → Tag articles → Generate embeddings
+- Output: Store in database (PostgreSQL/DuckDB) for future reference
+- Use case: Build a knowledge base from your existing library
 
-1. **Metadata Extraction** (`EXTRACT_METADATA`)
+**Screen Mode** (`--mode screen`):
+- Input: New articles from RSS feeds or other sources
+- Goal: Prioritize new articles based on learned interests
+- Processing: Extract metadata → Tag articles → Generate embeddings → k-NN search
+- Output: Ranked list of relevant articles
+- Use case: Weekly screening of new publications
+
+### 2. **Four-Stage Processing Pipeline**
+
+Each article goes through up to four processing stages:
+
+1. **Basic Metadata Extraction** (`BASIC_METADATA`)
    - Input: Raw RSS feed content (URL + text snippet)
    - Output: Structured article (title, abstract, DOI, URL)
    - Tools: Can use CrossRef/Springer APIs to find missing DOIs/abstracts
    - Validation: Pydantic `MetadataResponse` model
    - LLM Function: `chat()` in `common/llm.py`
+   - Process: `BASIC_METADATA` in `modules/agentic.nf`
 
-2. **Tagging** (`TAG`)
+2. **Advanced Metadata** (`ADVANCED_METADATA`)
+   - Input: Articles with DOI
+   - Output: Enhanced metadata (authors, journal info, dates, etc.)
+   - Source: CrossRef API or Zotero API
+   - Goal: Enrich articles with complete bibliographic information
+   - Process: `ADVANCED_METADATA` in `modules/zotero.nf`
+
+3. **Tagging** (`TAG`)
    - Input: Articles with metadata + research interests (YAML structure)
    - Output: List of categorical tags + reasoning for each article
    - Goal: Categorize articles based on research interest dimensions
    - Validation: Pydantic `TaggingResponse` model
    - LLM Function: `chat()` in `common/llm.py`
+   - Process: `TAG` in `modules/agentic.nf`
 
-3. **Scoring** (`COMPUTE_SCORE`)
-   - Input: Tagged articles + research interests YAML
-   - Output: Numeric score based on tag weights
-   - Goal: Rank articles by alignment with research priorities
-   - Logic: Hierarchical scoring based on category tree structure
-   - Script: `compute_article_score.py`
-
-4. **Embedding** (`EMBED`) *(Optional)*
-   - Input: Articles with metadata
+4. **Embedding** (`EMBED`)
+   - Input: Tagged articles
    - Output: Vector embeddings for semantic search
-   - Model: Google gemini-embedding-001 or similar
+   - Model: Google gemini-embedding-001 (3072 dimensions)
    - Function: `embed()` in `common/llm.py`
+   - Storage: PostgreSQL (pgvector) or DuckDB
+   - Process: `EMBED` in `modules/agentic.nf`
+
+**Scoring** (`SCORE` - currently defined but not used in workflows):
+- Input: Tagged articles + research interests YAML
+- Output: Numeric score based on tag weights
+- Goal: Rank articles by alignment with research priorities
+- Logic: Hierarchical scoring based on category tree structure
+- Script: `compute_article_score.py`
+- Note: The process exists in `modules/agentic.nf` but is not currently integrated into the main workflows
 
 **Retry Logic**: Each LLM stage has a `_RETRY` process that re-processes failed articles with `allow_qc_errors=false`.
 
-### 2. **Data Models**
+### 3. **Data Models**
 
-Core Pydantic models in `bin/common/models.py`:
+Core Pydantic/SQLModel models in `bin/common/models.py`:
 
-- **`Article`**: Full article with all metadata and processing results
-  - Core fields: title, authors, summary, doi, url, journal info, dates
-  - Processing fields: tags, reasoning, score, embedding, zotero_key
+**Database Models (SQLModel - for PostgreSQL/DuckDB):**
+
+- **`ArticleTable`**: Full article with all metadata and processing results
+  - Core fields: title, summary, doi, url
+  - Publication info: volume, issue, date, language
+  - Processing fields: reasoning, score, zotero_key
+  - Relationships: journal (via `ArticleJournalLink`), authors (via `ArticleAuthorLink`), tags (via `ArticleTagLink`)
+  - Vector field: embedding (pgvector, 3072 dimensions)
   - Raw data: raw_contents, access_date
 
-- **`ArticleList`**: Type adapter for `list[Article]`
+- **`AuthorTable`**: Individual or institutional author
+  - Fields: first_name (optional), last_name
+  - Relationship: articles (many-to-many)
 
-- **`Author`**: Individual author with first_name and last_name
-- **`InstitutionalAuthor`**: Institutional author with name only
+- **`Tag`**: Tag for categorizing articles
+  - Fields: name (unique)
+  - Relationship: articles (many-to-many)
 
-- **`MetadataResponse`**: LLM output for metadata extraction (title, summary, url, doi)
-- **`TaggingResponse`**: LLM output for tagging (doi, tags, reasoning)
+- **`JournalTable`**: Journal information
+  - Fields: name (unique), short_name
+  - Relationship: articles (many-to-many)
 
-### 3. **Nextflow Workflow System**
+**Link Tables (for many-to-many relationships):**
+- **`ArticleAuthorLink`**: Links articles to authors
+- **`ArticleTagLink`**: Links articles to tags
+- **`ArticleJournalLink`**: Links articles to journals
+
+**In-Memory Models (Pydantic - for JSON serialization):**
+
+- **`Article`**: JSON-serializable version of ArticleTable
+  - All fields from `ArticleBase`
+  - Lists instead of relationships: authors (list of Author), tags (list of str)
+  - Fields: journal_name, journal_short_name, embedding (list of float)
+
+- **`Author`**: Individual or institutional author (used in Article)
+  - Fields: first_name (optional), last_name
+  - Property: is_institutional (checks if first_name is None)
+
+- **`ArticleList`**: Type adapter for `list[Article]` (for JSON validation)
+
+**LLM Response Models:**
+
+- **`MetadataResponse`**: LLM output for metadata extraction
+  - Fields: title, summary, url, doi
+  - Validators: doi format (10.xxxx/...), url format
+
+- **`TaggingResponse`**: LLM output for tagging
+  - Fields: doi, tags (list of str), reasoning
+
+### 4. **Nextflow Workflow System**
 
 **Key Concepts:**
 - **Processes** (in `modules/`): Individual tasks (containerized)
@@ -147,28 +219,62 @@ Core Pydantic models in `bin/common/models.py`:
 
 **Main Entry Point**: `main.nf`
 - Validates parameters
-- Routes based on `--from` (input) and `--to` (output) backends
-- Calls `PROCESS_ARTICLES` workflow
-- Handles output routing
+- Routes based on `--mode` (learn/screen)
+- Calls `LEARN` or `SCREEN` workflows
+- Both workflows call `EMBED_ARTICLES` for processing
 
-### 4. **Backend Flexibility**
+**LEARN Workflow**:
+```nextflow
+Input (from JSON/Zotero) → Remove duplicates (if outputting to DB) → EMBED_ARTICLES → Save to DB
+```
+
+**SCREEN Workflow**:
+```nextflow
+Input (from RSS/JSON) → Remove duplicates (if outputting to DB) → EMBED_ARTICLES → SCREEN_ARTICLES (k-NN) → Output
+```
+
+**EMBED_ARTICLES Workflow** (in `workflows/articles.nf`):
+```nextflow
+BASIC_METADATA → BASIC_METADATA_RETRY
+     ↓
+ADVANCED_METADATA (for articles without DOI)
+     ↓
+TAG → TAG_RETRY
+     ↓
+EMBED → Batch and emit
+```
+
+### 5. **Backend Flexibility**
 
 **Input Backends** (`--from`):
-- `journals_tsv`: Fetch from RSS feeds defined in TSV file
+- `journals_tsv`: Fetch from RSS feeds defined in TSV file (screen mode)
 - `articles_json`: Read pre-fetched articles from JSON
-- `duckdb`: Load articles from DuckDB database
+- `duckdb`: Load articles from DuckDB database (not yet implemented)
+- `pg` (PostgreSQL): Load from PostgreSQL database (learn mode)
+- `zotero`: Fetch from Zotero library (learn mode)
 
 **Output Backends** (`--to`):
 - `articles_json`: Write to JSON file
-- `zotero`: Upload to Zotero library via API
+- `zotero`: Upload to Zotero library via API (not yet implemented in current version)
 - `duckdb`: Store in DuckDB database
+- `pg` (PostgreSQL): Store in PostgreSQL database (with pgvector)
 
-### 5. **Containerization**
+### 6. **Containerization**
 
 All Python processes run in Wave containers:
-- Base: `community.wave.seqera.io/library/pip_google-genai:*`
+- **LLM processes**: `community.wave.seqera.io/library/pip_google-genai_pgvector_sqlmodel:*`
+- **Database processes**: `community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:*`
+- **Scoring**: `community.wave.seqera.io/library/pip_pyyaml_pydantic:*`
 - Scripts in `bin/` are automatically available in container PATH
 - Secrets (API keys) injected via Nextflow secrets system
+
+### 7. **Database Schema**
+
+**PostgreSQL/DuckDB** uses the SQLModel-defined schema with:
+- **pgvector extension**: For storing and querying embeddings
+- **Many-to-many relationships**: Via link tables
+- **Normalized structure**: Authors, journals, and tags are separate tables
+- **Vector similarity search**: Efficient k-NN queries on embeddings
 
 ---
 
@@ -186,7 +292,7 @@ All Python processes run in Wave containers:
 3. **Add process** in `modules/agentic.nf`:
    ```nextflow
    process NEW_STAGE {
-       container 'community.wave.seqera.io/library/pip_google-genai:2e5c0f1812c5cbda'
+       container 'community.wave.seqera.io/library/pip_google-genai_pgvector_sqlmodel:852aa324a19aa1fc'
        label 'gemini_api'
        secret 'GOOGLE_API_KEY'
 
@@ -213,8 +319,13 @@ All Python processes run in Wave containers:
        """
    }
    ```
-4. **Add logic** to `bin/llm_process_articles.py`
-5. **Integrate** into `workflows/articles.nf`
+4. **Add subcommand** to `bin/llm_process_articles.py`:
+   ```python
+   new_stage_parser = subparsers.add_parser("new_stage")
+   new_stage_parser = add_llm_arguments(new_stage_parser, include_research_interests=False)
+   ```
+5. **Update validation logic** in `bin/common/validation.py` to handle the new response type
+6. **Integrate** into `workflows/articles.nf`
 
 ### Adding a New Backend
 
@@ -224,7 +335,7 @@ All Python processes run in Wave containers:
    workflow TO_NEW_BACKEND { ... }
    ```
 2. **Create processes** in `modules/new_backend.nf`
-3. **Add Python scripts** in `bin/` (e.g., `new_backend_fetch.py`)
+3. **Add Python scripts** in `bin/` (e.g., `new_backend_fetch.py`, `db_*.py` pattern)
 4. **Register** in `main.nf`:
    ```nextflow
    if (params.from == "new_backend") {
@@ -232,6 +343,32 @@ All Python processes run in Wave containers:
    }
    ```
 5. **Add parameters** to `nextflow.config` and `nextflow_schema.json`
+6. **Add database connection logic** to `bin/common/db.py` if needed
+
+### Adding a New Database Model
+
+1. **Define SQLModel class** in `bin/common/models.py`:
+   ```python
+   class NewTable(SQLModel, table=True):
+       __tablename__ = "new_table"
+       id: int | None = Field(default=None, primary_key=True)
+       name: str = Field(index=True, unique=True)
+   ```
+2. **Create link table** if many-to-many relationship:
+   ```python
+   class ArticleNewLink(SQLModel, table=True):
+       __tablename__ = "article_new_link"
+       article_id: int = Field(default=None, foreign_key="articles.id", primary_key=True)
+       new_id: int = Field(default=None, foreign_key="new_table.id", primary_key=True)
+   ```
+3. **Add relationship** to `ArticleTable`:
+   ```python
+   new_items: List["NewTable"] = Relationship(
+       back_populates="articles", link_model=ArticleNewLink
+   )
+   ```
+4. **Update `setup_db()`** in `bin/common/db.py` if special initialization needed
+5. **Run migration**: The schema is auto-created via `SQLModel.metadata.create_all(engine)`
 
 ### Testing Changes
 
@@ -244,15 +381,23 @@ uv run pytest tests/
 **Run Test Workflow:**
 ```bash
 nextflow run main.nf \
+    --mode screen \
     --from articles_json \
     --from_json_input test_articles.json \
     --to articles_json \
     --debug
 ```
 
-**Check Specific Process:**
+**Test Specific Process:**
 ```bash
-nextflow run main.nf -entry EXTRACT_METADATA --debug
+nextflow run main.nf -entry EMBED_ARTICLES --debug
+```
+
+**Test Database Connection:**
+```bash
+cd bin
+uv run python -c "from common.db import setup_db, build_connection_string; \
+    setup_db(build_connection_string('user', 'localhost:5432/dbname'))"
 ```
 
 ---
@@ -266,8 +411,8 @@ nextflow run main.nf -entry EXTRACT_METADATA --debug
 batched = batchArticles(articles_channel, 10)
 
 // Filter by field and batch
-filtered = filterAndBatch(articles_channel, 10, "screening_decision", true)
-// Returns: filtered.match, filtered.no_match
+filtered = filterAndBatch(articles_channel, 10, "doi", null)
+// Returns: filtered.match (articles where field != value), filtered.no_match (articles where field == value)
 ```
 
 ### Python: LLM Chat
@@ -285,13 +430,22 @@ response = chat(
     tools=tools  # Optional: for metadata extraction
 )
 
-validated = validate_llm_response(
-    response,
-    ResponseModel,
+# Validate response
+response_pass = validate_llm_response(
+    stage=stage,
+    response_text=response,
+    merge_key=merge_key,  # "url" for metadata, "doi" for tagging
     allow_qc_errors=allow_qc_errors
 )
 
-save_validated_responses(validated, articles, "pass.json", "fail.json")
+# Save to pass/fail JSON files
+save_validated_responses(
+    articles=articles,
+    response_pass=response_pass,
+    allow_qc_errors=allow_qc_errors,
+    stage=stage,
+    merge_key=merge_key
+)
 ```
 
 ### Python: Generate Embeddings
@@ -307,53 +461,123 @@ embeddings = embed(
 )
 ```
 
-### Python: Compute Article Scores
+### Python: Database Operations
 
 ```python
-from compute_article_score import compute_article_score, load_research_interests
+from common.db import build_connection_string, setup_db
+from sqlmodel import create_engine, Session, select
+from common.models import ArticleTable, Tag
 
-# Load research interests with hierarchical categories
-research_interests = load_research_interests(config_path)
+# Connect to database
+connection_string = build_connection_string(user="myuser", host="localhost:5432/mydb")
+setup_db(connection_string)  # Create tables if needed
+engine = create_engine(connection_string)
 
-# Compute score based on tags
-score = compute_article_score(article, research_interests)
-# Score is sum of points for matching tags, respecting hierarchy
+# Insert article
+with Session(engine) as session:
+    article = ArticleTable(
+        title="Sample Article",
+        url="https://example.com/article",
+        doi="10.1234/example",
+        ...
+    )
+    session.add(article)
+    session.commit()
+
+# Query articles
+with Session(engine) as session:
+    statement = select(ArticleTable).where(ArticleTable.doi == "10.1234/example")
+    article = session.exec(statement).first()
 ```
 
 ### Python: Article Manipulation
 
 ```python
 from common.models import Article, ArticleList
+import pathlib
 
 # Load articles
-with open("articles.json") as f:
-    articles = ArticleList.validate_json(f.read())
+json_string = pathlib.Path("articles.json").read_text()
+articles = ArticleList.validate_json(json_string)
 
 # Update article
 for article in articles:
-    article.screening_decision = True
-    article.screening_reasoning = "Relevant"
+    article.reasoning = "Relevant to my interests"
+    article.tags = ["Computational Biology", "Drug Discovery"]
 
 # Save articles
-with open("output.json", "w") as f:
-    f.write(ArticleList.dump_json(articles, indent=2).decode())
+pathlib.Path("output.json").write_text(
+    ArticleList.dump_json(articles, indent=2).decode()
+)
 ```
+
+### Python: Research Interests Parsing
+
+```python
+from compute_article_score import load_research_interests, compute_article_score
+
+# Load hierarchical research interests
+research_interests = load_research_interests("config/research_interests.md")
+# Returns dict with "field", "applications", "preferred_article_types", "preferred_journals" keys
+# Each with list of categories with name, description, points, and optional subcategories
+
+# Compute score based on tags
+score = compute_article_score(article, research_interests)
+# Score is sum of points for matching tags, respecting hierarchy
+```
+
+**Research Interests Structure:**
+The `research_interests.md` file uses a hierarchical YAML structure with:
+- **field**: Research fields (e.g., "Computational Biology") with optional subcategories (e.g., "Network Biology")
+- **applications**: Applications of interest (e.g., "Drug Discovery") with optional subcategories
+- **preferred_article_types**: Types of articles (e.g., "Review", "New Computational Method")
+- **preferred_journals**: Preferred journals with their own point values
+
+Each category has:
+- `name`: The category name (used as a tag)
+- `description`: Detailed description for LLM guidance
+- `points`: Weight for scoring (can be negative for penalties)
+- `subcategories` (optional): Nested categories with their own points
 
 ---
 
 ## ⚙️ Configuration
 
+### Configuration Files
+
+The project uses two configuration files:
+
+1. **`nextflow.config`**: Default parameter values and process configuration
+2. **`config/config.yaml`**: User-specific overrides (not committed to git)
+
+Parameters in `config.yaml` override those in `nextflow.config`. Command-line parameters override both.
+
 ### Key Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
+| `mode` | `learn` | Operational mode (`learn` or `screen`) |
 | `from` | `journals_tsv` | Input backend |
 | `to` | `articles_json` | Output backend |
+| `from_json_input` | `articles.json` | JSON input file path |
+| `from_duckdb_input` | `papers_please.duckdb` | DuckDB input file path |
+| `from_pg_user` | `null` | PostgreSQL username (input) |
+| `from_pg_host` | `null` | PostgreSQL host:port/db (input) |
+| `to_json_outdir` | `./results` | Output directory for JSON |
+| `to_pg_user` | `null` | PostgreSQL username (output) |
+| `to_pg_host` | `null` | PostgreSQL host:port/db (output) |
+| `journals_tsv` | (from config) | Path to journals TSV file |
+| `research_interests` | (from config) | Path to research interests MD file |
 | `days_back` | `8` | Days to look back for articles |
 | `batch_size` | `10` | Articles per batch for LLM |
 | `metadata_extraction_model` | `gemini-2.5-flash-lite` | LLM for metadata extraction |
+| `metadata_extraction_system_prompt` | `prompts/metadata_extraction.md` | Prompt for metadata |
 | `tagging_model` | `gemini-2.5-flash-lite` | LLM for tagging articles |
+| `tagging_system_prompt` | `prompts/tagging.md` | Prompt for tagging |
 | `embedding_model` | `gemini-embedding-001` | Model for generating embeddings |
+| `zotero_user_id` | `null` | Zotero user ID |
+| `zotero_collection_id` | `null` | Zotero collection ID |
+| `zotero_library_type` | `user` | Zotero library type |
 | `debug` | `false` | Enable debug logging |
 
 ### Secrets Required
@@ -362,6 +586,7 @@ with open("output.json", "w") as f:
 - `USER_EMAIL`: Email for CrossRef/NCBI APIs (required)
 - `SPRINGER_META_API_KEY`: Springer API key (optional)
 - `ZOTERO_API_KEY`: Zotero API key (optional, for `--to zotero`)
+- `PGPASSWORD`: PostgreSQL password (optional, for PostgreSQL backends)
 
 Set secrets:
 ```bash
@@ -454,9 +679,9 @@ uv run python llm_process_articles.py \
 
 1. **This is NOT for workflow agents**: This file is for code assistants (like GitHub Copilot) helping with development, not for the LLM agents that process articles.
 
-2. **Branch**: Currently on `feat/fine-tune-prompt` - working branch for improving prompt engineering and tagging system.
+2. **Branch**: Currently on `feat/modelsql` - working branch for integrating SQLModel and database backends.
 
-3. **Database**: DuckDB files (`.duckdb`) store processed articles to avoid re-processing.
+3. **Database**: DuckDB and PostgreSQL backends store processed articles with full relational structure and vector embeddings.
 
 4. **GitHub Actions**: `.github/workflows/` contains automation for weekly runs.
 

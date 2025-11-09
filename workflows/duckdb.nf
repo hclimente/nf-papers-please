@@ -9,6 +9,8 @@ workflow REMOVE_ARTICLES_IN_DUCKDB {
         articles_json
 
     main:
+        db = file(params.from_duckdb_input)
+
         REMOVE_PROCESSED(
             batchArticles(articles_json, 1000),
             db
