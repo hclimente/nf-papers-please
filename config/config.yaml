@@ -2,7 +2,7 @@
 # MAIN PARAMETERS
 # ===========================
 # These are the main parameters you'll want to customize
-mode:                 "screen"  # Options: "learn", "screen"
+mode:                 "learn"  # Options: "learn", "screen"
 research_interests:   "${projectDir}/config/research_interests.md"
 journals_tsv:         "${projectDir}/config/journals.tsv"
 

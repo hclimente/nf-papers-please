@@ -31,6 +31,15 @@ class ArticleTagLink(SQLModel, table=True):
     tag_id: int = Field(default=None, foreign_key="tags.id", primary_key=True)
 
 
+class ArticleJournalLink(SQLModel, table=True):
+    """Link table for many-to-many relationship between ArticleTable and Journals."""
+
+    __tablename__ = "article_journal_link"
+
+    article_id: int = Field(default=None, foreign_key="articles.id", primary_key=True)
+    journal_id: int = Field(default=None, foreign_key="journals.id", primary_key=True)
+
+
 class ArticleBase(SQLModel):
     """Model representing a scientific article with metadata and processing results."""
 
@@ -41,8 +50,6 @@ class ArticleBase(SQLModel):
     url: str
 
     # Publication information
-    journal_name: str
-    journal_short_name: str | None = None
     volume: int | None = None
     issue: int | None = None
     date: date
@@ -76,6 +83,10 @@ class ArticleTable(ArticleBase, table=True):
     __tablename__ = "articles"
 
     id: int | None = Field(default=None, primary_key=True)
+
+    journal: "JournalTable" = Relationship(
+        back_populates="articles", link_model=ArticleJournalLink
+    )
     authors: List["AuthorTable"] = Relationship(
         back_populates="articles", link_model=ArticleAuthorLink
     )
@@ -94,6 +105,8 @@ class Article(ArticleBase):
     the type to a column type, so we define it separately.
     """
 
+    journal_name: str
+    journal_short_name: str | None = None
     authors: list["AuthorBase"] | None = None
     tags: List[str] | None = None
     embedding: List[float] | None = None
@@ -146,6 +159,20 @@ class Tag(SQLModel, table=True):
     name: str = Field(index=True, unique=True)
     articles: List["ArticleTable"] = Relationship(
         back_populates="tags", link_model=ArticleTagLink
+    )
+
+
+class JournalTable(SQLModel, table=True):
+    """Model representing a journal."""
+
+    __tablename__ = "journals"
+
+    id: int | None = Field(default=None, primary_key=True)
+
+    name: str = Field(index=True, unique=True)
+    short_name: str | None = Field(default=None, index=True)
+    articles: List["ArticleTable"] = Relationship(
+        back_populates="journal", link_model=ArticleJournalLink
     )
 
 
