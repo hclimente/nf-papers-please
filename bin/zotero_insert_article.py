@@ -69,7 +69,7 @@ def create_zotero_article(
     # Core metadata fields
     zotero_article["title"] = item.title
     zotero_article["abstractNote"] = item.summary
-    zotero_article["publicationTitle"] = item.journal_name
+    zotero_article["publicationTitle"] = item.journal
     zotero_article["date"] = item.date.isoformat()
     zotero_article["DOI"] = item.doi
     zotero_article["url"] = str(item.url)

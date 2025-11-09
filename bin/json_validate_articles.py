@@ -45,7 +45,7 @@ def validate_articles_json(
     # Keep only required fields based on the stage
     core_fields = [
         "url",
-        "journal_name",
+        "journal",
         "date",
         "access_date",
         "raw_contents",

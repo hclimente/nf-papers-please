@@ -1,24 +1,3 @@
-process FETCH_JOURNALS {
-
-    container 'community.wave.seqera.io/library/duckdb:1.4.1--3daff581f117ee85'
-
-    input:
-    path DUCKDB_PATH
-
-    output:
-    path "journals.tsv"
-
-    script:
-    """
-    db_extract_fields.py duckdb \
---db_path ${DUCKDB_PATH} \
---table sources \
---columns "name, feed_url, last_checked" \
---out journals.tsv
-    """
-
-}
-
 process REMOVE_PROCESSED {
 
     container 'community.wave.seqera.io/library/duckdb:1.4.1--3daff581f117ee85'
@@ -39,7 +18,6 @@ process REMOVE_PROCESSED {
     """
 
 }
-
 
 process SAVE {
 

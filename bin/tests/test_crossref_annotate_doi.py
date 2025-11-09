@@ -302,7 +302,7 @@ class TestFetchMetadata:
             {
                 "title": "Test Article 1",
                 "url": "https://example.com/article1",
-                "journal_name": "Nature",
+                "journal": "Nature",
                 "date": "2024-01-01",
                 "access_date": "2024-01-15",
                 "raw_contents": "Content 1",

@@ -103,13 +103,13 @@ class TestArticle:
         """Test creating an Article with minimal required fields"""
         article = Article(
             url="https://example.com/article",
-            journal_name="Nature",
+            journal="Nature",
             date=date(2024, 1, 15),
             access_date=date(2024, 1, 20),
             raw_contents="Article text content",
         )
         assert str(article.url) == "https://example.com/article"
-        assert article.journal_name == "Nature"
+        assert article.journal == "Nature"
         assert article.date == date(2024, 1, 15)
         assert article.access_date == date(2024, 1, 20)
         assert article.raw_contents == "Article text content"
@@ -126,7 +126,7 @@ class TestArticle:
             summary="Article summary",
             doi="10.1234/test",
             url="https://example.com/article",
-            journal_name="Nature",
+            journal="Nature",
             journal_short_name="Nat.",
             volume=123,
             issue=4,
@@ -158,7 +158,7 @@ class TestArticle:
         article = Article(
             url="https://example.com/article",
             authors=authors,
-            journal_name="Science",
+            journal="Science",
             date=date(2024, 1, 15),
             access_date=date(2024, 1, 20),
             raw_contents="Content",
@@ -173,7 +173,7 @@ class TestArticle:
         """Test that optional fields default to None"""
         article = Article(
             url="https://example.com/article",
-            journal_name="Journal",
+            journal="Journal",
             date=date(2024, 1, 15),
             access_date=date(2024, 1, 20),
             raw_contents="Content",
@@ -194,15 +194,15 @@ class TestArticle:
         """Test that Article requires url"""
         with pytest.raises(ValidationError) as exc_info:
             Article(
-                journal_name="Journal",
+                journal="Journal",
                 date=date(2024, 1, 15),
                 access_date=date(2024, 1, 20),
                 raw_contents="Content",
             )
         assert "url" in str(exc_info.value).lower()
 
-    def test_article_requires_journal_name(self):
-        """Test that Article requires journal_name"""
+    def test_article_requires_journal(self):
+        """Test that Article requires journal"""
         with pytest.raises(ValidationError) as exc_info:
             Article(
                 url="https://example.com/article",
@@ -210,14 +210,14 @@ class TestArticle:
                 access_date=date(2024, 1, 20),
                 raw_contents="Content",
             )
-        assert "journal_name" in str(exc_info.value).lower()
+        assert "journal" in str(exc_info.value).lower()
 
     def test_article_requires_date(self):
         """Test that Article requires date"""
         with pytest.raises(ValidationError) as exc_info:
             Article(
                 url="https://example.com/article",
-                journal_name="Journal",
+                journal="Journal",
                 access_date=date(2024, 1, 20),
                 raw_contents="Content",
             )
@@ -228,7 +228,7 @@ class TestArticle:
         with pytest.raises(ValidationError) as exc_info:
             Article(
                 url="https://example.com/article",
-                journal_name="Journal",
+                journal="Journal",
                 date=date(2024, 1, 15),
                 raw_contents="Content",
             )
@@ -239,7 +239,7 @@ class TestArticle:
         with pytest.raises(ValidationError) as exc_info:
             Article(
                 url="https://example.com/article",
-                journal_name="Journal",
+                journal="Journal",
                 date=date(2024, 1, 15),
                 access_date=date(2024, 1, 20),
             )
@@ -250,7 +250,7 @@ class TestArticle:
         with pytest.raises(ValidationError) as exc_info:
             Article(
                 url="not-a-valid-url",
-                journal_name="Journal",
+                journal="Journal",
                 date=date(2024, 1, 15),
                 access_date=date(2024, 1, 20),
                 raw_contents="Content",
@@ -464,7 +464,7 @@ class TestPprint:
         """Test pprint excludes None values by default"""
         article = Article(
             url="https://example.com/article",
-            journal_name="Journal",
+            journal="Journal",
             date=date(2024, 1, 15),
             access_date=date(2024, 1, 20),
             raw_contents="Content",
@@ -480,7 +480,7 @@ class TestPprint:
         """Test pprint includes None values when exclude_none=False"""
         article = Article(
             url="https://example.com/article",
-            journal_name="Journal",
+            journal="Journal",
             date=date(2024, 1, 15),
             access_date=date(2024, 1, 20),
             raw_contents="Content",
@@ -843,14 +843,14 @@ class TestArticleList:
         json_data = """[
             {
                 "url": "https://example.com/article1",
-                "journal_name": "Nature",
+                "journal": "Nature",
                 "date": "2024-01-15",
                 "access_date": "2024-01-20",
                 "raw_contents": "Content 1"
             },
             {
                 "url": "https://example.com/article2",
-                "journal_name": "Science",
+                "journal": "Science",
                 "date": "2024-02-10",
                 "access_date": "2024-02-15",
                 "raw_contents": "Content 2"
@@ -858,15 +858,15 @@ class TestArticleList:
         ]"""
         articles = ArticleList.validate_json(json_data)
         assert len(articles) == 2
-        assert articles[0].journal_name == "Nature"
-        assert articles[1].journal_name == "Science"
+        assert articles[0].journal == "Nature"
+        assert articles[1].journal == "Science"
 
     def test_article_list_dump_json(self):
         """Test dumping a list of articles to JSON"""
         articles = [
             Article(
                 url="https://example.com/article",
-                journal_name="Nature",
+                journal="Nature",
                 date=date(2024, 1, 15),
                 access_date=date(2024, 1, 20),
                 raw_contents="Content",
@@ -876,14 +876,14 @@ class TestArticleList:
         json_str = json_bytes.decode()
         parsed = json.loads(json_str)
         assert len(parsed) == 1
-        assert parsed[0]["journal_name"] == "Nature"
+        assert parsed[0]["journal"] == "Nature"
 
     def test_article_list_validates_items(self):
         """Test that ArticleList validates individual items"""
         invalid_json = """[
             {
                 "url": "not-a-url",
-                "journal_name": "Nature",
+                "journal": "Nature",
                 "date": "2024-01-15",
                 "access_date": "2024-01-20",
                 "raw_contents": "Content"

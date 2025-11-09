@@ -1,6 +1,6 @@
 process FETCH_ARTICLES {
 
-    container 'community.wave.seqera.io/library/pip_feedparser_pydantic_python-dateutil:e334b7c08b3cb424'
+    container 'community.wave.seqera.io/library/pip_feedparser_pgvector_python-dateutil_sqlmodel:393d59579a7a91cf'
     tag { JOURNAL_NAME }
 
     input:

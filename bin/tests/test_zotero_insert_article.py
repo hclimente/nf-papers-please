@@ -130,7 +130,7 @@ class TestCreateZoteroArticle:
         return Article(
             title="Test Article",
             url="https://example.com/article",
-            journal_name="Nature",
+            journal="Nature",
             date=date(2025, 10, 15),
             access_date=date(2025, 10, 31),
             raw_contents="Raw content",
@@ -148,7 +148,7 @@ class TestCreateZoteroArticle:
             summary="This is a test summary",
             doi="10.1234/test",
             url="https://example.com/article",
-            journal_name="Nature",
+            journal="Nature",
             journal_short_name="Nat.",
             volume=123,
             issue=4,
@@ -247,7 +247,7 @@ class TestCreateZoteroNote:
         return Article(
             title="Test Article",
             url="https://example.com/article",
-            journal_name="Nature",
+            journal="Nature",
             date=date(2025, 10, 15),
             access_date=date(2025, 10, 31),
             raw_contents="Raw content",
@@ -450,7 +450,7 @@ class TestInsertArticle:
             {
                 "title": "Test Article 1",
                 "url": "https://example.com/article1",
-                "journal_name": "Nature",
+                "journal": "Nature",
                 "date": "2025-10-15",
                 "access_date": "2025-10-31",
                 "raw_contents": "Content 1",
@@ -461,7 +461,7 @@ class TestInsertArticle:
             {
                 "title": "Test Article 2",
                 "url": "https://example.com/article2",
-                "journal_name": "Science",
+                "journal": "Science",
                 "date": "2025-10-20",
                 "access_date": "2025-10-31",
                 "raw_contents": "Content 2",
@@ -571,7 +571,7 @@ class TestInsertArticle:
                 {
                     "title": f"Article {i}",
                     "url": f"https://example.com/article{i}",
-                    "journal_name": "Nature",
+                    "journal": "Nature",
                     "date": "2025-10-15",
                     "access_date": "2025-10-31",
                     "raw_contents": f"Content {i}",

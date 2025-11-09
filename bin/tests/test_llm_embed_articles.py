@@ -12,8 +12,9 @@ import pytest
 # Add the parent directory to the path so we can import the module
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from llm_embed_articles import prepare_text_to_embed, llm_process_articles
+from llm_embed_articles import llm_process_articles
 from common.models import Article, Author
+from common.utils import article_to_text
 
 
 class TestPrepareTextToEmbed:
@@ -25,7 +26,7 @@ class TestPrepareTextToEmbed:
         return Article(
             title="Test Article Title",
             url="https://example.com/article",
-            journal_name="Test Journal",
+            journal="Test Journal",
             date=date(2024, 1, 1),
             access_date=date(2024, 1, 15),
             raw_contents="Raw content",
@@ -39,7 +40,7 @@ class TestPrepareTextToEmbed:
 
     def test_prepare_text_with_all_fields(self, basic_article):
         """Test preparing text with all fields populated"""
-        result = prepare_text_to_embed(basic_article)
+        result = article_to_text(basic_article)
 
         assert "Title: Test Article Title" in result
         assert "Journal: Test Journal" in result
@@ -55,7 +56,7 @@ class TestPrepareTextToEmbed:
         article = Article(
             title="No Author Article",
             url="https://example.com/article",
-            journal_name="Test Journal",
+            journal="Test Journal",
             date=date(2024, 1, 1),
             access_date=date(2024, 1, 15),
             raw_contents="Raw content",
@@ -63,7 +64,7 @@ class TestPrepareTextToEmbed:
             authors=None,
         )
 
-        result = prepare_text_to_embed(article)
+        result = article_to_text(article)
 
         assert "First Author: N/A" in result
         assert "Last Author: N/A" in result
@@ -73,7 +74,7 @@ class TestPrepareTextToEmbed:
         article = Article(
             title="Empty Authors Article",
             url="https://example.com/article",
-            journal_name="Test Journal",
+            journal="Test Journal",
             date=date(2024, 1, 1),
             access_date=date(2024, 1, 15),
             raw_contents="Raw content",
@@ -81,7 +82,7 @@ class TestPrepareTextToEmbed:
             authors=[],
         )
 
-        result = prepare_text_to_embed(article)
+        result = article_to_text(article)
 
         assert "First Author: N/A" in result
         assert "Last Author: N/A" in result
@@ -91,7 +92,7 @@ class TestPrepareTextToEmbed:
         article = Article(
             title="No Tags Article",
             url="https://example.com/article",
-            journal_name="Test Journal",
+            journal="Test Journal",
             date=date(2024, 1, 1),
             access_date=date(2024, 1, 15),
             raw_contents="Raw content",
@@ -100,7 +101,7 @@ class TestPrepareTextToEmbed:
             tags=None,
         )
 
-        result = prepare_text_to_embed(article)
+        result = article_to_text(article)
 
         assert "Tags: N/A" in result
 
@@ -109,7 +110,7 @@ class TestPrepareTextToEmbed:
         article = Article(
             title="Empty Tags Article",
             url="https://example.com/article",
-            journal_name="Test Journal",
+            journal="Test Journal",
             date=date(2024, 1, 1),
             access_date=date(2024, 1, 15),
             raw_contents="Raw content",
@@ -118,7 +119,7 @@ class TestPrepareTextToEmbed:
             tags=[],
         )
 
-        result = prepare_text_to_embed(article)
+        result = article_to_text(article)
 
         assert "Tags: N/A" in result
 
@@ -127,7 +128,7 @@ class TestPrepareTextToEmbed:
         article = Article(
             title="Single Author Article",
             url="https://example.com/article",
-            journal_name="Test Journal",
+            journal="Test Journal",
             date=date(2024, 1, 1),
             access_date=date(2024, 1, 15),
             raw_contents="Raw content",
@@ -135,7 +136,7 @@ class TestPrepareTextToEmbed:
             authors=[Author(first_name="John", last_name="Doe")],
         )
 
-        result = prepare_text_to_embed(article)
+        result = article_to_text(article)
 
         # First and last author should be the same
         assert "First Author:" in result
@@ -147,7 +148,7 @@ class TestPrepareTextToEmbed:
         article = Article(
             title="Institutional Author Article",
             url="https://example.com/article",
-            journal_name="Test Journal",
+            journal="Test Journal",
             date=date(2024, 1, 1),
             access_date=date(2024, 1, 15),
             raw_contents="Raw content",
@@ -158,7 +159,7 @@ class TestPrepareTextToEmbed:
             ],
         )
 
-        result = prepare_text_to_embed(article)
+        result = article_to_text(article)
 
         assert "Title: Institutional Author Article" in result
         # The institutional author should be formatted somehow
@@ -171,7 +172,7 @@ class TestPrepareTextToEmbed:
         article = Article(
             title="Long Summary Article",
             url="https://example.com/article",
-            journal_name="Test Journal",
+            journal="Test Journal",
             date=date(2024, 1, 1),
             access_date=date(2024, 1, 15),
             raw_contents="Raw content",
@@ -179,7 +180,7 @@ class TestPrepareTextToEmbed:
             authors=[Author(first_name="John", last_name="Doe")],
         )
 
-        result = prepare_text_to_embed(article)
+        result = article_to_text(article)
 
         assert long_summary in result
 
@@ -188,7 +189,7 @@ class TestPrepareTextToEmbed:
         article = Article(
             title="Special Characters: Test & Symbols",
             url="https://example.com/article",
-            journal_name="Test Journal™",
+            journal="Test Journal™",
             date=date(2024, 1, 1),
             access_date=date(2024, 1, 15),
             raw_contents="Raw content",
@@ -197,7 +198,7 @@ class TestPrepareTextToEmbed:
             tags=["tag-1", "tag_2", "tag.3"],
         )
 
-        result = prepare_text_to_embed(article)
+        result = article_to_text(article)
 
         assert "Special Characters: Test & Symbols" in result
         assert "Test Journal™" in result
@@ -208,7 +209,7 @@ class TestPrepareTextToEmbed:
         article = Article(
             title="Many Tags Article",
             url="https://example.com/article",
-            journal_name="Test Journal",
+            journal="Test Journal",
             date=date(2024, 1, 1),
             access_date=date(2024, 1, 15),
             raw_contents="Raw content",
@@ -217,18 +218,18 @@ class TestPrepareTextToEmbed:
             tags=["tag1", "tag2", "tag3", "tag4", "tag5", "tag6"],
         )
 
-        result = prepare_text_to_embed(article)
+        result = article_to_text(article)
 
         assert "tag1, tag2, tag3, tag4, tag5, tag6" in result
 
     def test_prepare_text_returns_string(self, basic_article):
         """Test that prepare_text_to_embed returns a string"""
-        result = prepare_text_to_embed(basic_article)
+        result = article_to_text(basic_article)
         assert isinstance(result, str)
 
     def test_prepare_text_not_empty(self, basic_article):
         """Test that prepared text is not empty"""
-        result = prepare_text_to_embed(basic_article)
+        result = article_to_text(basic_article)
         assert len(result) > 0
 
 
@@ -242,7 +243,7 @@ class TestLlmProcessArticles:
             Article(
                 title="Test Article 1",
                 url="https://example.com/article1",
-                journal_name="Test Journal",
+                journal="Test Journal",
                 date=date(2024, 1, 1),
                 access_date=date(2024, 1, 15),
                 raw_contents="Content 1",
@@ -253,7 +254,7 @@ class TestLlmProcessArticles:
             Article(
                 title="Test Article 2",
                 url="https://example.com/article2",
-                journal_name="Test Journal",
+                journal="Test Journal",
                 date=date(2024, 1, 2),
                 access_date=date(2024, 1, 15),
                 raw_contents="Content 2",
@@ -628,7 +629,7 @@ class TestLlmProcessArticles:
             Article(
                 title="Single Article",
                 url="https://example.com/article",
-                journal_name="Test Journal",
+                journal="Test Journal",
                 date=date(2024, 1, 1),
                 access_date=date(2024, 1, 15),
                 raw_contents="Content",

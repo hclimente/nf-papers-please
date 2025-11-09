@@ -114,7 +114,7 @@ class TestFetchRssFeed:
         # Should return 1 article (one is too old, one has no date)
         assert len(articles) == 1
         assert isinstance(articles[0], Article)
-        assert articles[0].journal_name == "BBC News"
+        assert articles[0].journal == "BBC News"
         assert str(articles[0].url) == mock_feed_entry.link
         assert articles[0].date == date(2025, 10, 25)
 
@@ -296,7 +296,7 @@ class TestFetchRssFeed:
 
         # Check required fields
         assert isinstance(article, Article)
-        assert article.journal_name == "BBC News"
+        assert article.journal == "BBC News"
         assert article.url is not None
         assert article.date is not None
         assert hasattr(article, "raw_contents")

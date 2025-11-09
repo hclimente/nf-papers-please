@@ -105,11 +105,12 @@ class Article(ArticleBase):
     the type to a column type, so we define it separately.
     """
 
-    journal_name: str
+    journal: str
     journal_short_name: str | None = None
     authors: list["Author"] | None = None
     tags: List[str] | None = None
     embedding: List[float] | None = None
+    nearest_neighbors: list[str] | None = None
 
 
 ArticleList = TypeAdapter(list[Article])
@@ -160,6 +161,9 @@ class Tag(SQLModel, table=True):
     articles: List["ArticleTable"] = Relationship(
         back_populates="tags", link_model=ArticleTagLink
     )
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class JournalTable(SQLModel, table=True):

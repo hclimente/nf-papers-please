@@ -1,27 +1,3 @@
-process FETCH_JOURNALS {
-
-    container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
-    secret 'PGPASSWORD'
-
-    input:
-    val USER
-    val HOST
-
-    output:
-    path "journals.tsv"
-
-    script:
-    """
-    db_extract_fields.py pg \
---user "${USER}" \
---host "${HOST}" \
---table sources \
---columns "name, feed_url, last_checked" \
---out journals.tsv
-    """
-
-}
-
 process REMOVE_PROCESSED {
 
     container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
@@ -111,13 +87,10 @@ process FETCH_NEAREST_NEIGHBORS {
 
     script:
     """
-    db_extract_fields.py pg \
+    db_find_nearest_neighbors.py pg \
 --articles_json ${ARTICLES_JSON} \
 --user "${USER}" \
 --host "${HOST}" \
---table articles \
---columns doi \
---clause "ORDER BY embedding <-> '{embedding}' LIMIT 5" \
 --out knn.json
     """
 

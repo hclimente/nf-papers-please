@@ -17,7 +17,7 @@ class TestInsertArticle:
         """Test that a single article is inserted."""
         from db_insert_article import insert_article
 
-        mock_read_text.return_value = '[{"title": "Test Article", "summary": "Test summary", "url": "https://example.com", "journal_name": "Nature", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test contents", "doi": "10.1234/test", "tags": ["test"], "reasoning": "test reason"}]'
+        mock_read_text.return_value = '[{"title": "Test Article", "summary": "Test summary", "url": "https://example.com", "journal": "Nature", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test contents", "doi": "10.1234/test", "tags": ["test"], "reasoning": "test reason"}]'
 
         mock_engine = MagicMock()
         _ = MagicMock()
@@ -43,7 +43,7 @@ class TestInsertArticle:
         """Test that multiple articles are inserted."""
         from db_insert_article import insert_article
 
-        mock_read_text.return_value = '[{"title": "Article 1", "summary": "Summary 1", "url": "https://example1.com", "journal_name": "Nature", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "contents1", "doi": "10.1234/test1", "tags": ["test"], "reasoning": "reason1"}, {"title": "Article 2", "summary": "Summary 2", "url": "https://example2.com", "journal_name": "Science", "date": "2025-01-02", "access_date": "2025-11-09", "raw_contents": "contents2", "doi": "10.1234/test2", "tags": ["test"], "reasoning": "reason2"}]'
+        mock_read_text.return_value = '[{"title": "Article 1", "summary": "Summary 1", "url": "https://example1.com", "journal": "Nature", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "contents1", "doi": "10.1234/test1", "tags": ["test"], "reasoning": "reason1"}, {"title": "Article 2", "summary": "Summary 2", "url": "https://example2.com", "journal": "Science", "date": "2025-01-02", "access_date": "2025-11-09", "raw_contents": "contents2", "doi": "10.1234/test2", "tags": ["test"], "reasoning": "reason2"}]'
 
         mock_engine = MagicMock()
         mock_create_engine.return_value = mock_engine
@@ -67,7 +67,7 @@ class TestInsertArticle:
         """Test that null fields are handled correctly."""
         from db_insert_article import insert_article
 
-        mock_read_text.return_value = '[{"title": "Test", "summary": "Summary", "url": "https://example.com", "journal_name": "Nature", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test contents", "doi": null, "tags": null, "reasoning": null}]'
+        mock_read_text.return_value = '[{"title": "Test", "summary": "Summary", "url": "https://example.com", "journal": "Nature", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test contents", "doi": null, "tags": null, "reasoning": null}]'
 
         mock_engine = MagicMock()
         mock_create_engine.return_value = mock_engine
@@ -90,7 +90,7 @@ class TestInsertArticle:
         """Test that errors are raised properly."""
         from db_insert_article import insert_article
 
-        mock_read_text.return_value = '[{"title": "Test", "summary": "Summary", "url": "https://example.com", "journal_name": "Nature", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test contents", "doi": "10.1234/test", "tags": ["test"], "reasoning": "reason"}]'
+        mock_read_text.return_value = '[{"title": "Test", "summary": "Summary", "url": "https://example.com", "journal": "Nature", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test contents", "doi": "10.1234/test", "tags": ["test"], "reasoning": "reason"}]'
 
         mock_engine = MagicMock()
         mock_create_engine.return_value = mock_engine
@@ -112,7 +112,7 @@ class TestInsertArticle:
         """Test that articles with authors and tags are inserted correctly."""
         from db_insert_article import insert_article
 
-        mock_read_text.return_value = '[{"title": "Test", "summary": "Summary", "url": "https://example.com", "journal_name": "Nature", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test contents", "doi": "10.1234/test", "authors": [{"first_name": "John", "last_name": "Doe"}], "tags": ["genetics", "research"], "reasoning": "reason"}]'
+        mock_read_text.return_value = '[{"title": "Test", "summary": "Summary", "url": "https://example.com", "journal": "Nature", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test contents", "doi": "10.1234/test", "authors": [{"first_name": "John", "last_name": "Doe"}], "tags": ["genetics", "research"], "reasoning": "reason"}]'
 
         mock_engine = MagicMock()
         mock_create_engine.return_value = mock_engine
@@ -246,7 +246,7 @@ class TestConvertArticleToTable:
             title="Test",
             summary="Summary",
             url="https://example.com",
-            journal_name="Nature",
+            journal="Nature",
             journal_short_name="Nat",
             date="2025-01-01",
             access_date="2025-11-09",
@@ -278,7 +278,7 @@ class TestConvertArticleToTable:
             title="Test",
             summary="Summary",
             url="https://example.com",
-            journal_name="Nature",
+            journal="Nature",
             date="2025-01-01",
             access_date="2025-11-09",
             raw_contents="test contents",

@@ -68,13 +68,13 @@ class TestUpdateFieldDuckDB:
         update_field(
             table="articles",
             set_clause="tags = 'biology'",
-            where_clause="date > '2025-01-01' AND journal_name = 'Nature'",
+            where_clause="date > '2025-01-01' AND journal = 'Nature'",
             db_type="duckdb",
             db_path="test.duckdb",
         )
 
         query = mock_conn.execute.call_args[0][0]
-        assert "WHERE date > '2025-01-01' AND journal_name = 'Nature'" in query
+        assert "WHERE date > '2025-01-01' AND journal = 'Nature'" in query
 
 
 class TestUpdateFieldPostgreSQL:
@@ -175,10 +175,10 @@ class TestUpdateFieldPostgreSQL:
         update_field(
             table="articles",
             set_clause="tags = 'biology'",
-            where_clause="date > '2025-01-01' AND journal_name = 'Nature'",
+            where_clause="date > '2025-01-01' AND journal = 'Nature'",
             db_type="pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
         query = mock_cursor.execute.call_args[0][0]
-        assert "WHERE date > '2025-01-01' AND journal_name = 'Nature'" in query
+        assert "WHERE date > '2025-01-01' AND journal = 'Nature'" in query

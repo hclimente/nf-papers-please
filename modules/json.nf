@@ -42,7 +42,7 @@ def filterAndBatch(channel, batch_size, key, value) {
 
 process VALIDATE {
 
-    container "community.wave.seqera.io/library/pip_pydantic:1317fe30f73a8cef"
+    container "community.wave.seqera.io/library/pip_pgvector_sqlmodel:20246ca7cb091f43"
 
     input:
     path ARTICLES_JSON

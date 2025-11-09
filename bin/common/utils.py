@@ -1,6 +1,8 @@
 import logging
 import os
 
+from .models import Article, ArticleTable
+
 
 def get_common_variations(expected_values: list):
     """
@@ -53,3 +55,23 @@ def get_env_variable(var_name: str, raise_error: bool = False) -> str:
         if raise_error:
             raise ValueError(error_msg)
     return value
+
+
+def article_to_text(article: Article | ArticleTable) -> str:
+    """
+    Prepare the text representation of an article for embedding.
+
+    Args:
+        article: The article object.
+
+    Returns:
+        str: The text representation of the article.
+    """
+    return f"""
+Title: {article.title}
+Journal: {article.journal if isinstance(article, Article) else article.journal}
+First Author: {article.authors[0] if article.authors else "N/A"}
+Last Author: {article.authors[-1] if article.authors else "N/A"}
+Summary: {article.summary}
+Tags: {", ".join(str(tag) for tag in article.tags) if article.tags else "N/A"}
+"""

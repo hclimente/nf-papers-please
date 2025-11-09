@@ -16,7 +16,7 @@ class TestRemoveProcessedArticles:
         """Test that temporary table is created."""
         from db_remove_processed import remove_processed_articles
 
-        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Nature"}, {"url": "https://example2.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Science"}]'
+        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}, {"url": "https://example2.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Science"}]'
 
         mock_engine = MagicMock()
         mock_create_engine.return_value = mock_engine
@@ -53,7 +53,7 @@ class TestRemoveProcessedArticles:
         """Test that URLs are inserted into temporary table."""
         from db_remove_processed import remove_processed_articles
 
-        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Nature"}, {"url": "https://example2.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Science"}]'
+        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}, {"url": "https://example2.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Science"}]'
 
         mock_engine = MagicMock()
         mock_create_engine.return_value = mock_engine
@@ -85,7 +85,7 @@ class TestRemoveProcessedArticles:
         """Test that unprocessed articles are written to output file."""
         from db_remove_processed import remove_processed_articles
 
-        mock_read_text.return_value = '[{"url": "https://example1.com", "title": "Article 1", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Nature"}, {"url": "https://example2.com", "title": "Article 2", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Science"}]'
+        mock_read_text.return_value = '[{"url": "https://example1.com", "title": "Article 1", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}, {"url": "https://example2.com", "title": "Article 2", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Science"}]'
 
         mock_engine = MagicMock()
         mock_create_engine.return_value = mock_engine
@@ -121,7 +121,7 @@ class TestRemoveProcessedArticles:
         """Test that articles are filtered correctly based on database results."""
         from db_remove_processed import remove_processed_articles
 
-        mock_read_text.return_value = '[{"url": "https://example1.com", "title": "Article 1", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Nature"}, {"url": "https://example2.com", "title": "Article 2", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Science"}, {"url": "https://example3.com", "title": "Article 3", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Cell"}]'
+        mock_read_text.return_value = '[{"url": "https://example1.com", "title": "Article 1", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}, {"url": "https://example2.com", "title": "Article 2", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Science"}, {"url": "https://example3.com", "title": "Article 3", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Cell"}]'
 
         mock_engine = MagicMock()
         mock_create_engine.return_value = mock_engine
@@ -162,7 +162,7 @@ class TestRemoveProcessedArticles:
         """Test that transaction is committed."""
         from db_remove_processed import remove_processed_articles
 
-        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Nature"}]'
+        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}]'
 
         mock_engine = MagicMock()
         mock_create_engine.return_value = mock_engine
@@ -193,7 +193,7 @@ class TestRemoveProcessedArticles:
         """Test that temporary table is dropped after processing."""
         from db_remove_processed import remove_processed_articles
 
-        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal_name": "Nature"}]'
+        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}]'
 
         mock_engine = MagicMock()
         mock_create_engine.return_value = mock_engine

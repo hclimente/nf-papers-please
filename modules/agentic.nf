@@ -65,7 +65,7 @@ tagging \
 
 process SCORE {
 
-    container 'community.wave.seqera.io/library/pip_pyyaml_pydantic:4cafb834b00f8d86'
+    container 'community.wave.seqera.io/library/pip_feedparser_pgvector_python-dateutil_sqlmodel:393d59579a7a91cf'
 
     input:
     path ARTICLES_JSON

@@ -106,12 +106,21 @@ def convert_article_to_table(article, session: Session) -> ArticleTable:
     """
     # Convert Article to ArticleTable
     article_table = ArticleTable(
-        **article.model_dump(exclude={"authors", "tags", "embedding"})
+        **article.model_dump(
+            exclude={
+                "authors",
+                "tags",
+                "embedding",
+                "journal",
+                "journal_short_name",
+                "nearest_neighbors",
+            }
+        )
     )
 
-    if article.journal_name:
+    if article.journal:
         article_table.journal = get_or_create_journal(
-            session, article.journal_name, article.journal_short_name
+            session, article.journal, article.journal_short_name
         )
 
     if article.authors:
