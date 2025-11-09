@@ -8,7 +8,6 @@ from sqlmodel import Session, create_engine
 from common.models import ArticleList
 from common.parsers import (
     add_input_articles_json_argument,
-    add_duckdb_arguments,
     add_postgresql_arguments,
 )
 from common.db import (
@@ -19,8 +18,6 @@ from common.db import (
 
 def insert_article(
     articles_json: str,
-    db_type: str,
-    db_path: str = None,
     connection_string: str = None,
 ) -> None:
     """
@@ -59,12 +56,6 @@ if __name__ == "__main__":
         dest="db_type", required=True, help="Database backend to use"
     )
 
-    duckdb_parser = subparsers.add_parser(
-        "duckdb", help="Use DuckDB as the database backend"
-    )
-    duckdb_parser = add_duckdb_arguments(duckdb_parser)
-    duckdb_parser = add_input_articles_json_argument(duckdb_parser)
-
     pg_parser = subparsers.add_parser(
         "pg", help="Use PostgreSQL as the database backend"
     )
@@ -73,14 +64,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Build connection string for PostgreSQL
-    db_path = None
     connection_string = build_connection_string(args.user, args.host)
     setup_db(connection_string)
 
     insert_article(
         articles_json=args.articles_json,
-        db_type=args.db_type,
-        db_path=db_path,
         connection_string=connection_string,
     )

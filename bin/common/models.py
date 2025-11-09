@@ -1,9 +1,8 @@
-from __future__ import annotations
 from datetime import date
 import re
 from typing import List
 
-from sqlmodel import Column, Field, JSON, SQLModel
+from sqlmodel import Column, Field, SQLModel, Relationship
 
 from pgvector.sqlalchemy import Vector
 from pydantic import (
@@ -14,34 +13,30 @@ from pydantic import (
 )
 
 
-class Author(BaseModel):
-    """Model representing an author of a scientific article."""
+class ArticleAuthorLink(SQLModel, table=True):
+    """Link table for many-to-many relationship between ArticleTable and Authors."""
 
-    first_name: str
-    last_name: str
+    __tablename__ = "article_author_link"
 
-    def __str__(self) -> str:
-        return f"{self.first_name} {self.last_name}"
-
-
-class InstitutionalAuthor(BaseModel):
-    """Model representing an institutional author of a scientific article."""
-
-    name: str
-
-    def __str__(self) -> str:
-        return self.name
+    article_id: int = Field(default=None, foreign_key="articles.id", primary_key=True)
+    author_id: int = Field(default=None, foreign_key="authors.id", primary_key=True)
 
 
-class Article(SQLModel, table=True):
+class ArticleTagLink(SQLModel, table=True):
+    """Link table for many-to-many relationship between ArticleTable and Tags."""
+
+    __tablename__ = "article_tag_link"
+
+    article_id: int = Field(default=None, foreign_key="articles.id", primary_key=True)
+    tag_id: int = Field(default=None, foreign_key="tags.id", primary_key=True)
+
+
+class ArticleBase(SQLModel):
     """Model representing a scientific article with metadata and processing results."""
 
     # Core metadata fields
-    doi: str | None = Field(primary_key=True)
+    doi: str | None = None
     title: str | None = None
-    authors: list[Author | InstitutionalAuthor] | None = Field(
-        default=None, sa_column=Column(JSON)
-    )
     summary: str | None = None
     url: str
 
@@ -56,10 +51,8 @@ class Article(SQLModel, table=True):
     language: str | None = None
 
     # LLM results
-    tags: str | None = None
     reasoning: str | None = None
     score: int | None = None
-    embedding: List[float] = Field(sa_column=Column(Vector(3072)))
 
     # Raw and integration data
     access_date: date
@@ -75,7 +68,85 @@ class Article(SQLModel, table=True):
         return v
 
 
+class ArticleTable(ArticleBase, table=True):
+    """
+    SQLModel for database representation of an article.
+    """
+
+    __tablename__ = "articles"
+
+    id: int | None = Field(default=None, primary_key=True)
+    authors: List["AuthorTable"] = Relationship(
+        back_populates="articles", link_model=ArticleAuthorLink
+    )
+    tags: List["Tag"] = Relationship(
+        back_populates="articles", link_model=ArticleTagLink
+    )
+    embedding: List[float] = Field(sa_column=Column(Vector(3072)))
+
+
+class Article(ArticleBase):
+    """
+    Pydantic model for in-memory representation of an article.
+
+    Adding a list["AuthorBase"] to represent authors to ArticleBase caused
+    issues when ArticleBase was inherited by ArticleSQL and it couldn't map
+    the type to a column type, so we define it separately.
+    """
+
+    authors: list["AuthorBase"] | None = None
+    tags: List[str] | None = None
+    embedding: List[float] | None = None
+
+
 ArticleList = TypeAdapter(list[Article])
+
+
+class AuthorBase(SQLModel):
+    """
+    Database model representing an author (individual or institutional).
+
+    For individual authors: first_name and last_name are both provided.
+    For institutional authors: only last_name is provided (first_name is None).
+    """
+
+    first_name: str | None = None
+    last_name: str
+
+    def __str__(self) -> str:
+        if self.first_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.last_name
+
+    @property
+    def is_institutional(self) -> bool:
+        """Check if this is an institutional author."""
+        return self.first_name is None
+
+
+class AuthorTable(AuthorBase, table=True):
+    """
+    Database model representing an author (individual or institutional).
+    """
+
+    __tablename__ = "authors"
+
+    id: int | None = Field(default=None, primary_key=True)
+    articles: List["ArticleTable"] = Relationship(
+        back_populates="authors", link_model=ArticleAuthorLink
+    )
+
+
+class Tag(SQLModel, table=True):
+    """Model representing a tag for articles."""
+
+    __tablename__ = "tags"
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    articles: List["ArticleTable"] = Relationship(
+        back_populates="tags", link_model=ArticleTagLink
+    )
 
 
 class MetadataResponse(BaseModel):

@@ -3,7 +3,6 @@ import argparse
 import logging
 
 from common.parsers import (
-    add_duckdb_arguments,
     add_postgresql_arguments,
 )
 from common.db import (
@@ -41,32 +40,6 @@ def add_common_db_arguments(parser: argparse.ArgumentParser) -> argparse.Argumen
         help="Clause specifying the update (e.g., `field_name = 'value'`).",
     )
     return parser
-
-
-def get_update_field_sql(
-    table: str, field: str, condition_field: str, db_type: str = "duckdb"
-) -> str:
-    """
-    Get SQL template for updating a field.
-
-    Note: This is a legacy function that uses string formatting.
-    For production use, consider using parameterized queries.
-
-    Args:
-        table: Table name
-        field: Field to update
-        condition_field: Field to use in WHERE clause
-        db_type: Either 'duckdb' or 'postgresql'
-
-    Returns:
-        SQL UPDATE statement with appropriate placeholder style
-    """
-    placeholder = "?" if db_type == "duckdb" else "%s"
-    return f"""
-        UPDATE {table}
-        SET {field} = {placeholder}
-        WHERE {condition_field} = {placeholder}
-    """
 
 
 def update_field(
@@ -141,12 +114,6 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(
         dest="db_type", required=True, help="Database backend to use"
     )
-
-    duckdb_parser = subparsers.add_parser(
-        "duckdb", help="Use DuckDB as the database backend"
-    )
-    duckdb_parser = add_duckdb_arguments(duckdb_parser)
-    duckdb_parser = add_common_db_arguments(duckdb_parser)
 
     pg_parser = subparsers.add_parser(
         "pg", help="Use PostgreSQL as the database backend"

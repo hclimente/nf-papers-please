@@ -9,7 +9,6 @@ from common.models import (
     Article,
     ArticleList,
     Author,
-    InstitutionalAuthor,
 )
 from common.parsers import (
     add_input_articles_json_argument,
@@ -18,11 +17,11 @@ from common.parsers import (
 from common.utils import get_env_variable
 
 
-def add_creators(authors: list | None) -> list:
+def add_creators(authors: list[Author] | None) -> list:
     """
-    Convert a list of Author or InstitutionalAuthor objects into Zotero creator format.
+    Convert a list of Author objects into Zotero creator format.
     Args:
-        authors (list | None): List of Author or InstitutionalAuthor objects.
+        authors (list | None): List of Author objects.
         Returns:
         list: List of creators in Zotero format.
     """
@@ -32,14 +31,14 @@ def add_creators(authors: list | None) -> list:
 
     creators = []
     for author in authors:
-        if isinstance(author, InstitutionalAuthor):
+        if author.is_institutional:
             creators.append(
                 {
                     "creatorType": "author",
-                    "name": author.name,
+                    "name": author.last_name,
                 }
             )
-        elif isinstance(author, Author):
+        else:
             creators.append(
                 {
                     "creatorType": "author",

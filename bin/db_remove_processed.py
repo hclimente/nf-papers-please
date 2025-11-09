@@ -3,7 +3,7 @@ import argparse
 import logging
 import pathlib
 
-from common.models import ArticleList, Article, pprint
+from common.models import ArticleList, ArticleTable, pprint
 from common.parsers import (
     add_input_articles_json_argument,
     add_postgresql_arguments,
@@ -46,7 +46,7 @@ def remove_processed_articles(
     articles = ArticleList.validate_json(json_string)
     logging.info(f"Loaded {len(articles)} articles from {articles_json}.")
 
-    article_table = Article.__table__
+    article_table = ArticleTable.__table__
 
     metadata = article_table.metadata
 
@@ -63,7 +63,7 @@ def remove_processed_articles(
     with Session(engine) as session:
         # This executes the CREATE TEMPORARY TABLE statement
         tmp_table.create(bind=session.bind, checkfirst=True)
-        print("Temporary table created in the current session.")
+        logging.info("Temporary table created in the current session.")
 
         # insert only the urls
         session.execute(
@@ -74,10 +74,10 @@ def remove_processed_articles(
 
         # left join to find unprocessed articles (those not in the article table)
         result = session.exec(
-            text("""
+            text(f"""
             SELECT a.url
             FROM tmp_articles a
-            LEFT JOIN article p
+            LEFT JOIN {ArticleTable.__tablename__} p
             ON a.url = p.url
             WHERE p.url IS NULL
             """)
