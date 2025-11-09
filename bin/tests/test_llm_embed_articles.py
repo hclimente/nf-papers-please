@@ -13,7 +13,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from llm_embed_articles import prepare_text_to_embed, llm_process_articles
-from common.models import Article, Author, InstitutionalAuthor
+from common.models import Article, Author
 
 
 class TestPrepareTextToEmbed:
@@ -153,7 +153,7 @@ class TestPrepareTextToEmbed:
             raw_contents="Raw content",
             summary="Summary with institutional author",
             authors=[
-                InstitutionalAuthor(name="World Health Organization"),
+                Author(last_name="World Health Organization"),
                 Author(first_name="John", last_name="Doe"),
             ],
         )

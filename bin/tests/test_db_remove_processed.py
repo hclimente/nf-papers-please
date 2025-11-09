@@ -2,11 +2,6 @@
 
 from unittest.mock import MagicMock, mock_open, patch
 
-from db_remove_processed import (
-    get_create_temp_articles_table_sql,
-    get_select_unprocessed_sql,
-)
-
 # Test connection string for PostgreSQL tests
 TEST_PG_CONN_STRING = "postgresql://user:pass@localhost/db"  # pragma: allowlist secret
 
@@ -260,32 +255,3 @@ class TestRemoveUnprocessedArticlesPostgreSQL:
 
         # Should not try to connect to database
         assert not mock_connect.called
-
-
-class TestGetSelectUnprocessedSql:
-    """Test get_select_unprocessed_sql function."""
-
-    def test_returns_left_join_query(self):
-        """Test returns LEFT JOIN query."""
-        sql = get_select_unprocessed_sql()
-        assert "SELECT a.url" in sql
-        assert "FROM tmp_articles a" in sql
-        assert "LEFT JOIN articles p" in sql
-        assert "ON a.url = p.url" in sql
-        assert "WHERE p.title IS NULL" in sql
-
-
-class TestGetCreateTempArticlesTableSql:
-    """Test get_create_temp_articles_table_sql function."""
-
-    def test_duckdb_uses_temporary(self):
-        """Test DuckDB uses TEMPORARY keyword."""
-        sql = get_create_temp_articles_table_sql(db_type="duckdb")
-        assert "CREATE TEMPORARY TABLE tmp_articles" in sql
-        assert "url TEXT" in sql
-
-    def test_postgresql_uses_temp(self):
-        """Test PostgreSQL uses TEMP keyword."""
-        sql = get_create_temp_articles_table_sql(db_type="pg")
-        assert "CREATE TEMP TABLE tmp_articles" in sql
-        assert "url TEXT" in sql

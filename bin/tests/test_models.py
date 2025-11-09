@@ -17,7 +17,7 @@ from common.models import (
     ArticleJournalLink,
     ArticleBase,
     ArticleTable,
-    AuthorBase,
+    Author,
     AuthorTable,
     Article,
     ArticleList,
@@ -30,11 +30,11 @@ from common.models import (
 
 
 class TestAuthor:
-    """Test suite for AuthorBase model"""
+    """Test suite for Author model"""
 
     def test_create_individual_author(self):
         """Test creating a valid individual author"""
-        author = AuthorBase(first_name="John", last_name="Doe")
+        author = Author(first_name="John", last_name="Doe")
         assert author.first_name == "John"
         assert author.last_name == "Doe"
         assert not author.is_institutional
@@ -42,16 +42,16 @@ class TestAuthor:
 
     def test_create_institutional_author(self):
         """Test creating an institutional author (first_name=None)"""
-        author = AuthorBase(last_name="University Research Lab")
+        author = Author(last_name="University Research Lab")
         assert author.first_name is None
         assert author.last_name == "University Research Lab"
         assert author.is_institutional
         assert str(author) == "University Research Lab"
 
     def test_author_requires_last_name(self):
-        """Test that AuthorBase requires last_name"""
+        """Test that Author requires last_name"""
         with pytest.raises(ValidationError) as exc_info:
-            AuthorBase(first_name="John")
+            Author(first_name="John")
         assert "last_name" in str(exc_info.value).lower()
         assert (
             "field required" in str(exc_info.value).lower()
@@ -59,8 +59,8 @@ class TestAuthor:
         )
 
     def test_author_json_serialization(self):
-        """Test AuthorBase JSON serialization"""
-        author = AuthorBase(first_name="Jane", last_name="Smith")
+        """Test Author JSON serialization"""
+        author = Author(first_name="Jane", last_name="Smith")
         json_str = author.model_dump_json()
         parsed = json.loads(json_str)
         assert parsed["first_name"] == "Jane"
@@ -68,11 +68,11 @@ class TestAuthor:
 
 
 class TestInstitutionalAuthor:
-    """Test suite for institutional authors using AuthorBase"""
+    """Test suite for institutional authors using Author"""
 
     def test_create_institutional_author(self):
         """Test creating a valid institutional author"""
-        author = AuthorBase(last_name="University Research Lab")
+        author = Author(last_name="University Research Lab")
         assert author.last_name == "University Research Lab"
         assert author.first_name is None
         assert author.is_institutional
@@ -80,7 +80,7 @@ class TestInstitutionalAuthor:
     def test_institutional_author_requires_name(self):
         """Test that institutional author requires last_name"""
         with pytest.raises(ValidationError) as exc_info:
-            AuthorBase()
+            Author()
         assert "last_name" in str(exc_info.value).lower()
         assert (
             "field required" in str(exc_info.value).lower()
@@ -89,7 +89,7 @@ class TestInstitutionalAuthor:
 
     def test_institutional_author_json_serialization(self):
         """Test institutional author JSON serialization"""
-        author = AuthorBase(last_name="Research Institute")
+        author = Author(last_name="Research Institute")
         json_str = author.model_dump_json()
         parsed = json.loads(json_str)
         assert parsed["last_name"] == "Research Institute"
@@ -117,8 +117,8 @@ class TestArticle:
     def test_create_full_article(self):
         """Test creating an Article with all fields"""
         authors = [
-            AuthorBase(first_name="John", last_name="Doe"),
-            AuthorBase(first_name="Jane", last_name="Smith"),
+            Author(first_name="John", last_name="Doe"),
+            Author(first_name="Jane", last_name="Smith"),
         ]
         article = Article(
             title="Test Article",
@@ -152,8 +152,8 @@ class TestArticle:
     def test_article_with_mixed_authors(self):
         """Test Article with both individual and institutional authors"""
         authors = [
-            AuthorBase(first_name="John", last_name="Doe"),
-            AuthorBase(last_name="Research Institute"),  # Institutional author
+            Author(first_name="John", last_name="Doe"),
+            Author(last_name="Research Institute"),  # Institutional author
         ]
         article = Article(
             url="https://example.com/article",
@@ -164,8 +164,8 @@ class TestArticle:
             raw_contents="Content",
         )
         assert len(article.authors) == 2
-        assert isinstance(article.authors[0], AuthorBase)
-        assert isinstance(article.authors[1], AuthorBase)
+        assert isinstance(article.authors[0], Author)
+        assert isinstance(article.authors[1], Author)
         assert not article.authors[0].is_institutional
         assert article.authors[1].is_institutional
 
@@ -414,8 +414,8 @@ class TestPprint:
     """Test suite for pprint function"""
 
     def test_pprint_single_author(self):
-        """Test pprint with a single AuthorBase model"""
-        author = AuthorBase(first_name="John", last_name="Doe")
+        """Test pprint with a single Author model"""
+        author = Author(first_name="John", last_name="Doe")
         result = pprint(author)
         parsed = json.loads(result)
         assert parsed["first_name"] == "John"
@@ -428,8 +428,8 @@ class TestPprint:
     def test_pprint_list_of_authors(self):
         """Test pprint with a list of models"""
         authors = [
-            AuthorBase(first_name="John", last_name="Doe"),
-            AuthorBase(first_name="Jane", last_name="Smith"),
+            Author(first_name="John", last_name="Doe"),
+            Author(first_name="Jane", last_name="Smith"),
         ]
         result = pprint(authors)
         parsed = json.loads(result)
@@ -445,8 +445,8 @@ class TestPprint:
     def test_pprint_dict_of_models(self):
         """Test pprint with a dict of models"""
         authors = {
-            "author1": AuthorBase(first_name="John", last_name="Doe"),
-            "author2": AuthorBase(first_name="Jane", last_name="Smith"),
+            "author1": Author(first_name="John", last_name="Doe"),
+            "author2": Author(first_name="Jane", last_name="Smith"),
         }
         result = pprint(authors)
         parsed = json.loads(result)
@@ -536,8 +536,8 @@ class TestPprint:
     def test_pprint_list_has_proper_formatting(self):
         """Test that pprint formats list with proper indentation and commas"""
         authors = [
-            AuthorBase(first_name="John", last_name="Doe"),
-            AuthorBase(first_name="Jane", last_name="Smith"),
+            Author(first_name="John", last_name="Doe"),
+            Author(first_name="Jane", last_name="Smith"),
         ]
         result = pprint(authors)
         parsed = json.loads(result)
@@ -556,7 +556,7 @@ class TestPprint:
     def test_pprint_dict_has_proper_formatting(self):
         """Test that pprint formats dict with proper structure"""
         authors = {
-            "author1": AuthorBase(first_name="John", last_name="Doe"),
+            "author1": Author(first_name="John", last_name="Doe"),
         }
         result = pprint(authors)
         parsed = json.loads(result)
@@ -764,7 +764,7 @@ class TestAuthorTable:
         assert author.first_name == "Jane"
 
     def test_author_table_inherits_from_author_base(self):
-        """Test that AuthorTable inherits AuthorBase functionality"""
+        """Test that AuthorTable inherits Author functionality"""
         author = AuthorTable(first_name="Alice", last_name="Johnson")
         assert str(author) == "Alice Johnson"
         assert not author.is_institutional

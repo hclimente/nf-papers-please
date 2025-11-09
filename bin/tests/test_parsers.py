@@ -256,7 +256,7 @@ class TestBuildPostgresqlConnectionString:
 
     def test_builds_basic_connection_string(self, monkeypatch):
         """Test building a basic connection string"""
-        from common.utils import build_connection_string
+        from common.db import build_connection_string
 
         # Mock the environment variable
         monkeypatch.setenv("PGPASSWORD", "testpass")
@@ -268,7 +268,7 @@ class TestBuildPostgresqlConnectionString:
 
     def test_builds_connection_string_with_port(self, monkeypatch):
         """Test building a connection string with port"""
-        from common.utils import build_connection_string
+        from common.db import build_connection_string
 
         # Mock the environment variable
         monkeypatch.setenv("PGPASSWORD", "testpass")
@@ -278,7 +278,7 @@ class TestBuildPostgresqlConnectionString:
 
     def test_builds_connection_string_with_neon_host(self, monkeypatch):
         """Test building a connection string with Neon host"""
-        from common.utils import build_connection_string
+        from common.db import build_connection_string
 
         # Mock the environment variable
         monkeypatch.setenv("PGPASSWORD", "secret123")
@@ -294,7 +294,7 @@ class TestBuildPostgresqlConnectionString:
 
     def test_builds_connection_string_with_query_params(self, monkeypatch):
         """Test building a connection string with query parameters"""
-        from common.utils import build_connection_string
+        from common.db import build_connection_string
 
         # Mock the environment variable
         monkeypatch.setenv("PGPASSWORD", "mypass")

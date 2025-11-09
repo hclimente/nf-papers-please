@@ -100,14 +100,14 @@ class Article(ArticleBase):
     """
     Pydantic model for in-memory representation of an article.
 
-    Adding a list["AuthorBase"] to represent authors to ArticleBase caused
+    Adding a list["Author"] to represent authors to ArticleBase caused
     issues when ArticleBase was inherited by ArticleSQL and it couldn't map
     the type to a column type, so we define it separately.
     """
 
     journal_name: str
     journal_short_name: str | None = None
-    authors: list["AuthorBase"] | None = None
+    authors: list["Author"] | None = None
     tags: List[str] | None = None
     embedding: List[float] | None = None
 
@@ -115,7 +115,7 @@ class Article(ArticleBase):
 ArticleList = TypeAdapter(list[Article])
 
 
-class AuthorBase(SQLModel):
+class Author(SQLModel):
     """
     Database model representing an author (individual or institutional).
 
@@ -137,7 +137,7 @@ class AuthorBase(SQLModel):
         return self.first_name is None
 
 
-class AuthorTable(AuthorBase, table=True):
+class AuthorTable(Author, table=True):
     """
     Database model representing an author (individual or institutional).
     """

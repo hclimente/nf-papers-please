@@ -8,7 +8,7 @@ from httpx import HTTPStatusError
 
 from common.models import (
     ArticleList,
-    AuthorBase,
+    Author,
     pprint,
 )
 from common.parsers import (
@@ -18,26 +18,26 @@ from common.parsers import (
 from common.utils import get_env_variable
 
 
-def process_author_list(author_data: list) -> list[AuthorBase]:
+def process_author_list(author_data: list) -> list[Author]:
     """
-    Convert raw author data from Crossref into a list of AuthorBase objects.
+    Convert raw author data from Crossref into a list of Author objects.
 
     Args:
         author_data (list): List of author data dictionaries from Crossref.
 
     Returns:
-        list[AuthorBase]: List of AuthorBase objects.
+        list[Author]: List of Author objects.
     """
     authors = []
     for author in author_data:
         if "name" in author:
             # Institutional author
             name = author["name"]
-            authors.append(AuthorBase(last_name=name))
+            authors.append(Author(last_name=name))
         else:
             first_name = author["given"]
             last_name = author["family"]
-            authors.append(AuthorBase(first_name=first_name, last_name=last_name))
+            authors.append(Author(first_name=first_name, last_name=last_name))
     return authors if authors else None
 
 

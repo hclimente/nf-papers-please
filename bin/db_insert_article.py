@@ -8,6 +8,7 @@ from sqlmodel import Session, create_engine, select
 from common.models import (
     ArticleList,
     ArticleTable,
+    Author,
     AuthorTable,
     JournalTable,
     Tag,
@@ -47,13 +48,13 @@ def get_or_create_journal(
     return journal
 
 
-def get_or_create_author(session: Session, author_data) -> AuthorTable:
+def get_or_create_author(session: Session, author_data: Author) -> AuthorTable:
     """
     Find an existing author or create a new one.
 
     Args:
         session: SQLModel session.
-        author_data: Author data (AuthorBase instance).
+        author_data: author data
 
     Returns:
         AuthorTable instance.

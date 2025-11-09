@@ -19,7 +19,7 @@ from zotero_insert_article import (
     insert_batch,
     insert_article,
 )
-from common.models import Article, Author, InstitutionalAuthor
+from common.models import Article, Author
 
 
 class TestAddCreators:
@@ -61,7 +61,7 @@ class TestAddCreators:
 
     def test_add_creators_institutional_author(self):
         """Test with InstitutionalAuthor"""
-        authors = [InstitutionalAuthor(name="MIT Research Group")]
+        authors = [Author(last_name="MIT Research Group")]
         result = add_creators(authors)
 
         assert len(result) == 1
@@ -74,7 +74,7 @@ class TestAddCreators:
         """Test with mix of Author and InstitutionalAuthor"""
         authors = [
             Author(first_name="John", last_name="Doe"),
-            InstitutionalAuthor(name="MIT Research Group"),
+            Author(last_name="MIT Research Group"),
             Author(first_name="Jane", last_name="Smith"),
         ]
         result = add_creators(authors)
@@ -143,7 +143,7 @@ class TestCreateZoteroArticle:
             title="Full Test Article",
             authors=[
                 Author(first_name="John", last_name="Doe"),
-                InstitutionalAuthor(name="MIT"),
+                Author(last_name="MIT"),
             ],
             summary="This is a test summary",
             doi="10.1234/test",
