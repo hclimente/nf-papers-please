@@ -1,7 +1,7 @@
 import logging
 import os
 
-from .models import Article, ArticleTable
+from .models import Article, ArticleTable, Author
 
 
 def get_common_variations(expected_values: list):
@@ -75,3 +75,103 @@ Last Author: {article.authors[-1] if article.authors else "N/A"}
 Summary: {article.summary}
 Tags: {", ".join(str(tag) for tag in article.tags) if article.tags else "N/A"}
 """
+
+
+def prune_article_for_classification(article: Article) -> Article:
+    """
+    Create a pruned copy of an article with only fields needed for classification.
+
+    Keeps: title, journal, authors (first and last only), summary, tags, doi, nearest_neighbors.
+    Removes all other fields to reduce token usage in LLM prompts.
+    Recursively prunes any Article objects in nearest_neighbors.
+
+    Args:
+        article: The full article object.
+
+    Returns:
+        Article: A pruned copy with only classification-relevant fields.
+    """
+    # Recursively prune nearest neighbors if present
+    pruned_neighbors = None
+    if article.nearest_neighbors:
+        pruned_neighbors = [
+            prune_article_for_classification(neighbor)
+            for neighbor in article.nearest_neighbors
+        ]
+
+    # Keep only first and last authors if present
+    pruned_authors = None
+    if article.authors:
+        if len(article.authors) == 1:
+            pruned_authors = [article.authors[0]]
+        else:
+            pruned_authors = [article.authors[0], article.authors[-1]]
+
+    return Article(
+        title=article.title,
+        journal=article.journal,
+        journal_short_name=article.journal_short_name,
+        authors=pruned_authors,
+        summary=article.summary,
+        tags=article.tags,
+        doi=article.doi,
+        url=article.url,
+        date=article.date,
+        access_date=article.access_date,
+        raw_contents="",  # Empty string to save tokens
+        nearest_neighbors=pruned_neighbors,
+    )
+
+
+def article_table_to_article(article_table: ArticleTable) -> Article:
+    """
+    Convert an ArticleTable (SQLModel database object) to an Article (Pydantic model).
+
+    Args:
+        article_table: ArticleTable instance from database query.
+
+    Returns:
+        Article: Pydantic Article instance with converted relationships.
+    """
+    # Convert AuthorTable objects to Author objects
+    authors = None
+    if article_table.authors:
+        authors = [
+            Author(first_name=author.first_name, last_name=author.last_name)
+            for author in article_table.authors
+        ]
+
+    # Convert Tag objects to strings
+    tags = None
+    if article_table.tags:
+        tags = [str(tag.name) for tag in article_table.tags]
+
+    # Extract journal information
+    journal_name = str(article_table.journal.name) if article_table.journal else None
+    journal_short_name = (
+        str(article_table.journal.short_name)
+        if (article_table.journal and article_table.journal.short_name)
+        else None
+    )
+
+    return Article(
+        doi=article_table.doi,
+        title=article_table.title,
+        summary=article_table.summary,
+        url=article_table.url,
+        volume=article_table.volume,
+        issue=article_table.issue,
+        date=article_table.date,
+        language=str(article_table.language) if article_table.language else None,
+        reasoning=str(article_table.reasoning) if article_table.reasoning else None,
+        score=article_table.score,
+        relevance=str(article_table.relevance) if article_table.relevance else None,
+        access_date=article_table.access_date,
+        raw_contents=str(article_table.raw_contents),
+        zotero_key=str(article_table.zotero_key) if article_table.zotero_key else None,
+        journal=journal_name,
+        journal_short_name=journal_short_name,
+        authors=authors,
+        tags=tags,
+        embedding=article_table.embedding,
+    )

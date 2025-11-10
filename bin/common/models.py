@@ -60,6 +60,7 @@ class ArticleBase(SQLModel):
     # LLM results
     reasoning: str | None = None
     score: int | None = None
+    relevance: str | None = None  # Classification relevance: "high", "medium", or "low"
 
     # Raw and integration data
     access_date: date
@@ -110,7 +111,7 @@ class Article(ArticleBase):
     authors: list["Author"] | None = None
     tags: List[str] | None = None
     embedding: List[float] | None = None
-    nearest_neighbors: list[str] | None = None
+    nearest_neighbors: list["Article"] | None = None
 
 
 ArticleList = TypeAdapter(list[Article])
@@ -210,6 +211,25 @@ class TaggingResponse(BaseModel):
     doi: str
     tags: list[str]
     reasoning: str
+
+
+class ClassificationResponse(BaseModel):
+    """Model for LLM response containing article classification."""
+
+    doi: str
+    relevance: str
+    reasoning: str
+
+    @field_validator("relevance", mode="after")
+    @classmethod
+    def validate_relevance(cls, relevance: str) -> str:
+        """Validate that relevance is one of the allowed values."""
+        allowed_values = ["high", "medium", "low"]
+        if relevance not in allowed_values:
+            raise ValueError(
+                f"Invalid relevance value: {relevance}. Must be one of {allowed_values}"
+            )
+        return relevance
 
 
 def pprint(model: BaseModel, exclude_none: bool = True) -> str:

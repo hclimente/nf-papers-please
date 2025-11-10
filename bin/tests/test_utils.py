@@ -10,7 +10,13 @@ from pathlib import Path
 # Add the parent directory to the path so we can import the module
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.utils import get_env_variable, get_common_variations
+from common.utils import (
+    get_env_variable,
+    get_common_variations,
+    prune_article_for_classification,
+)
+from common.models import Article, Author
+from datetime import date
 
 
 class TestGetEnvVariable:
@@ -320,3 +326,319 @@ class TestGetCommonVariations:
         assert "'VAL'" in result
         assert '"VAL"' in result
         assert "VAL." in result
+
+
+class TestPruneArticleForClassification:
+    """Test suite for prune_article_for_classification function"""
+
+    def test_prune_keeps_required_fields(self):
+        """Test that pruning keeps all required fields for classification"""
+        neighbor1 = Article(
+            title="Neighbor 1",
+            journal="Neighbor Journal",
+            url="https://example.com/neighbor1",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="neighbor content",
+        )
+        neighbor2 = Article(
+            title="Neighbor 2",
+            journal="Neighbor Journal",
+            url="https://example.com/neighbor2",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="neighbor content",
+        )
+
+        article = Article(
+            title="Test Article",
+            journal="Nature",
+            journal_short_name="Nat",
+            authors=[Author(first_name="John", last_name="Doe")],
+            summary="Test summary",
+            tags=["Tag1", "Tag2"],
+            doi="10.1234/test",
+            url="https://example.com",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="Full text content here",
+            nearest_neighbors=[neighbor1, neighbor2],
+        )
+
+        pruned = prune_article_for_classification(article)
+
+        assert pruned.title == "Test Article"
+        assert pruned.journal == "Nature"
+        assert pruned.journal_short_name == "Nat"
+        assert len(pruned.authors) == 1
+        assert pruned.authors[0].first_name == "John"
+        assert pruned.summary == "Test summary"
+        assert pruned.tags == ["Tag1", "Tag2"]
+        assert pruned.doi == "10.1234/test"
+        assert pruned.url == "https://example.com"
+        assert len(pruned.nearest_neighbors) == 2
+        assert isinstance(pruned.nearest_neighbors[0], Article)
+
+    def test_prune_empties_raw_contents(self):
+        """Test that pruning empties raw_contents to save tokens"""
+        article = Article(
+            title="Test",
+            journal="Test Journal",
+            url="https://example.com",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="Very long raw content that should be removed",
+        )
+
+        pruned = prune_article_for_classification(article)
+
+        assert pruned.raw_contents == ""
+
+    def test_prune_preserves_nearest_neighbors(self):
+        """Test that nearest_neighbors field is preserved"""
+        neighbor = Article(
+            title="Neighbor Article",
+            journal="Neighbor Journal",
+            url="https://example.com/neighbor",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="neighbor content",
+        )
+
+        article = Article(
+            title="Test",
+            journal="Test Journal",
+            url="https://example.com",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="content",
+            nearest_neighbors=[neighbor],
+        )
+
+        pruned = prune_article_for_classification(article)
+
+        assert len(pruned.nearest_neighbors) == 1
+        assert isinstance(pruned.nearest_neighbors[0], Article)
+        assert pruned.nearest_neighbors[0].title == "Neighbor Article"
+
+    def test_prune_handles_none_nearest_neighbors(self):
+        """Test that pruning handles articles without nearest_neighbors"""
+        article = Article(
+            title="Test",
+            journal="Test Journal",
+            url="https://example.com",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="content",
+        )
+
+        pruned = prune_article_for_classification(article)
+
+        assert pruned.nearest_neighbors is None
+
+    def test_prune_returns_article_instance(self):
+        """Test that pruned result is an Article instance"""
+        article = Article(
+            title="Test",
+            journal="Test Journal",
+            url="https://example.com",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="content",
+        )
+
+        pruned = prune_article_for_classification(article)
+
+        assert isinstance(pruned, Article)
+
+    def test_prune_recursively_prunes_neighbor_articles(self):
+        """Test that pruning recursively prunes Article objects in nearest_neighbors"""
+        neighbor1 = Article(
+            title="Neighbor 1",
+            journal="Journal 1",
+            url="https://example.com/1",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="Long raw content for neighbor 1",
+            tags=["Tag1"],
+        )
+        neighbor2 = Article(
+            title="Neighbor 2",
+            journal="Journal 2",
+            url="https://example.com/2",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="Long raw content for neighbor 2",
+            tags=["Tag2"],
+        )
+
+        article = Article(
+            title="Target Article",
+            journal="Main Journal",
+            url="https://example.com/target",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="Target article raw content",
+            nearest_neighbors=[neighbor1, neighbor2],
+        )
+
+        pruned = prune_article_for_classification(article)
+
+        # Check that main article was pruned
+        assert pruned.raw_contents == ""
+
+        # Check that neighbors were pruned recursively
+        assert len(pruned.nearest_neighbors) == 2
+        assert isinstance(pruned.nearest_neighbors[0], Article)
+        assert pruned.nearest_neighbors[0].raw_contents == ""
+        assert pruned.nearest_neighbors[1].raw_contents == ""
+        assert pruned.nearest_neighbors[0].title == "Neighbor 1"
+        assert pruned.nearest_neighbors[1].title == "Neighbor 2"
+
+
+class TestArticleTableToArticle:
+    """Test suite for article_table_to_article function"""
+
+    def test_converts_basic_fields(self):
+        """Test that basic fields are converted correctly"""
+        from common.utils import article_table_to_article
+        from common.models import ArticleTable, AuthorTable, JournalTable, Tag
+
+        # Create a simple ArticleTable
+        journal = JournalTable(name="Nature", short_name="Nat.")
+        author = AuthorTable(first_name="John", last_name="Doe")
+        tag = Tag(name="Computational Biology")
+
+        article_table = ArticleTable(
+            doi="10.1234/test",
+            title="Test Article",
+            summary="Test summary",
+            url="https://example.com/test",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="Test raw content",
+        )
+        article_table.journal = journal
+        article_table.authors = [author]
+        article_table.tags = [tag]
+        article_table.embedding = [0.1] * 3072
+
+        result = article_table_to_article(article_table)
+
+        assert result.doi == "10.1234/test"
+        assert result.title == "Test Article"
+        assert result.summary == "Test summary"
+        assert result.url == "https://example.com/test"
+        assert result.date == date(2024, 1, 1)
+        assert result.access_date == date(2024, 1, 2)
+        assert result.raw_contents == "Test raw content"
+        assert result.journal == "Nature"
+        assert result.journal_short_name == "Nat."
+        assert len(result.authors) == 1
+        assert result.authors[0].first_name == "John"
+        assert result.authors[0].last_name == "Doe"
+        assert len(result.tags) == 1
+        assert result.tags[0] == "Computational Biology"
+        assert len(result.embedding) == 3072
+
+    def test_handles_optional_fields(self):
+        """Test that None optional fields are handled correctly"""
+        from common.utils import article_table_to_article
+        from common.models import ArticleTable, JournalTable
+
+        journal = JournalTable(name="Science")
+
+        article_table = ArticleTable(
+            title="Test",
+            url="https://example.com/test",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="content",
+        )
+        article_table.journal = journal
+
+        result = article_table_to_article(article_table)
+
+        assert result.doi is None
+        assert result.summary is None
+        assert result.language is None
+        assert result.reasoning is None
+        assert result.relevance is None
+        assert result.zotero_key is None
+        assert result.authors is None
+        assert result.tags is None
+        assert result.journal_short_name is None
+
+    def test_handles_multiple_authors(self):
+        """Test conversion with multiple authors"""
+        from common.utils import article_table_to_article
+        from common.models import ArticleTable, AuthorTable, JournalTable
+
+        journal = JournalTable(name="Cell")
+
+        article_table = ArticleTable(
+            title="Test",
+            url="https://example.com/test",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="content",
+        )
+        article_table.journal = journal
+        article_table.authors = [
+            AuthorTable(first_name="Alice", last_name="Smith"),
+            AuthorTable(first_name="Bob", last_name="Jones"),
+            AuthorTable(first_name="Charlie", last_name="Brown"),
+        ]
+
+        result = article_table_to_article(article_table)
+
+        assert len(result.authors) == 3
+        assert result.authors[0].first_name == "Alice"
+        assert result.authors[1].first_name == "Bob"
+        assert result.authors[2].first_name == "Charlie"
+
+    def test_handles_institutional_author(self):
+        """Test conversion with institutional author (no first_name)"""
+        from common.utils import article_table_to_article
+        from common.models import ArticleTable, AuthorTable, JournalTable
+
+        journal = JournalTable(name="PNAS")
+
+        article_table = ArticleTable(
+            title="Test",
+            url="https://example.com/test",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="content",
+        )
+        article_table.journal = journal
+        article_table.authors = [
+            AuthorTable(last_name="WHO Consortium"),
+        ]
+
+        result = article_table_to_article(article_table)
+
+        assert len(result.authors) == 1
+        assert result.authors[0].first_name is None
+        assert result.authors[0].last_name == "WHO Consortium"
+        assert result.authors[0].is_institutional
+
+    def test_returns_article_instance(self):
+        """Test that the function returns an Article instance"""
+        from common.utils import article_table_to_article
+        from common.models import ArticleTable, JournalTable, Article
+
+        journal = JournalTable(name="Nature")
+
+        article_table = ArticleTable(
+            title="Test",
+            url="https://example.com/test",
+            date=date(2024, 1, 1),
+            access_date=date(2024, 1, 2),
+            raw_contents="content",
+        )
+        article_table.journal = journal
+
+        result = article_table_to_article(article_table)
+
+        assert isinstance(result, Article)

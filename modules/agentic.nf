@@ -85,6 +85,37 @@ ${DEBUG ? '--debug' : ''}
     """
 }
 
+process CLASSIFY {
+
+    container 'community.wave.seqera.io/library/pip_google-genai_pgvector_sqlmodel:852aa324a19aa1fc'
+    label 'gemini_api'
+    secret 'GOOGLE_API_KEY'
+    secret 'SPRINGER_META_API_KEY'
+    secret 'USER_EMAIL'
+
+    input:
+    path ARTICLES_JSON
+    path SYSTEM_PROMPT
+    val MODEL
+    val ALLOW_QC_ERRORS
+    val DEBUG
+
+    output:
+    path "classify_pass.json", emit: pass, optional: true
+    path "classify_fail.json", emit: fail, optional: true
+
+    script:
+    """
+    llm_process_articles.py \
+--articles_json ${ARTICLES_JSON} \
+${DEBUG ? '--debug' : ''} \
+classify \
+--system_prompt_path ${SYSTEM_PROMPT} \
+--model ${MODEL} \
+--allow_qc_errors ${ALLOW_QC_ERRORS}
+    """
+}
+
 process EMBED {
 
     container 'community.wave.seqera.io/library/pip_google-genai_pgvector_sqlmodel:852aa324a19aa1fc'

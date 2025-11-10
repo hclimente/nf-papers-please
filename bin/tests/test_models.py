@@ -25,6 +25,7 @@ from common.models import (
     JournalTable,
     MetadataResponse,
     TaggingResponse,
+    ClassificationResponse,
     pprint,
 )
 
@@ -408,6 +409,73 @@ class TestLabellingResponse:
             TaggingResponse(
                 doi="10.1234/test", tags="Network Biology", reasoning="Test"
             )
+
+
+class TestClassificationResponse:
+    """Test suite for ClassificationResponse model"""
+
+    def test_create_classification_response(self):
+        """Test creating a valid ClassificationResponse"""
+        response = ClassificationResponse(
+            doi="10.1234/test",
+            relevance="high",
+            reasoning="Strong alignment with cluster on network-based drug discovery methods",
+        )
+        assert response.doi == "10.1234/test"
+        assert response.relevance == "high"
+        assert "Strong alignment" in response.reasoning
+
+    def test_classification_response_all_relevance_levels(self):
+        """Test ClassificationResponse with all valid relevance levels"""
+        for level in ["high", "medium", "low"]:
+            response = ClassificationResponse(
+                doi="10.1234/test",
+                relevance=level,
+                reasoning=f"Test reasoning for {level} relevance",
+            )
+            assert response.relevance == level
+
+    def test_classification_response_invalid_relevance(self):
+        """Test that ClassificationResponse rejects invalid relevance values"""
+        invalid_values = ["High", "MEDIUM", "Low", "very high", "none", ""]
+        for invalid in invalid_values:
+            with pytest.raises(ValidationError) as exc_info:
+                ClassificationResponse(
+                    doi="10.1234/test",
+                    relevance=invalid,
+                    reasoning="Test reasoning",
+                )
+            assert "relevance" in str(exc_info.value).lower()
+
+    def test_classification_response_requires_all_fields(self):
+        """Test that ClassificationResponse requires all fields"""
+        with pytest.raises(ValidationError) as exc_info:
+            ClassificationResponse(doi="10.1234/test", relevance="high")
+        assert "reasoning" in str(exc_info.value).lower()
+
+        with pytest.raises(ValidationError) as exc_info:
+            ClassificationResponse(doi="10.1234/test", reasoning="Test")
+        assert "relevance" in str(exc_info.value).lower()
+
+        with pytest.raises(ValidationError) as exc_info:
+            ClassificationResponse(relevance="high", reasoning="Test")
+        assert "doi" in str(exc_info.value).lower()
+
+    def test_classification_response_reasoning_can_be_detailed(self):
+        """Test ClassificationResponse with detailed reasoning"""
+        long_reasoning = (
+            "The 5 neighbor articles all focus on network analysis methods for biological data. "
+            "Target article presents a graph neural network approach for predicting protein interactions. "
+            "Tag overlap includes 'Network Biology', 'Machine Learning', and 'Protein Interactions'. "
+            "Methodology is consistent with neighbors. High relevance assigned."
+        )
+        response = ClassificationResponse(
+            doi="10.1234/test",
+            relevance="high",
+            reasoning=long_reasoning,
+        )
+        assert response.reasoning == long_reasoning
+        assert len(response.reasoning) > 100
 
 
 class TestPprint:

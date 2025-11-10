@@ -10,7 +10,7 @@ from common.parsers import (
     add_debug_argument,
     add_llm_arguments,
 )
-from common.utils import get_env_variable
+from common.utils import get_env_variable, prune_article_for_classification
 from common.validation import (
     save_validated_responses,
     validate_llm_response,
@@ -58,6 +58,11 @@ def llm_process_articles(
     articles = ArticleList.validate_json(json_string)
     logging.info(f"Loaded {len(articles)} articles.")
     # logging.debug(f"Articles: {pprint(articles)}")
+
+    # For classify stage, prune articles to only include relevant fields
+    if stage == "classify":
+        articles = [prune_article_for_classification(article) for article in articles]
+        logging.info("Pruned articles for classification stage.")
 
     response_text = chat(
         articles=articles,
@@ -108,6 +113,10 @@ if __name__ == "__main__":
     )
     tagging_parser = subparsers.add_parser("tagging")
     tagging_parser = add_llm_arguments(tagging_parser, include_research_interests=True)
+    classify_parser = subparsers.add_parser("classify")
+    classify_parser = add_llm_arguments(
+        classify_parser, include_research_interests=False
+    )
 
     args = parser.parse_args()
     try:

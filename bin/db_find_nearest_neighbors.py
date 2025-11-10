@@ -16,7 +16,8 @@ from common.db import (
     setup_db,
 )
 from common.utils import (
-    article_to_text,
+    article_table_to_article,
+    prune_article_for_classification,
 )
 
 
@@ -45,6 +46,8 @@ def find_k_nearest_neighbors(
     logging.info(f"Loaded {len(articles)} articles.")
 
     engine = create_engine(connection_string, echo=True)
+    # store articles in pruned form to simplify outputs
+    pruned_articles = []
 
     with Session(engine) as session:
         for item in articles:
@@ -55,10 +58,16 @@ def find_k_nearest_neighbors(
             )
             results = session.exec(statement).all()
 
-            setattr(item, "nearest_neighbors", [article_to_text(a) for a in results])
+            setattr(
+                item,
+                "nearest_neighbors",
+                [article_table_to_article(a) for a in results],
+            )
+            pruned_article = prune_article_for_classification(item)
+            pruned_articles.append(pruned_article)
 
     with open(out, "w") as f:
-        f.write(pprint(articles))
+        f.write(pprint(pruned_article))
 
 
 if __name__ == "__main__":

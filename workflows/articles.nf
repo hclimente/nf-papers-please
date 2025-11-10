@@ -1,7 +1,8 @@
-include { BASIC_METADATA; TAG; SCORE; EMBED } from '../modules/agentic'
+include { BASIC_METADATA; TAG; SCORE; EMBED; CLASSIFY } from '../modules/agentic'
 include { BASIC_METADATA as BASIC_METADATA_RETRY } from '../modules/agentic'
 include { ADVANCED_METADATA; REMOVE_PROCESSED; SAVE } from '../modules/zotero'
 include { TAG as TAG_RETRY } from '../modules/agentic'
+include { CLASSIFY as CLASSIFY_RETRY } from '../modules/agentic'
 
 include { FETCH_NEAREST_NEIGHBORS } from '../modules/postgresql'
 
@@ -85,28 +86,26 @@ workflow SCREEN_ARTICLES {
             params.to_pg_host
         )
 
-    //     KNN(
-    //         batchArticles(articles_json, params.batch_size),
-    //         file(params.screening_system_prompt),
-    //         params.screening_model,
-    //         true,
-    //         params.debug
-    //     )
+        CLASSIFY(
+            FETCH_NEAREST_NEIGHBORS.out,
+            file(params.classification_system_prompt),
+            params.classification_model,
+            true,
+            params.debug
+        )
 
-    //     failed_screening = batchArticles(KNN.out.fail, params.batch_size)
-    //     KNN_RETRY(
-    //         failed_screening,
-    //         file(params.screening_system_prompt),
-    //         params.screening_model,
-    //         false,
-    //         params.debug
-    //     )
+        CLASSIFY_RETRY(
+            CLASSIFY.out.fail,
+            file(params.classification_system_prompt),
+            params.classification_model,
+            false,
+            params.debug
+        )
 
-    //     screened_articles = KNN.out.pass
-    //         .concat(KNN_RETRY.out.pass)
-    //     final_batches = batchArticles(screened_articles, 100)
+        prioritized_articles = CLASSIFY.out.pass
+            .concat(CLASSIFY_RETRY.out.pass)
 
-    // emit:
-    //     screened_articles = KNN.out.pass
-    //     all_articles = final_batches
+    emit:
+        prioritized_articles
+
 }

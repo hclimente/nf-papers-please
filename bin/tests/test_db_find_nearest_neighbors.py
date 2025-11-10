@@ -45,6 +45,8 @@ class TestFindKNearestNeighbors:
     @pytest.fixture
     def mock_db_articles(self):
         """Create mock database article results."""
+        from datetime import date
+
         articles = []
         for i in range(5):
             article = MagicMock(spec=ArticleTable)
@@ -52,14 +54,25 @@ class TestFindKNearestNeighbors:
             article.summary = f"DB summary {i}"
             article.url = f"https://example.com/db{i}"
             article.doi = f"10.1234/db{i}"
-            article.date = "2025-01-01"
+            article.volume = None
+            article.issue = None
+            article.date = date(2025, 1, 1)
+            article.language = None
+            article.reasoning = None
+            article.score = None
+            article.relevance = None
+            article.access_date = date(2025, 11, 9)
+            article.raw_contents = f"Raw content {i}"
+            article.zotero_key = None
             article.journal = MagicMock(spec=JournalTable)
             article.journal.name = "Nature"
             article.journal.short_name = "Nat."
             article.authors = [
                 MagicMock(spec=AuthorTable, first_name="John", last_name="Doe")
             ]
-            article.tags = [MagicMock(name="Computational Biology")]
+            tag_mock = MagicMock()
+            tag_mock.name = "Computational Biology"
+            article.tags = [tag_mock]
             article.embedding = [0.1 + i * 0.01] * 3072
             articles.append(article)
         return articles
