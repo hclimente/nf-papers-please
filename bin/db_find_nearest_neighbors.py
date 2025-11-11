@@ -67,7 +67,7 @@ def find_k_nearest_neighbors(
             pruned_articles.append(pruned_article)
 
     with open(out, "w") as f:
-        f.write(pprint(pruned_article))
+        f.write(pprint(pruned_articles))
 
 
 if __name__ == "__main__":

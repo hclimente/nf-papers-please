@@ -61,11 +61,15 @@ def llm_process_articles(
 
     # For classify stage, prune articles to only include relevant fields
     if stage == "classify":
-        articles = [prune_article_for_classification(article) for article in articles]
+        articles_for_llm = [
+            prune_article_for_classification(article) for article in articles
+        ]
         logging.info("Pruned articles for classification stage.")
+    else:
+        articles_for_llm = articles
 
     response_text = chat(
-        articles=articles,
+        articles=articles_for_llm,
         system_prompt_path=system_prompt_path,
         model=model,
         api_key=get_env_variable("GOOGLE_API_KEY"),

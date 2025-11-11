@@ -69,7 +69,9 @@ workflow SCREEN {
     EMBED_ARTICLES(articles_to_process)
     SCREEN_ARTICLES(EMBED_ARTICLES.out.all_articles)
 
-    // TO_ZOTERO(batchArticles(SCREEN_ARTICLES.out, 10))
+    // if (params.to == "pg") {
+    //     TO_POSTGRESQL(SCREEN_ARTICLES.out)
+    // }
 
 }
 

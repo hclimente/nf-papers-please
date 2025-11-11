@@ -44,6 +44,7 @@ def get_or_create_journal(
     if not journal:
         journal = JournalTable(name=name, short_name=short_name)
         session.add(journal)
+        session.flush()
 
     return journal
 
@@ -68,6 +69,7 @@ def get_or_create_author(session: Session, author_data: Author) -> AuthorTable:
     if not author:
         author = AuthorTable(**author_data.model_dump())
         session.add(author)
+        session.flush()
 
     return author
 
@@ -89,6 +91,7 @@ def get_or_create_tag(session: Session, tag_name: str) -> Tag:
     if not tag:
         tag = Tag(name=tag_name)
         session.add(tag)
+        session.flush()
 
     return tag
 
