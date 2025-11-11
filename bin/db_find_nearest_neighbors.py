@@ -5,7 +5,7 @@ import pathlib
 
 from sqlmodel import Session, create_engine, select
 
-from common.models import ArticleList, ArticleTable, pprint
+from common.models import Article, ArticleList, ArticleTable, pprint
 from common.parsers import (
     add_input_articles_json_argument,
     add_postgresql_arguments,
@@ -16,7 +16,6 @@ from common.db import (
     setup_db,
 )
 from common.utils import (
-    article_table_to_article,
     prune_article_for_classification,
 )
 
@@ -61,7 +60,7 @@ def find_k_nearest_neighbors(
             setattr(
                 item,
                 "nearest_neighbors",
-                [article_table_to_article(a) for a in results],
+                [Article.from_article_table(a) for a in results],
             )
             pruned_article = prune_article_for_classification(item)
             pruned_articles.append(pruned_article)

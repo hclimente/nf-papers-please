@@ -496,13 +496,12 @@ class TestPruneArticleForClassification:
         assert pruned.nearest_neighbors[1].title == "Neighbor 2"
 
 
-class TestArticleTableToArticle:
-    """Test suite for article_table_to_article function"""
+class TestArticleFromArticleTable:
+    """Test suite for Article.from_article_table class method"""
 
     def test_converts_basic_fields(self):
         """Test that basic fields are converted correctly"""
-        from common.utils import article_table_to_article
-        from common.models import ArticleTable, AuthorTable, JournalTable, Tag
+        from common.models import Article, ArticleTable, AuthorTable, JournalTable, Tag
 
         # Create a simple ArticleTable
         journal = JournalTable(name="Nature", short_name="Nat.")
@@ -523,7 +522,7 @@ class TestArticleTableToArticle:
         article_table.tags = [tag]
         article_table.embedding = [0.1] * 3072
 
-        result = article_table_to_article(article_table)
+        result = Article.from_article_table(article_table)
 
         assert result.doi == "10.1234/test"
         assert result.title == "Test Article"
@@ -543,8 +542,7 @@ class TestArticleTableToArticle:
 
     def test_handles_optional_fields(self):
         """Test that None optional fields are handled correctly"""
-        from common.utils import article_table_to_article
-        from common.models import ArticleTable, JournalTable
+        from common.models import Article, ArticleTable, JournalTable
 
         journal = JournalTable(name="Science")
 
@@ -557,13 +555,13 @@ class TestArticleTableToArticle:
         )
         article_table.journal = journal
 
-        result = article_table_to_article(article_table)
+        result = Article.from_article_table(article_table)
 
         assert result.doi is None
         assert result.summary is None
         assert result.language is None
         assert result.reasoning is None
-        assert result.relevance is None
+        assert result.priority is None
         assert result.zotero_key is None
         assert result.authors is None
         assert result.tags is None
@@ -571,8 +569,7 @@ class TestArticleTableToArticle:
 
     def test_handles_multiple_authors(self):
         """Test conversion with multiple authors"""
-        from common.utils import article_table_to_article
-        from common.models import ArticleTable, AuthorTable, JournalTable
+        from common.models import Article, ArticleTable, AuthorTable, JournalTable
 
         journal = JournalTable(name="Cell")
 
@@ -590,7 +587,7 @@ class TestArticleTableToArticle:
             AuthorTable(first_name="Charlie", last_name="Brown"),
         ]
 
-        result = article_table_to_article(article_table)
+        result = Article.from_article_table(article_table)
 
         assert len(result.authors) == 3
         assert result.authors[0].first_name == "Alice"
@@ -599,8 +596,7 @@ class TestArticleTableToArticle:
 
     def test_handles_institutional_author(self):
         """Test conversion with institutional author (no first_name)"""
-        from common.utils import article_table_to_article
-        from common.models import ArticleTable, AuthorTable, JournalTable
+        from common.models import Article, ArticleTable, AuthorTable, JournalTable
 
         journal = JournalTable(name="PNAS")
 
@@ -616,7 +612,7 @@ class TestArticleTableToArticle:
             AuthorTable(last_name="WHO Consortium"),
         ]
 
-        result = article_table_to_article(article_table)
+        result = Article.from_article_table(article_table)
 
         assert len(result.authors) == 1
         assert result.authors[0].first_name is None
@@ -624,9 +620,8 @@ class TestArticleTableToArticle:
         assert result.authors[0].is_institutional
 
     def test_returns_article_instance(self):
-        """Test that the function returns an Article instance"""
-        from common.utils import article_table_to_article
-        from common.models import ArticleTable, JournalTable, Article
+        """Test that the method returns an Article instance"""
+        from common.models import Article, ArticleTable, JournalTable
 
         journal = JournalTable(name="Nature")
 
@@ -639,6 +634,6 @@ class TestArticleTableToArticle:
         )
         article_table.journal = journal
 
-        result = article_table_to_article(article_table)
+        result = Article.from_article_table(article_table)
 
         assert isinstance(result, Article)

@@ -259,6 +259,128 @@ class TestArticle:
         error_msg = str(exc_info.value).lower()
         assert "url" in error_msg
 
+    def test_from_zotero_item_basic(self):
+        """Test converting a basic Zotero item to Article"""
+        zotero_item = {
+            "key": "ABCDEF123",  # pragma: allowlist secret
+            "data": {
+                "itemType": "journalArticle",
+                "title": "Test Article from Zotero",
+                "abstractNote": "This is a test abstract",
+                "DOI": "10.1234/test.zotero",
+                "url": "https://example.com/zotero-article",
+                "publicationTitle": "Nature",
+                "journalAbbreviation": "Nat.",
+                "date": "2024-01-15",
+                "accessDate": "2024-01-20",
+                "volume": "123",
+                "issue": "4",
+                "language": "en",
+                "creators": [
+                    {"creatorType": "author", "firstName": "John", "lastName": "Doe"},
+                    {"creatorType": "author", "firstName": "Jane", "lastName": "Smith"},
+                ],
+                "tags": [{"tag": "Network Biology"}, {"tag": "Cancer"}],
+            },
+        }
+
+        article = Article.from_zotero_item(zotero_item)
+
+        assert article.title == "Test Article from Zotero"
+        assert article.summary == "This is a test abstract"
+        assert article.doi == "10.1234/test.zotero"
+        assert str(article.url) == "https://example.com/zotero-article"
+        assert article.journal == "Nature"
+        assert article.journal_short_name == "Nat."
+        assert article.date == date(2024, 1, 15)
+        assert article.access_date == date(2024, 1, 20)
+        assert article.volume == 123
+        assert article.issue == 4
+        assert article.language == "en"
+        assert article.zotero_key == "ABCDEF123"  # pragma: allowlist secret
+        assert len(article.authors) == 2
+        assert article.authors[0].first_name == "John"
+        assert article.authors[0].last_name == "Doe"
+        assert len(article.tags) == 2
+        assert "Network Biology" in article.tags
+
+    def test_from_zotero_item_minimal(self):
+        """Test converting a minimal Zotero item"""
+        zotero_item = {
+            "data": {
+                "itemType": "journalArticle",
+                "url": "https://example.com/minimal",
+                "publicationTitle": "Science",
+                "date": "2024-01-15",
+            },
+        }
+
+        article = Article.from_zotero_item(zotero_item)
+
+        assert article.url == "https://example.com/minimal"
+        assert article.journal == "Science"
+        assert article.title is None
+        assert article.summary is None
+        assert article.doi is None
+        assert article.zotero_key is None
+
+    def test_from_zotero_item_with_institutional_author(self):
+        """Test converting Zotero item with institutional author"""
+        zotero_item = {
+            "data": {
+                "itemType": "journalArticle",
+                "url": "https://example.com/institutional",
+                "publicationTitle": "Journal",
+                "date": "2024-01-15",
+                "creators": [
+                    {"creatorType": "author", "name": "WHO Consortium"},
+                    {"creatorType": "author", "firstName": "Jane", "lastName": "Smith"},
+                ],
+            },
+        }
+
+        article = Article.from_zotero_item(zotero_item)
+
+        assert len(article.authors) == 2
+        assert article.authors[0].first_name is None
+        assert article.authors[0].last_name == "WHO Consortium"
+        assert article.authors[0].is_institutional
+        assert article.authors[1].first_name == "Jane"
+        assert not article.authors[1].is_institutional
+
+    def test_from_zotero_item_invalid_date(self):
+        """Test that invalid dates default to today"""
+        zotero_item = {
+            "data": {
+                "itemType": "journalArticle",
+                "url": "https://example.com/test",
+                "publicationTitle": "Journal",
+                "date": "invalid-date",
+                "accessDate": "also-invalid",
+            },
+        }
+
+        article = Article.from_zotero_item(zotero_item)
+
+        # Should default to today's date
+        assert article.date == date.today()
+        assert article.access_date == date.today()
+
+    def test_from_zotero_item_missing_dates(self):
+        """Test that missing dates default to today"""
+        zotero_item = {
+            "data": {
+                "itemType": "journalArticle",
+                "url": "https://example.com/test",
+                "publicationTitle": "Journal",
+            },
+        }
+
+        article = Article.from_zotero_item(zotero_item)
+
+        assert article.date == date.today()
+        assert article.access_date == date.today()
+
 
 class TestMetadataResponse:
     """Test suite for MetadataResponse model"""
@@ -418,47 +540,47 @@ class TestClassificationResponse:
         """Test creating a valid ClassificationResponse"""
         response = ClassificationResponse(
             doi="10.1234/test",
-            relevance="high",
+            priority="high",
             reasoning="Strong alignment with cluster on network-based drug discovery methods",
         )
         assert response.doi == "10.1234/test"
-        assert response.relevance == "high"
+        assert response.priority == "high"
         assert "Strong alignment" in response.reasoning
 
-    def test_classification_response_all_relevance_levels(self):
-        """Test ClassificationResponse with all valid relevance levels"""
+    def test_classification_response_all_priority_levels(self):
+        """Test ClassificationResponse with all valid priority levels"""
         for level in ["high", "medium", "low"]:
             response = ClassificationResponse(
                 doi="10.1234/test",
-                relevance=level,
-                reasoning=f"Test reasoning for {level} relevance",
+                priority=level,
+                reasoning=f"Test reasoning for {level} priority",
             )
-            assert response.relevance == level
+            assert response.priority == level
 
-    def test_classification_response_invalid_relevance(self):
-        """Test that ClassificationResponse rejects invalid relevance values"""
+    def test_classification_response_invalid_priority(self):
+        """Test that ClassificationResponse rejects invalid priority values"""
         invalid_values = ["High", "MEDIUM", "Low", "very high", "none", ""]
         for invalid in invalid_values:
             with pytest.raises(ValidationError) as exc_info:
                 ClassificationResponse(
                     doi="10.1234/test",
-                    relevance=invalid,
+                    priority=invalid,
                     reasoning="Test reasoning",
                 )
-            assert "relevance" in str(exc_info.value).lower()
+            assert "priority" in str(exc_info.value).lower()
 
     def test_classification_response_requires_all_fields(self):
         """Test that ClassificationResponse requires all fields"""
         with pytest.raises(ValidationError) as exc_info:
-            ClassificationResponse(doi="10.1234/test", relevance="high")
+            ClassificationResponse(doi="10.1234/test", priority="high")
         assert "reasoning" in str(exc_info.value).lower()
 
         with pytest.raises(ValidationError) as exc_info:
             ClassificationResponse(doi="10.1234/test", reasoning="Test")
-        assert "relevance" in str(exc_info.value).lower()
+        assert "priority" in str(exc_info.value).lower()
 
         with pytest.raises(ValidationError) as exc_info:
-            ClassificationResponse(relevance="high", reasoning="Test")
+            ClassificationResponse(priority="high", reasoning="Test")
         assert "doi" in str(exc_info.value).lower()
 
     def test_classification_response_reasoning_can_be_detailed(self):
@@ -467,11 +589,11 @@ class TestClassificationResponse:
             "The 5 neighbor articles all focus on network analysis methods for biological data. "
             "Target article presents a graph neural network approach for predicting protein interactions. "
             "Tag overlap includes 'Network Biology', 'Machine Learning', and 'Protein Interactions'. "
-            "Methodology is consistent with neighbors. High relevance assigned."
+            "Methodology is consistent with neighbors. High priority assigned."
         )
         response = ClassificationResponse(
             doi="10.1234/test",
-            relevance="high",
+            priority="high",
             reasoning=long_reasoning,
         )
         assert response.reasoning == long_reasoning

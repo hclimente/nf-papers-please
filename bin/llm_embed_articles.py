@@ -12,7 +12,6 @@ from common.parsers import (
 )
 from common.utils import (
     get_env_variable,
-    article_to_text,
 )
 
 
@@ -47,7 +46,7 @@ def llm_process_articles(
     logging.info(f"Loaded {len(articles)} articles.")
     logging.debug(f"Articles: {pprint(articles)}")
 
-    texts = [article_to_text(article) for article in articles]
+    texts = [article.to_embedding_text() for article in articles]
 
     embeddings = embed(
         texts=texts,

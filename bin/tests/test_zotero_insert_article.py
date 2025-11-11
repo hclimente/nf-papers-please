@@ -155,7 +155,7 @@ class TestCreateZoteroArticle:
             date=date(2025, 10, 15),
             language="en",
             tags=["Network Biology", "Cancer Biology"],
-            reasoning="High relevance and importance",
+            reasoning="High priority and importance",
             access_date=date(2025, 10, 31),
             raw_contents="Raw content",
         )
@@ -253,7 +253,7 @@ class TestCreateZoteroNote:
             raw_contents="Raw content",
             zotero_key="ABC123",
             tags=["Machine Learning", "Systems Biology"],
-            reasoning="High relevance due to novel findings in core research area",
+            reasoning="High priority due to novel findings in core research area",
         )
 
     def test_create_zotero_note(self, article_with_key, mock_zotero):
@@ -263,7 +263,7 @@ class TestCreateZoteroNote:
         assert result["parentItem"] == "ABC123"
         assert "AI Scoring reasoning:" in result["note"]
         assert (
-            "High relevance due to novel findings in core research area"
+            "High priority due to novel findings in core research area"
             in result["note"]
         )
 
@@ -456,7 +456,7 @@ class TestInsertArticle:
                 "raw_contents": "Content 1",
                 "doi": "10.1234/test1",
                 "tags": ["Network Biology", "Cancer Biology"],
-                "reasoning": "High relevance to research interests",
+                "reasoning": "High priority to research interests",
             },
             {
                 "title": "Test Article 2",
@@ -467,7 +467,7 @@ class TestInsertArticle:
                 "raw_contents": "Content 2",
                 "doi": "10.1234/test2",
                 "tags": ["Machine Learning"],
-                "reasoning": "Medium relevance to research interests",
+                "reasoning": "Medium priority to research interests",
             },
         ]
 

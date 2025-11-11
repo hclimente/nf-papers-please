@@ -60,7 +60,7 @@ class TestFindKNearestNeighbors:
             article.language = None
             article.reasoning = None
             article.score = None
-            article.relevance = None
+            article.priority = None
             article.access_date = date(2025, 11, 9)
             article.raw_contents = f"Raw content {i}"
             article.zotero_key = None

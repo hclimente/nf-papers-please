@@ -14,7 +14,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from llm_embed_articles import llm_process_articles
 from common.models import Article, Author
-from common.utils import article_to_text
 
 
 class TestPrepareTextToEmbed:
@@ -40,7 +39,7 @@ class TestPrepareTextToEmbed:
 
     def test_prepare_text_with_all_fields(self, basic_article):
         """Test preparing text with all fields populated"""
-        result = article_to_text(basic_article)
+        result = basic_article.to_embedding_text()
 
         assert "Title: Test Article Title" in result
         assert "Journal: Test Journal" in result
@@ -49,7 +48,6 @@ class TestPrepareTextToEmbed:
         assert "Last Author:" in result
         assert "Jane Smith" in result.replace("\n", " ")
         assert "Summary: This is a test summary of the article." in result
-        assert "Tags: tag1, tag2, tag3" in result
 
     def test_prepare_text_without_authors(self):
         """Test preparing text when article has no authors"""
@@ -64,7 +62,7 @@ class TestPrepareTextToEmbed:
             authors=None,
         )
 
-        result = article_to_text(article)
+        result = article.to_embedding_text()
 
         assert "First Author: N/A" in result
         assert "Last Author: N/A" in result
@@ -82,46 +80,10 @@ class TestPrepareTextToEmbed:
             authors=[],
         )
 
-        result = article_to_text(article)
+        result = article.to_embedding_text()
 
         assert "First Author: N/A" in result
         assert "Last Author: N/A" in result
-
-    def test_prepare_text_without_tags(self):
-        """Test preparing text when article has no tags"""
-        article = Article(
-            title="No Tags Article",
-            url="https://example.com/article",
-            journal="Test Journal",
-            date=date(2024, 1, 1),
-            access_date=date(2024, 1, 15),
-            raw_contents="Raw content",
-            summary="Summary without tags",
-            authors=[Author(first_name="John", last_name="Doe")],
-            tags=None,
-        )
-
-        result = article_to_text(article)
-
-        assert "Tags: N/A" in result
-
-    def test_prepare_text_with_empty_tags_list(self):
-        """Test preparing text when article has empty tags list"""
-        article = Article(
-            title="Empty Tags Article",
-            url="https://example.com/article",
-            journal="Test Journal",
-            date=date(2024, 1, 1),
-            access_date=date(2024, 1, 15),
-            raw_contents="Raw content",
-            summary="Summary with empty tags",
-            authors=[Author(first_name="John", last_name="Doe")],
-            tags=[],
-        )
-
-        result = article_to_text(article)
-
-        assert "Tags: N/A" in result
 
     def test_prepare_text_with_single_author(self):
         """Test preparing text when article has single author"""
@@ -136,7 +98,7 @@ class TestPrepareTextToEmbed:
             authors=[Author(first_name="John", last_name="Doe")],
         )
 
-        result = article_to_text(article)
+        result = article.to_embedding_text()
 
         # First and last author should be the same
         assert "First Author:" in result
@@ -159,7 +121,7 @@ class TestPrepareTextToEmbed:
             ],
         )
 
-        result = article_to_text(article)
+        result = article.to_embedding_text()
 
         assert "Title: Institutional Author Article" in result
         # The institutional author should be formatted somehow
@@ -180,7 +142,7 @@ class TestPrepareTextToEmbed:
             authors=[Author(first_name="John", last_name="Doe")],
         )
 
-        result = article_to_text(article)
+        result = article.to_embedding_text()
 
         assert long_summary in result
 
@@ -198,7 +160,7 @@ class TestPrepareTextToEmbed:
             tags=["tag-1", "tag_2", "tag.3"],
         )
 
-        result = article_to_text(article)
+        result = article.to_embedding_text()
 
         assert "Special Characters: Test & Symbols" in result
         assert "Test Journal™" in result
@@ -218,18 +180,18 @@ class TestPrepareTextToEmbed:
             tags=["tag1", "tag2", "tag3", "tag4", "tag5", "tag6"],
         )
 
-        result = article_to_text(article)
+        result = article.to_embedding_text()
 
         assert "tag1, tag2, tag3, tag4, tag5, tag6" in result
 
     def test_prepare_text_returns_string(self, basic_article):
         """Test that prepare_text_to_embed returns a string"""
-        result = article_to_text(basic_article)
+        result = basic_article.to_embedding_text()
         assert isinstance(result, str)
 
     def test_prepare_text_not_empty(self, basic_article):
         """Test that prepared text is not empty"""
-        result = article_to_text(basic_article)
+        result = basic_article.to_embedding_text()
         assert len(result) > 0
 
 

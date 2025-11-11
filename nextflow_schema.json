@@ -37,9 +37,9 @@
                 },
                 "from": {
                     "type": "string",
-                    "enum": ["articles_json", "duckdb", "journals_tsv", "pg"],
+                    "enum": ["articles_json", "journals_tsv", "zotero"],
                     "description": "Source backend for fetching articles",
-                    "help_text": "Select where to fetch articles from: 'journals_tsv' for RSS feeds, 'duckdb' for existing database, 'postgresql' for PostgreSQL database, or 'articles_json' for JSON file.",
+                    "help_text": "Select where to fetch articles from: 'journals_tsv' for RSS feeds, 'articles_json' for JSON file, or 'zotero' for direct Zotero import.",
                     "default": "journals_tsv"
                 },
                 "from_json_input": {
@@ -76,6 +76,19 @@
                     "description": "Number of days to look back when fetching articles",
                     "help_text": "Articles published within this many days from the current date will be fetched and processed.",
                     "default": 8
+                },
+                "from_zotero_collection_id": {
+                    "type": ["string", "null"],
+                    "description": "Zotero collection ID where articles will be saved",
+                    "help_text": "The collection ID within your Zotero library. Find this by right-clicking on a collection in Zotero and selecting 'Copy Collection Identifier'. Only used when 'to' is set to 'zotero'.",
+                    "default": null
+                },
+                "from_zotero_library_type": {
+                    "type": "string",
+                    "enum": ["user", "group"],
+                    "description": "Type of Zotero library",
+                    "help_text": "Set to 'user' for personal library or 'group' for a shared group library. Only used when 'to' is set to 'zotero'.",
+                    "default": "user"
                 }
             },
             "required": ["journals_tsv", "research_interests"]
@@ -117,13 +130,13 @@
                     "help_text": "Your Zotero user ID (for personal library) or group ID (for group library). Find this in your Zotero settings. Only used when 'to' is set to 'zotero'.",
                     "default": null
                 },
-                "zotero_collection_id": {
+                "to_zotero_collection_id": {
                     "type": ["string", "null"],
                     "description": "Zotero collection ID where articles will be saved",
                     "help_text": "The collection ID within your Zotero library. Find this by right-clicking on a collection in Zotero and selecting 'Copy Collection Identifier'. Only used when 'to' is set to 'zotero'.",
                     "default": null
                 },
-                "zotero_library_type": {
+                "to_zotero_library_type": {
                     "type": "string",
                     "enum": ["user", "group"],
                     "description": "Type of Zotero library",

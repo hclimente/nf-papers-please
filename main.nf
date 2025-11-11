@@ -4,7 +4,7 @@ include { REMOVE_ARTICLES_IN_DUCKDB; TO_DUCKDB } from './workflows/duckdb'
 include { FROM_JSON; TO_JSON } from './workflows/json'
 include { REMOVE_ARTICLES_IN_POSTGRESQL; TO_POSTGRESQL } from './workflows/postgresql'
 include { FROM_TABULAR } from './workflows/tabular'
-include { COLLECTION_CHECK; TO_ZOTERO } from './workflows/zotero'
+include { COLLECTION_CHECK; FROM_ZOTERO; TO_ZOTERO } from './workflows/zotero'
 
 include { EMBED_ARTICLES; SCREEN_ARTICLES } from './workflows/articles'
 
@@ -16,8 +16,8 @@ workflow LEARN {
         FROM_JSON(file(params.from_json_input))
         fetched_articles = FROM_JSON.out
     } else if (params.from == "zotero") {
-        // FROM_POSTGRESQL(file(params.journals_tsv))
-        // fetched_articles = FROM_POSTGRESQL.out
+        FROM_ZOTERO(params.zotero_user_id, params.from_zotero_collection_id, params.from_zotero_library_type)
+        fetched_articles = FROM_ZOTERO.out
     } else {
         error "Unsupported from: ${params.from}. Supported backends: 'articles_json', 'zotero'."
     }
@@ -69,9 +69,9 @@ workflow SCREEN {
     EMBED_ARTICLES(articles_to_process)
     SCREEN_ARTICLES(EMBED_ARTICLES.out.all_articles)
 
-    // if (params.to == "pg") {
-    //     TO_POSTGRESQL(SCREEN_ARTICLES.out)
-    // }
+    if (params.to == "pg") {
+        TO_POSTGRESQL(SCREEN_ARTICLES.out)
+    }
 
 }
 

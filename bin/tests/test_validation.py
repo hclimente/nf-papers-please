@@ -562,7 +562,7 @@ class TestValidateLlmResponse:
                 {
                     "doi": "10.1234/test",
                     "tags": ["Network Biology"],
-                    "reasoning": "High relevance article",
+                    "reasoning": "High priority article",
                 }
             ]
         )
@@ -655,7 +655,7 @@ class TestValidateLlmResponse:
             [
                 {
                     "doi": "10.1234/test",
-                    "relevance": "high",
+                    "priority": "high",
                     "reasoning": "Strong alignment with cluster on network-based methods",
                 }
             ]
@@ -669,27 +669,27 @@ class TestValidateLlmResponse:
         )
 
         assert "10.1234/test" in result
-        assert result["10.1234/test"].relevance == "high"
+        assert result["10.1234/test"].priority == "high"
         assert "Strong alignment" in result["10.1234/test"].reasoning
 
     @patch("common.validation.logging.info")
     def test_validate_classify_response_all_levels(self, mock_info):
-        """Test validating classify response with all relevance levels"""
+        """Test validating classify response with all priority levels"""
         response_text = json.dumps(
             [
                 {
                     "doi": "10.1234/high",
-                    "relevance": "high",
+                    "priority": "high",
                     "reasoning": "High alignment",
                 },
                 {
                     "doi": "10.1234/medium",
-                    "relevance": "medium",
+                    "priority": "medium",
                     "reasoning": "Medium alignment",
                 },
                 {
                     "doi": "10.1234/low",
-                    "relevance": "low",
+                    "priority": "low",
                     "reasoning": "Low alignment",
                 },
             ]
@@ -703,18 +703,18 @@ class TestValidateLlmResponse:
         )
 
         assert len(result) == 3
-        assert result["10.1234/high"].relevance == "high"
-        assert result["10.1234/medium"].relevance == "medium"
-        assert result["10.1234/low"].relevance == "low"
+        assert result["10.1234/high"].priority == "high"
+        assert result["10.1234/medium"].priority == "medium"
+        assert result["10.1234/low"].priority == "low"
 
     @patch("common.validation.logging.info")
-    def test_validate_classify_response_invalid_relevance(self, mock_info):
-        """Test validation rejects invalid relevance values"""
+    def test_validate_classify_response_invalid_priority(self, mock_info):
+        """Test validation rejects invalid priority values"""
         response_text = json.dumps(
             [
                 {
                     "doi": "10.1234/invalid",
-                    "relevance": "very high",  # Invalid
+                    "priority": "very high",  # Invalid
                     "reasoning": "Test reasoning",
                 }
             ]
@@ -727,7 +727,7 @@ class TestValidateLlmResponse:
             allow_qc_errors=True,
         )
 
-        # Should be rejected due to invalid relevance
+        # Should be rejected due to invalid priority
         assert "10.1234/invalid" not in result
 
 

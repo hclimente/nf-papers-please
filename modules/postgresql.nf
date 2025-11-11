@@ -26,6 +26,7 @@ process REMOVE_PROCESSED {
 process SAVE {
 
     container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
+    maxForks 1
     secret 'PGPASSWORD'
 
     input:
