@@ -29,7 +29,7 @@ def filterAndBatch(channel, batch_size, key, value) {
     def branches = channel
         .splitJson()
         .flatten()
-        .branch {
+        .branch { it ->
             match: it[key] == value
             no_match: it[key] != value
         }
