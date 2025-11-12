@@ -235,7 +235,6 @@ class Article(ArticleBase):
             journal_short_name=self.journal_short_name,
             authors=pruned_authors,
             summary=self.summary,
-            tags=self.tags,
             doi=self.doi,
             url=self.url,
             date=self.date,

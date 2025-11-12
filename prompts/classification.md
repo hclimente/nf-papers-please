@@ -16,9 +16,9 @@ You will assing one of three matching levels to the target article:
 
 - **medium**: The neighbors show moderate coherence, perhaps 3-4 neighbors share a strong theme while 1-2 are more distant. The target article meaningfully engages with the dominant theme, sharing methodological approaches and application domains with **2-3 neighbors** in substantive ways. Use medium for: different diseases with same methods, complementary techniques within the same research paradigm, or related application domains. **Do not use medium for superficial similarity**: if the target merely exists in the same broad field but uses fundamentally different approaches, assign **low** instead.
 
-- **low**: The target article has minimal alignment with the cluster. This occurs when: (1) the neighbors themselves lack coherence (each addresses different topics/methods), OR (2) **the target shares only superficial connections with a coherent cluster**—such as broad disciplinary tags ('Computational Biology', 'Cancer Biology'), journal overlap, or general field membership—but does not engage with the cluster's specific research focus, methodology, or application domain. Target aligns with **fewer than 2 neighbors** in meaningful ways. **Key principle**: Being in the same broad field is not sufficient; the target must address similar research questions or use similar methodological approaches.
+- **low**: The target article has minimal alignment with the cluster. This occurs when: (1) the neighbors themselves lack coherence (each addresses different topics/methods), OR (2) **the target shares only superficial connections with a coherent cluster**—such as journal overlap or general field membership—but does not engage with the cluster's specific research focus, methodology, or application domain. Target aligns with **fewer than 2 neighbors** in meaningful ways. **Key principle**: Being in the same broad field is not sufficient; the target must address similar research questions or use similar methodological approaches.
 
-**Critical principle**: The user is a scientist highly specialized in their field. Hence, small differences matter, and superficial similarities (e.g. shared broad tags) should receive low classifications. Use the neighbor articles to discern fine-grained distinctions. Since they are the closest articles in the user's library, they should help you calibrate your judgments. If the target doesn't closely match the neighbors in research approach, it likely shouldn't have been retrieved as a neighbor in the first place, suggesting low priority.
+**Critical principle**: The user is a scientist highly specialized in their field. Hence, small differences matter, and superficial similarities should receive low classifications. Use the neighbor articles to discern fine-grained distinctions. Since they are the closest articles in the user's library, they should help you calibrate your judgments. If the target doesn't closely match the neighbors in research approach, it likely shouldn't have been retrieved as a neighbor in the first place, suggesting low priority.
 
 # Evaluation Strategy
 
@@ -52,7 +52,6 @@ Articles are provided as JSON objects with the following structure:
       "last_name": "LastName"
     }
   ],
-  "tags": ["Tag1", "Tag2", "Tag3"],
   "nearest_neighbors": [
     {
       "title": "Neighbor Article Title",
@@ -62,8 +61,7 @@ Articles are provided as JSON objects with the following structure:
       "access_date": "2024-01-02",
       "raw_contents": "",
       "journal": "Neighbor Journal",
-      "authors": [{"first_name": "Author", "last_name": "Name"}],
-      "tags": ["NeighborTag1", "NeighborTag2"]
+      "authors": [{"first_name": "Author", "last_name": "Name"}]
     }
   ]
 }
@@ -74,10 +72,9 @@ Articles are provided as JSON objects with the following structure:
 - `summary`: Article abstract/summary
 - `journal`: Journal name
 - `authors`: List of authors (only first and last author included to reduce tokens; if single author, only that author)
-- `tags`: List of tags assigned by previous processing stages
 - `nearest_neighbors`: Array of 5 similar articles from the user's library (in the same JSON format)
 
-**Note**: The `raw_contents` field is always empty (pruned to save tokens). The `doi`, `url`, `date`, and `access_date` fields are present but not critical for classification. Focus your analysis on: `title`, `summary`, `journal`, `authors`, and `tags`.
+**Note**: The `raw_contents` field is always empty (pruned to save tokens). The `doi`, `url`, `date`, and `access_date` fields are present but not critical for classification. Focus your analysis on: `title`, `summary`, `journal`, and `authors`.
 
 # Output Format Requirements
 
@@ -129,7 +126,6 @@ Your reasoning should:
         "summary": "We present NetMed, a network-based framework for identifying therapeutic targets by integrating protein-protein interaction networks with genomic and transcriptomic data. Applied to cancer and neurodegenerative diseases, NetMed identifies novel target candidates with higher validation rates than traditional approaches.",
         "journal": "Nature Biotechnology",
         "authors": [{"first_name": "Wang", "last_name": "Li"}, {"first_name": "Albert", "last_name": "Barabási"}],
-        "tags": ["Computational Biology", "Network Biology", "Drug discovery", "Drug Target Discovery", "New Computational Method"],
         "url": "https://example.com/target",
         "date": "2024-01-01",
         "access_date": "2024-01-02",
@@ -140,7 +136,6 @@ Your reasoning should:
             "summary": "We developed network-based stratification (NBS), a method to integrate somatic tumor genomes with gene networks to discover cancer subtypes. NBS identifies subtypes that are predictive of clinical outcomes in ovarian and uterine cancers.",
             "journal": "Nature Methods",
             "authors": [{"first_name": "Hofree", "last_name": "Smith"}, {"first_name": "Trey", "last_name": "Ideker"}],
-            "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug Target Discovery", "New Computational Method"],
             "url": "https://example.com/neighbor1",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -151,7 +146,6 @@ Your reasoning should:
             "summary": "Cancer genes exhibit mutual exclusivity in their mutation patterns within pathways. We present a method to identify driver pathways by detecting mutually exclusive mutations in network modules, applied to discover novel cancer driver pathways.",
             "journal": "Genome Biology",
             "authors": [{"first_name": "Leiserson", "last_name": "Jones"}, {"first_name": "Ben", "last_name": "Raphael"}],
-            "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug Target Discovery"],
             "url": "https://example.com/neighbor2",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -162,7 +156,6 @@ Your reasoning should:
             "summary": "We develop a network-based approach to predict synergistic drug combinations by analyzing drug-target networks and disease module interactions. The method successfully predicts effective combination therapies in cancer.",
             "journal": "Nature Communications",
             "authors": [{"first_name": "Cheng", "last_name": "Wu"}, {"first_name": "Albert", "last_name": "Barabási"}],
-            "tags": ["Computational Biology", "Network Biology", "Drug discovery", "Drug Target Discovery"],
             "url": "https://example.com/neighbor3",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -173,7 +166,6 @@ Your reasoning should:
             "summary": "We construct a network of human diseases based on shared genetic origins, revealing that disease genes cluster in specific network neighborhoods. This provides insights into disease relationships and potential therapeutic targets.",
             "journal": "Proceedings of the National Academy of Sciences",
             "authors": [{"first_name": "Goh", "last_name": "Kim"}, {"first_name": "Albert", "last_name": "Barabási"}],
-            "tags": ["Computational Biology", "Network Biology", "Drug Target Discovery", "Review"],
             "url": "https://example.com/neighbor4",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -184,7 +176,6 @@ Your reasoning should:
             "summary": "We review the emerging field of network medicine, which leverages network biology principles to understand disease mechanisms and identify therapeutic strategies. We discuss how disease modules in molecular networks inform drug target discovery.",
             "journal": "Nature Reviews Genetics",
             "authors": [{"first_name": "Albert", "last_name": "Barabási"}],
-            "tags": ["Computational Biology", "Network Biology", "Drug discovery", "Drug Target Discovery", "Review"],
             "url": "https://example.com/neighbor5",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -196,7 +187,7 @@ Your reasoning should:
     "response": [
       {
         "doi": "10.1234/target_article",
-        "reasoning": "All 5 neighbor articles focus on network-based approaches for disease understanding and drug target identification, primarily from the Barabási group. The target article (NetMed) directly extends this paradigm by presenting a network-based framework for target identification using multi-omics integration. Strong thematic alignment: all articles use network/graph-based methods for therapeutic target discovery. Perfect tag overlap: 'Computational Biology', 'Network Biology', 'Drug discovery', 'Drug Target Discovery' appear consistently. Methodological consistency: all employ network analysis on biological data. The target article represents a natural evolution of the approaches described in the neighbor articles, introducing a novel framework (tagged as 'New Computational Method') that builds on established network medicine principles. High priority assigned due to exceptional thematic, methodological, and application domain alignment.",
+        "reasoning": "All 5 neighbor articles focus on network-based approaches for disease understanding and drug target identification, primarily from the Barabási group. The target article (NetMed) directly extends this paradigm by presenting a network-based framework for target identification using multi-omics integration. Strong thematic alignment: all articles use network/graph-based methods for therapeutic target discovery. Methodological consistency: all employ network analysis on biological data. The target article represents a natural evolution of the approaches described in the neighbor articles, introducing a novel computational framework that builds on established network medicine principles. High priority assigned due to exceptional thematic, methodological, and application domain alignment.",
         "priority": "high"
       }
     ]
@@ -209,7 +200,6 @@ Your reasoning should:
         "summary": "We introduce ACeT, an attention-based context-embedding transformer that fuses routine early-stage assay readouts to predict three endpoints: high-concentration viscosity, mouse intravenous clearance, and Phase I-to-approval outcomes. The model achieved R2 ≈ 0.75 for viscosity and R2 ≈ 0.80 for clearance, and for clinical progression reached ~78% balanced accuracy. By unifying heterogeneous assays in a single encoder, this framework improves the fidelity of early-stage developability decisions for monoclonal antibodies.",
         "journal": "bioRxiv",
         "authors": [{"first_name": "Smith", "last_name": "Jones"}, {"first_name": "Jane", "last_name": "Doe"}],
-        "tags": ["Computational Biology", "Drug discovery", "New Computational Method", "Pre-print"],
         "url": "https://www.biorxiv.org/content/10.1101/2025.10.31.685722v1",
         "date": "2025-11-01",
         "access_date": "2025-11-02",
@@ -220,7 +210,6 @@ Your reasoning should:
             "summary": "We present the Nucleotide Transformer, a foundation model trained on DNA sequences from diverse genomes. The model learns genomic language and can predict regulatory elements, variant effects, and gene expression from sequence context.",
             "journal": "bioRxiv",
             "authors": [{"first_name": "Dalla-Torre", "last_name": "Wang"}, {"first_name": "Sarah", "last_name": "Chen"}],
-            "tags": ["Computational Biology", "Genomics Language Models", "New Computational Method", "Pre-print"],
             "url": "https://example.com/neighbor1",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -231,7 +220,6 @@ Your reasoning should:
             "summary": "We develop Enformer, a transformer-based model that predicts gene expression from DNA sequence by learning long-range regulatory interactions. The model outperforms previous approaches on variant effect prediction and regulatory element identification.",
             "journal": "Nature Methods",
             "authors": [{"first_name": "Avsec", "last_name": "Li"}, {"first_name": "Vikram", "last_name": "Agarwal"}],
-            "tags": ["Computational Biology", "Genomics Language Models", "New Computational Method"],
             "url": "https://example.com/neighbor2",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -242,7 +230,6 @@ Your reasoning should:
             "summary": "We systematically evaluate genomic foundation models on their ability to predict functional effects of genetic variants. We compare models trained on human genomes and assess their performance on regulatory element prediction and disease variant interpretation.",
             "journal": "Genome Biology",
             "authors": [{"first_name": "Zhang", "last_name": "Liu"}, {"first_name": "Michael", "last_name": "Thompson"}],
-            "tags": ["Computational Biology", "Genomics Language Models", "Statistical Genetics"],
             "url": "https://example.com/neighbor3",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -253,7 +240,6 @@ Your reasoning should:
             "summary": "We present a transformer architecture that learns the regulatory code directly from DNA sequence to predict tissue-specific gene expression. The model captures enhancer-promoter interactions and predicts expression changes from genetic variants.",
             "journal": "Nature Genetics",
             "authors": [{"first_name": "Kim", "last_name": "Park"}, {"first_name": "David", "last_name": "Wilson"}],
-            "tags": ["Computational Biology", "Genomics Language Models", "New Computational Method", "Nature Genetics"],
             "url": "https://example.com/neighbor4",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -264,7 +250,6 @@ Your reasoning should:
             "summary": "We review the emerging field of genomic foundation models—transformer-based models trained on DNA sequences to learn genomic language. We discuss their applications in variant interpretation, regulatory element discovery, and therapeutic target identification, along with current limitations and future directions.",
             "journal": "Nature Reviews Genetics",
             "authors": [{"first_name": "Chen", "last_name": "Rodriguez"}],
-            "tags": ["Computational Biology", "Genomics Language Models", "Review"],
             "url": "https://example.com/neighbor5",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -276,7 +261,7 @@ Your reasoning should:
     "response": [
       {
         "doi": "10.1101/2025.10.31.685722",
-        "reasoning": "The 5 neighbors form a coherent cluster focused on genomic language models—transformer-based models trained on DNA/RNA sequences to predict genomic properties like regulatory elements, gene expression, and variant effects from sequence context. The target article (ACeT) uses a transformer architecture but for an entirely different task: predicting antibody biophysical properties (viscosity, clearance, clinical success) from experimental assay readouts, not from sequence data. Critical distinction: neighbors work with DNA sequence as input to learn genomic regulatory logic; the target integrates heterogeneous experimental measurements to predict protein developability. While both employ transformer architectures and share 'Computational Biology' and 'New Computational Method' tags, using the same neural network architecture does not constitute methodological alignment. The input data modalities (genomic sequences vs. biophysical assay data), prediction targets (genomic functions vs. antibody properties), and application domains (genomics/genetics vs. protein therapeutics engineering) are fundamentally different. The target's 'Drug discovery' tag is absent from all neighbors, while their defining 'Genomics Language Models' tag is absent from the target. Low priority assigned: superficial similarity through shared ML architecture and broad field membership, but no substantive overlap in research questions, data types, or domain focus.",
+        "reasoning": "The 5 neighbors form a coherent cluster focused on genomic language models—transformer-based models trained on DNA/RNA sequences to predict genomic properties like regulatory elements, gene expression, and variant effects from sequence context. The target article (ACeT) uses a transformer architecture but for an entirely different task: predicting antibody biophysical properties (viscosity, clearance, clinical success) from experimental assay readouts, not from sequence data. Critical distinction: neighbors work with DNA sequence as input to learn genomic regulatory logic; the target integrates heterogeneous experimental measurements to predict protein developability. While both employ transformer architectures, using the same neural network architecture does not constitute methodological alignment. The input data modalities (genomic sequences vs. biophysical assay data), prediction targets (genomic functions vs. antibody properties), and application domains (genomics/genetics vs. protein therapeutics engineering) are fundamentally different. Low priority assigned: superficial similarity through shared ML architecture and broad field membership, but no substantive overlap in research questions, data types, or domain focus.",
         "priority": "low"
       }
     ]
@@ -289,7 +274,6 @@ Your reasoning should:
         "summary": "The authors use spatial and single-cell transcriptomics to examine spatial dynamics during early human cardiogenesis, yielding insights into the development of the cardiac pacemaker-conduction system, autonomic innervation, heart valves and atrial septum, and heterogeneity of cardiac mesenchymal cells.",
         "journal": "Nature Genetics",
         "authors": [{"first_name": "Smith", "last_name": "Williams"}, {"first_name": "Robert", "last_name": "Johnson"}],
-        "tags": ["Computational Biology", "Large-Scale Analyses", "Nature Genetics"],
         "url": "https://example.com/heart_dev",
         "date": "2025-10-29",
         "access_date": "2025-11-02",
@@ -300,7 +284,6 @@ Your reasoning should:
             "summary": "We present the Nucleotide Transformer, a foundation model trained on DNA sequences from diverse genomes. The model learns genomic language and can predict regulatory elements, variant effects, and gene expression from sequence context.",
             "journal": "bioRxiv",
             "authors": [{"first_name": "Dalla-Torre", "last_name": "Wang"}, {"first_name": "Sarah", "last_name": "Chen"}],
-            "tags": ["Computational Biology", "Genomics Language Models", "New Computational Method", "Pre-print"],
             "url": "https://example.com/neighbor1",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -311,7 +294,6 @@ Your reasoning should:
             "summary": "We develop Enformer, a transformer-based model that predicts gene expression from DNA sequence by learning long-range regulatory interactions. The model outperforms previous approaches on variant effect prediction and regulatory element identification.",
             "journal": "Nature Methods",
             "authors": [{"first_name": "Avsec", "last_name": "Li"}, {"first_name": "Vikram", "last_name": "Agarwal"}],
-            "tags": ["Computational Biology", "Genomics Language Models", "New Computational Method"],
             "url": "https://example.com/neighbor2",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -322,7 +304,6 @@ Your reasoning should:
             "summary": "We systematically evaluate genomic foundation models on their ability to predict functional effects of genetic variants. We compare models trained on human genomes and assess their performance on regulatory element prediction and disease variant interpretation.",
             "journal": "Genome Biology",
             "authors": [{"first_name": "Zhang", "last_name": "Liu"}, {"first_name": "Michael", "last_name": "Thompson"}],
-            "tags": ["Computational Biology", "Genomics Language Models", "Statistical Genetics"],
             "url": "https://example.com/neighbor3",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -333,7 +314,6 @@ Your reasoning should:
             "summary": "We present a transformer architecture that learns the regulatory code directly from DNA sequence to predict tissue-specific gene expression. The model captures enhancer-promoter interactions and predicts expression changes from genetic variants.",
             "journal": "Nature Genetics",
             "authors": [{"first_name": "Kim", "last_name": "Park"}, {"first_name": "David", "last_name": "Wilson"}],
-            "tags": ["Computational Biology", "Genomics Language Models", "New Computational Method", "Nature Genetics"],
             "url": "https://example.com/neighbor4",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -344,7 +324,6 @@ Your reasoning should:
             "summary": "We review the emerging field of genomic foundation models—transformer-based models trained on DNA sequences to learn genomic language. We discuss their applications in variant interpretation, regulatory element discovery, and therapeutic target identification, along with current limitations and future directions.",
             "journal": "Nature Reviews Genetics",
             "authors": [{"first_name": "Chen", "last_name": "Rodriguez"}],
-            "tags": ["Computational Biology", "Genomics Language Models", "Review"],
             "url": "https://example.com/neighbor5",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -356,7 +335,7 @@ Your reasoning should:
     "response": [
       {
         "doi": "10.1038/s41588-025-02352-6",
-        "reasoning": "The 5 neighbors form a tight cluster around genomic language models—computational methods that learn from DNA sequences to predict genomic properties like regulatory elements and gene expression from sequence context alone. All neighbors focus on sequence-to-function prediction using foundation models. The target article investigates human heart development using spatial and single-cell transcriptomics—experimental techniques that measure actual gene expression and cellular composition in tissue samples. While both target and neighbors relate to gene expression and share 'Computational Biology' tags, they represent fundamentally different research paradigms: computational sequence modeling vs. experimental transcriptomic profiling. The target generates experimental data to understand developmental biology; the neighbors build computational models to predict from sequence. There is no indication the target applies or evaluates genomic language models, nor do the neighbors focus on developmental biology applications. The only substantial overlap is that both involve computational analysis of biological data at scale, but this is too broad to constitute meaningful alignment. The target's 'Nature Genetics' tag appears in one neighbor, but publication venue alone is insufficient. Low priority assigned: superficial similarity through broad field membership ('Computational Biology', 'Large-Scale Analyses') without substantive methodological or research question alignment.",
+        "reasoning": "The 5 neighbors form a tight cluster around genomic language models—computational methods that learn from DNA sequences to predict genomic properties like regulatory elements and gene expression from sequence context alone. All neighbors focus on sequence-to-function prediction using foundation models. The target article investigates human heart development using spatial and single-cell transcriptomics—experimental techniques that measure actual gene expression and cellular composition in tissue samples. While both target and neighbors relate to gene expression, they represent fundamentally different research paradigms: computational sequence modeling vs. experimental transcriptomic profiling. The target generates experimental data to understand developmental biology; the neighbors build computational models to predict from sequence. There is no indication the target applies or evaluates genomic language models, nor do the neighbors focus on developmental biology applications. The only substantial overlap is that both involve computational analysis of biological data at scale, but this is too broad to constitute meaningful alignment. The target's publication venue (Nature Genetics) appears in one neighbor, but publication venue alone is insufficient. Low priority assigned: superficial similarity through broad field membership without substantive methodological or research question alignment.",
         "priority": "low"
       }
     ]
@@ -369,7 +348,6 @@ Your reasoning should:
         "summary": "We present AlphaFold-Multimer, an extension of AlphaFold2 that predicts the structures of protein complexes. The method achieves high accuracy on diverse protein assemblies and provides insights into protein-protein interactions.",
         "journal": "Nature",
         "authors": [{"first_name": "Evans", "last_name": "Smith"}, {"first_name": "Demis", "last_name": "Hassabis"}],
-        "tags": ["Computational Biology", "New Computational Method"],
         "url": "https://example.com/alphafold",
         "date": "2024-01-01",
         "access_date": "2024-01-02",
@@ -380,7 +358,6 @@ Your reasoning should:
             "summary": "We develop network-based methods to predict protein-protein interactions relevant to cancer biology. The approach identifies interaction partners for cancer-associated proteins and predicts their functional roles.",
             "journal": "Molecular Systems Biology",
             "authors": [{"first_name": "Chen", "last_name": "Zhang"}, {"first_name": "Marc", "last_name": "Vidal"}],
-            "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug Target Discovery"],
             "url": "https://example.com/neighbor1",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -391,7 +368,6 @@ Your reasoning should:
             "summary": "We apply graph neural networks to predict protein-protein interactions from network topology and sequence features. The method outperforms traditional network-based approaches on benchmark datasets.",
             "journal": "Bioinformatics",
             "authors": [{"first_name": "Zhang", "last_name": "Li"}, {"first_name": "Wei", "last_name": "Wang"}],
-            "tags": ["Computational Biology", "Network Biology", "New Computational Method"],
             "url": "https://example.com/neighbor2",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -402,7 +378,6 @@ Your reasoning should:
             "summary": "Using network-based integration of GWAS and protein interaction data, we identify novel genes and pathways regulating blood pressure. Network analysis reveals functional modules associated with cardiovascular disease.",
             "journal": "Cell Systems",
             "authors": [{"first_name": "Liu", "last_name": "Chen"}, {"first_name": "Joseph", "last_name": "Loscalzo"}],
-            "tags": ["Computational Biology", "Network Biology", "Statistical Genetics", "Drug Target Discovery"],
             "url": "https://example.com/neighbor3",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -413,7 +388,6 @@ Your reasoning should:
             "summary": "We present a network-based approach to identify drug repurposing opportunities for cardiovascular diseases by analyzing drug-target networks and disease modules in the human interactome.",
             "journal": "Nature Communications",
             "authors": [{"first_name": "Cheng", "last_name": "Wu"}, {"first_name": "Albert", "last_name": "Barabási"}],
-            "tags": ["Computational Biology", "Network Biology", "Drug discovery", "Drug Target Discovery"],
             "url": "https://example.com/neighbor4",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -424,7 +398,6 @@ Your reasoning should:
             "summary": "We systematically analyze how disease genes cluster in protein interaction networks. Network-based analysis reveals that disease genes tend to interact with each other, forming disease modules that suggest therapeutic targets.",
             "journal": "PLOS Computational Biology",
             "authors": [{"first_name": "Kim", "last_name": "Park"}, {"first_name": "Edward", "last_name": "Marcotte"}],
-            "tags": ["Computational Biology", "Network Biology", "Drug Target Discovery"],
             "url": "https://example.com/neighbor5",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -436,7 +409,7 @@ Your reasoning should:
     "response": [
       {
         "doi": "10.1038/s41586-021-03819-2",
-        "reasoning": "The 5 neighbor articles consistently focus on network-based approaches for analyzing protein interactions, disease mechanisms, and drug target discovery. They emphasize network topology analysis and systems-level understanding of biological processes. The target article (AlphaFold-Multimer) predicts protein complex structures using deep learning, which relates to protein-protein interactions but through a fundamentally different methodology (structure prediction vs. network analysis). Partial tag overlap: both share 'Computational Biology' and 'New Computational Method', but the target lacks 'Network Biology', 'Drug Target Discovery' tags present in most neighbors. The target article provides complementary information (3D structures) that could inform network-based analyses, but doesn't directly employ network methods itself. Medium priority assigned: related application domain (protein interactions) but distinct methodological approach (structure prediction vs. network analysis).",
+        "reasoning": "The 5 neighbor articles consistently focus on network-based approaches for analyzing protein interactions, disease mechanisms, and drug target discovery. They emphasize network topology analysis and systems-level understanding of biological processes. The target article (AlphaFold-Multimer) predicts protein complex structures using deep learning, which relates to protein-protein interactions but through a fundamentally different methodology (structure prediction vs. network analysis). The target article provides complementary information (3D structures) that could inform network-based analyses, but doesn't directly employ network methods itself. Medium priority assigned: related application domain (protein interactions) but distinct methodological approach (structure prediction vs. network analysis).",
         "priority": "medium"
       }
     ]
@@ -449,7 +422,6 @@ Your reasoning should:
         "summary": "We demonstrate the application of CRISPR-Cas9 genome editing in zebrafish to create models of human genetic diseases. The approach allows rapid generation of loss-of-function mutations to study developmental biology and disease mechanisms in this vertebrate model system.",
         "journal": "Disease Models & Mechanisms",
         "authors": [{"first_name": "Hwang", "last_name": "Park"}, {"first_name": "Stephen", "last_name": "Ekker"}],
-        "tags": ["Other application", "Only non-human application(s)"],
         "url": "https://example.com/crispr",
         "date": "2024-01-01",
         "access_date": "2024-01-02",
@@ -460,7 +432,6 @@ Your reasoning should:
             "summary": "Using network-based stratification on multi-omics data, we identify four distinct glioblastoma subtypes with different molecular characteristics and clinical outcomes. The network approach reveals subtype-specific therapeutic vulnerabilities.",
             "journal": "Cell",
             "authors": [{"first_name": "Verhaak", "last_name": "Smith"}, {"first_name": "Jill", "last_name": "Mesirov"}],
-            "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug Target Discovery", "Large-Scale Analyses"],
             "url": "https://example.com/neighbor1",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -471,7 +442,6 @@ Your reasoning should:
             "summary": "We perform integrative analysis of genomic alterations across 33 cancer types to identify driver genes and potential therapeutic targets. Network-based approaches reveal functional relationships between cancer genes.",
             "journal": "Nature Genetics",
             "authors": [{"first_name": "Sanchez-Vega", "last_name": "Rodriguez"}, {"first_name": "Nikolaus", "last_name": "Schultz"}],
-            "tags": ["Computational Biology", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "Large-Scale Analyses", "Nature Genetics"],
             "url": "https://example.com/neighbor2",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -482,7 +452,6 @@ Your reasoning should:
             "summary": "We develop network propagation methods to identify therapeutic targets in cancer by integrating genomic data with molecular interaction networks. The approach identifies both known and novel cancer drug targets.",
             "journal": "Nature Biotechnology",
             "authors": [{"first_name": "Cowen", "last_name": "Smith"}, {"first_name": "Ernest", "last_name": "Fraenkel"}],
-            "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug Target Discovery", "New Computational Method"],
             "url": "https://example.com/neighbor3",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -493,7 +462,6 @@ Your reasoning should:
             "summary": "We review statistical genetics approaches for distinguishing cancer driver mutations from passenger mutations in tumor sequencing studies. We discuss methods for identifying significantly mutated genes and their therapeutic implications.",
             "journal": "Trends in Genetics",
             "authors": [{"first_name": "Lawrence", "last_name": "Miller"}, {"first_name": "Gad", "last_name": "Getz"}],
-            "tags": ["Computational Biology", "Statistical Genetics", "Cancer Biology", "Drug Target Discovery", "Review", "Methodological Guidelines", "Trends in Genetics"],
             "url": "https://example.com/neighbor4",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -504,7 +472,6 @@ Your reasoning should:
             "summary": "We apply network centrality metrics to protein interaction networks to prioritize cancer driver genes. The network-based approach successfully identifies known drivers and predicts novel candidates for experimental validation.",
             "journal": "Bioinformatics",
             "authors": [{"first_name": "Winter", "last_name": "Schmidt"}, {"first_name": "Teresa", "last_name": "Przytycka"}],
-            "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug Target Discovery"],
             "url": "https://example.com/neighbor5",
             "date": "2023-01-01",
             "access_date": "2024-01-02",
@@ -516,7 +483,7 @@ Your reasoning should:
     "response": [
       {
         "doi": "10.1242/dmm.012195",
-        "reasoning": "The 5 neighbor articles consistently focus on computational/statistical genetics and network-based approaches for identifying cancer driver genes and therapeutic targets in human cancers. All neighbors emphasize data integration, network analysis, and drug target discovery using genomic data from human tumors. The target article describes CRISPR genome editing in zebrafish for disease modeling - a wet-lab experimental approach in a non-human model organism. Fundamental methodological mismatch: neighbors use computational/network methods while target uses experimental genetics. Application mismatch: neighbors focus on human cancer drug targets while target focuses on zebrafish developmental biology. No meaningful tag overlap: target tagged as 'Other application, Only non-human application(s)' while all neighbors have 'Computational Biology', 'Cancer Biology', 'Drug Target Discovery'. The article may be useful for validating computational predictions, but represents a completely different research approach and domain. Low priority assigned due to minimal thematic, methodological, and application alignment with the cluster.",
+        "reasoning": "The 5 neighbor articles consistently focus on computational/statistical genetics and network-based approaches for identifying cancer driver genes and therapeutic targets in human cancers. All neighbors emphasize data integration, network analysis, and drug target discovery using genomic data from human tumors. The target article describes CRISPR genome editing in zebrafish for disease modeling - a wet-lab experimental approach in a non-human model organism. Fundamental methodological mismatch: neighbors use computational/network methods while target uses experimental genetics. Application mismatch: neighbors focus on human cancer drug targets while target focuses on zebrafish developmental biology. The article may be useful for validating computational predictions, but represents a completely different research approach and domain. Low priority assigned due to minimal thematic, methodological, and application alignment with the cluster.",
         "priority": "low"
       }
     ]
