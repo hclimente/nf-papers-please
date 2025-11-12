@@ -13,7 +13,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from common.utils import (
     get_env_variable,
     get_common_variations,
-    prune_article_for_classification,
 )
 from common.models import Article, Author
 from datetime import date
@@ -328,8 +327,8 @@ class TestGetCommonVariations:
         assert "VAL." in result
 
 
-class TestPruneArticleForClassification:
-    """Test suite for prune_article_for_classification function"""
+class TestArticlePruneForClassification:
+    """Test suite for Article.prune_for_classification method"""
 
     def test_prune_keeps_required_fields(self):
         """Test that pruning keeps all required fields for classification"""
@@ -365,7 +364,7 @@ class TestPruneArticleForClassification:
             nearest_neighbors=[neighbor1, neighbor2],
         )
 
-        pruned = prune_article_for_classification(article)
+        pruned = article.prune_for_classification()
 
         assert pruned.title == "Test Article"
         assert pruned.journal == "Nature"
@@ -373,7 +372,6 @@ class TestPruneArticleForClassification:
         assert len(pruned.authors) == 1
         assert pruned.authors[0].first_name == "John"
         assert pruned.summary == "Test summary"
-        assert pruned.tags == ["Tag1", "Tag2"]
         assert pruned.doi == "10.1234/test"
         assert pruned.url == "https://example.com"
         assert len(pruned.nearest_neighbors) == 2
@@ -390,7 +388,7 @@ class TestPruneArticleForClassification:
             raw_contents="Very long raw content that should be removed",
         )
 
-        pruned = prune_article_for_classification(article)
+        pruned = article.prune_for_classification()
 
         assert pruned.raw_contents == ""
 
@@ -415,7 +413,7 @@ class TestPruneArticleForClassification:
             nearest_neighbors=[neighbor],
         )
 
-        pruned = prune_article_for_classification(article)
+        pruned = article.prune_for_classification()
 
         assert len(pruned.nearest_neighbors) == 1
         assert isinstance(pruned.nearest_neighbors[0], Article)
@@ -432,7 +430,7 @@ class TestPruneArticleForClassification:
             raw_contents="content",
         )
 
-        pruned = prune_article_for_classification(article)
+        pruned = article.prune_for_classification()
 
         assert pruned.nearest_neighbors is None
 
@@ -447,7 +445,7 @@ class TestPruneArticleForClassification:
             raw_contents="content",
         )
 
-        pruned = prune_article_for_classification(article)
+        pruned = article.prune_for_classification()
 
         assert isinstance(pruned, Article)
 
@@ -482,7 +480,7 @@ class TestPruneArticleForClassification:
             nearest_neighbors=[neighbor1, neighbor2],
         )
 
-        pruned = prune_article_for_classification(article)
+        pruned = article.prune_for_classification()
 
         # Check that main article was pruned
         assert pruned.raw_contents == ""

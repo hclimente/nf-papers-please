@@ -10,7 +10,7 @@ from common.parsers import (
     add_debug_argument,
     add_llm_arguments,
 )
-from common.utils import get_env_variable, prune_article_for_classification
+from common.utils import get_env_variable
 from common.validation import (
     save_validated_responses,
     validate_llm_response,
@@ -61,9 +61,7 @@ def llm_process_articles(
 
     # For classify stage, prune articles to only include relevant fields
     if stage == "classify":
-        articles_for_llm = [
-            prune_article_for_classification(article) for article in articles
-        ]
+        articles_for_llm = [article.prune_for_classification() for article in articles]
         logging.info("Pruned articles for classification stage.")
     else:
         articles_for_llm = articles

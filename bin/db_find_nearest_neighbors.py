@@ -15,9 +15,6 @@ from common.db import (
     build_connection_string,
     setup_db,
 )
-from common.utils import (
-    prune_article_for_classification,
-)
 
 
 def find_k_nearest_neighbors(
@@ -62,7 +59,7 @@ def find_k_nearest_neighbors(
                 "nearest_neighbors",
                 [Article.from_article_table(a) for a in results],
             )
-            pruned_article = prune_article_for_classification(item)
+            pruned_article = item.prune_for_classification()
             pruned_articles.append(pruned_article)
 
     with open(out, "w") as f:
