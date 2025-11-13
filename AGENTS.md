@@ -1,19 +1,19 @@
 # AGENTS.md - Code Assistant Guide
 
-**Last Updated:** November 1, 2025
+**Last Updated:** November 7, 2025
 **Project:** Papers, Please - Agentic Literature Screening Workflow
 
 ---
 
 ## 📋 Project Overview
 
-**Papers, Please** is an automated literature screening system that helps researchers stay current with scientific publications. It uses AI (Google Gemini) to extract metadata, screen articles for relevance, and prioritize them based on research interests.
+**Papers, Please** is an automated literature screening system that helps researchers stay current with scientific publications. It uses AI (Google Gemini) to extract metadata and tag articles based on research interests.
 
 ### Key Characteristics
 - **Language Stack**: Nextflow (workflow orchestration) + Python (data processing/LLM interaction)
 - **Architecture**: Modular, containerized pipeline with separate concerns
 - **Execution**: Can run locally, on HPC clusters, or via GitHub Actions (weekly automation)
-- **Data Flow**: RSS feeds → Metadata extraction → Screening → Prioritization → Output (JSON/Zotero/DuckDB)
+- **Data Flow**: RSS feeds → Metadata extraction → Tagging → Scoring → Output (JSON/Zotero/DuckDB)
 
 ---
 
@@ -21,12 +21,12 @@
 
 ### High-Level Flow
 ```
-Input Sources          Processing Pipeline           Output Destinations
-┌─────────────┐       ┌──────────────────┐         ┌─────────────┐
-│ RSS Feeds   │──────>│ Metadata Extract │────────>│ JSON File   │
-│ JSON File   │       │ Screen Articles  │         │ Zotero API  │
-│ DuckDB      │       │ Prioritize       │         │ DuckDB      │
-└─────────────┘       └──────────────────┘         └─────────────┘
+Input Sources          Processing Pipeline            Output Destinations
+┌─────────────┐       ┌──────────────────┐          ┌─────────────┐
+│ RSS Feeds   │──────>│ Metadata Extract │─────────>│ JSON File   │
+│ JSON File   │       │ Tag Articles     │          │ Zotero API  │
+│ DuckDB      │       │ Score Articles   │          │ DuckDB      │
+└─────────────┘       └──────────────────┘          └─────────────┘
 ```
 
 ### Directory Structure
@@ -50,7 +50,7 @@ papers_please/
 │   └── zotero.nf             # Zotero integration workflows
 │
 ├── modules/                   # Nextflow process definitions
-│   ├── agentic.nf            # LLM processes (metadata, screening, prioritization)
+│   ├── agentic.nf            # LLM processes (metadata extraction, tagging)
 │   ├── db.nf                 # Database operations
 │   ├── json.nf               # JSON manipulation utilities
 │   ├── rss.nf                # RSS feed fetching
@@ -68,14 +68,16 @@ papers_please/
 │   ├── tools/                # Helper tools for metadata enrichment
 │   ├── fetch_articles.py     # RSS feed fetching
 │   ├── llm_process_articles.py  # LLM processing orchestrator
+│   ├── llm_embed_articles.py    # Generate embeddings for articles
+│   ├── compute_article_score.py # Score articles based on tags
 │   ├── json_validate_articles.py # JSON schema validation
+│   ├── crossref_annotate_doi.py # Annotate articles with CrossRef metadata
 │   ├── duckdb_*.py          # DuckDB operations
 │   └── zotero_*.py          # Zotero operations
 │
 ├── prompts/                   # LLM system prompts
 │   ├── metadata_extraction.md  # Extract title, abstract, DOI
-│   ├── screening.md          # Binary relevance filtering
-│   └── prioritization.md     # Rank by research interest alignment
+│   └── tagging.md            # Tag articles based on research interests
 │
 ├── assets/                    # Validation schemas
 └── results/                   # Default output directory
@@ -85,43 +87,55 @@ papers_please/
 
 ## 🔑 Core Concepts
 
-### 1. **Three-Stage LLM Pipeline**
+### 1. **Four-Stage Processing Pipeline**
 
-Each article goes through three AI-powered stages:
+Each article goes through four processing stages:
 
 1. **Metadata Extraction** (`EXTRACT_METADATA`)
    - Input: Raw RSS feed content (URL + text snippet)
    - Output: Structured article (title, abstract, DOI, URL)
-   - Tools: Can use CrossRef/Springer APIs to find missing DOIs
+   - Tools: Can use CrossRef/Springer APIs to find missing DOIs/abstracts
    - Validation: Pydantic `MetadataResponse` model
+   - LLM Function: `chat()` in `common/llm.py`
 
-2. **Screening** (`SCREEN`)
-   - Input: Articles with metadata + research interests
-   - Output: Boolean decision (relevant/not relevant) + reasoning
-   - Goal: High recall (80-90%) - filter out clear mismatches
-   - Validation: Pydantic `ScreeningResponse` model
+2. **Tagging** (`TAG`)
+   - Input: Articles with metadata + research interests (YAML structure)
+   - Output: List of categorical tags + reasoning for each article
+   - Goal: Categorize articles based on research interest dimensions
+   - Validation: Pydantic `TaggingResponse` model
+   - LLM Function: `chat()` in `common/llm.py`
 
-3. **Prioritization** (`PRIORITIZE`)
-   - Input: Screened (relevant) articles + research interests
-   - Output: Priority level (high/medium/low) + reasoning
-   - Goal: Rank articles by alignment with interests
-   - Validation: Pydantic `PriorityResponse` model
+3. **Scoring** (`COMPUTE_SCORE`)
+   - Input: Tagged articles + research interests YAML
+   - Output: Numeric score based on tag weights
+   - Goal: Rank articles by alignment with research priorities
+   - Logic: Hierarchical scoring based on category tree structure
+   - Script: `compute_article_score.py`
 
-**Retry Logic**: Each stage has a `_RETRY` process that re-processes failed articles with `allow_qc_errors=false`.
+4. **Embedding** (`EMBED`) *(Optional)*
+   - Input: Articles with metadata
+   - Output: Vector embeddings for semantic search
+   - Model: Google gemini-embedding-001 or similar
+   - Function: `embed()` in `common/llm.py`
+
+**Retry Logic**: Each LLM stage has a `_RETRY` process that re-processes failed articles with `allow_qc_errors=false`.
 
 ### 2. **Data Models**
 
 Core Pydantic models in `bin/common/models.py`:
 
 - **`Article`**: Full article with all metadata and processing results
-  - Fields: title, authors, summary, doi, url, journal info, dates
-  - LLM fields: screening_decision, screening_reasoning, priority_decision, priority_reasoning
+  - Core fields: title, authors, summary, doi, url, journal info, dates
+  - Processing fields: tags, reasoning, score, embedding, zotero_key
+  - Raw data: raw_contents, access_date
 
 - **`ArticleList`**: Type adapter for `list[Article]`
 
-- **`MetadataResponse`**: LLM output for metadata extraction
-- **`ScreeningResponse`**: LLM output for screening
-- **`PriorityResponse`**: LLM output for prioritization
+- **`Author`**: Individual author with first_name and last_name
+- **`InstitutionalAuthor`**: Institutional author with name only
+
+- **`MetadataResponse`**: LLM output for metadata extraction (title, summary, url, doi)
+- **`TaggingResponse`**: LLM output for tagging (doi, tags, reasoning)
 
 ### 3. **Nextflow Workflow System**
 
@@ -256,16 +270,19 @@ filtered = filterAndBatch(articles_channel, 10, "screening_decision", true)
 // Returns: filtered.match, filtered.no_match
 ```
 
-### Python: LLM Query
+### Python: LLM Chat
 
 ```python
-from common.llm import llm_query
+from common.llm import chat
 from common.validation import validate_llm_response, save_validated_responses
 
-response = llm_query(
-    system_prompt=system_prompt,
-    user_prompt=user_prompt,
-    model=model
+response = chat(
+    articles=articles,
+    system_prompt_path=system_prompt_path,
+    research_interests_path=research_interests_path,
+    model=model,
+    api_key=api_key,
+    tools=tools  # Optional: for metadata extraction
 )
 
 validated = validate_llm_response(
@@ -275,6 +292,32 @@ validated = validate_llm_response(
 )
 
 save_validated_responses(validated, articles, "pass.json", "fail.json")
+```
+
+### Python: Generate Embeddings
+
+```python
+from common.llm import embed
+
+embeddings = embed(
+    texts=["Article title and abstract", "Another article"],
+    model="gemini-embedding-001",
+    api_key=api_key,
+    task="CLASSIFICATION"  # or "RETRIEVAL_QUERY", "RETRIEVAL_DOCUMENT"
+)
+```
+
+### Python: Compute Article Scores
+
+```python
+from compute_article_score import compute_article_score, load_research_interests
+
+# Load research interests with hierarchical categories
+research_interests = load_research_interests(config_path)
+
+# Compute score based on tags
+score = compute_article_score(article, research_interests)
+# Score is sum of points for matching tags, respecting hierarchy
 ```
 
 ### Python: Article Manipulation
@@ -308,9 +351,9 @@ with open("output.json", "w") as f:
 | `to` | `articles_json` | Output backend |
 | `days_back` | `8` | Days to look back for articles |
 | `batch_size` | `10` | Articles per batch for LLM |
-| `metadata_extraction_model` | `gemini-2.5-flash-lite` | LLM for metadata |
-| `screening_model` | `gemini-2.5-flash-lite` | LLM for screening |
-| `prioritization_model` | `gemini-2.5-flash-lite` | LLM for prioritization |
+| `metadata_extraction_model` | `gemini-2.5-flash-lite` | LLM for metadata extraction |
+| `tagging_model` | `gemini-2.5-flash-lite` | LLM for tagging articles |
+| `embedding_model` | `gemini-embedding-001` | Model for generating embeddings |
 | `debug` | `false` | Enable debug logging |
 
 ### Secrets Required
@@ -411,7 +454,7 @@ uv run python llm_process_articles.py \
 
 1. **This is NOT for workflow agents**: This file is for code assistants (like GitHub Copilot) helping with development, not for the LLM agents that process articles.
 
-2. **Branch**: Currently on `feat/add_tests` - working branch for adding test coverage.
+2. **Branch**: Currently on `feat/fine-tune-prompt` - working branch for improving prompt engineering and tagging system.
 
 3. **Database**: DuckDB files (`.duckdb`) store processed articles to avoid re-processing.
 

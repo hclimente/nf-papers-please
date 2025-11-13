@@ -96,15 +96,12 @@ def create_zotero_article(
     # Add creators/authors if available
     zotero_article["creators"] = add_creators(item.authors)
 
-    # Add tags based on screening/priority
+    # Add tags from article
     zotero_article["tags"] = []
 
-    try:
-        zotero_article["tags"].append(
-            {"tag": f"llm_priority-{item.priority_decision}", "type": 0}
-        )
-    except KeyError:
-        pass
+    if item.tags:
+        for tag in item.tags:
+            zotero_article["tags"].append({"tag": tag, "type": 0})
 
     # Add to collections if specified
     zotero_article["collections"] = [zotero_collection_id]
@@ -118,9 +115,7 @@ def create_zotero_note(item: Article, zot: zotero.Zotero) -> dict:
 
     note["parentItem"] = item.zotero_key
     note["note"] = f"""
-**AI Screening reasoning:** {item.screening_reasoning}
-
-**AI Priority reasoning:** {item.priority_reasoning}
+**AI Scoring reasoning:** {item.reasoning}
 """
 
     return note

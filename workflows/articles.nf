@@ -1,7 +1,7 @@
-include { EXTRACT_METADATA; SCREEN; PRIORITIZE } from '../modules/agentic'
-include { EXTRACT_METADATA as EXTRACT_METADATA_RETRY } from '../modules/agentic'
-include { SCREEN as SCREEN_RETRY } from '../modules/agentic'
-include { PRIORITIZE as PRIORITIZE_RETRY } from '../modules/agentic'
+include { BASIC_METADATA; TAG; SCORE; EMBED } from '../modules/agentic'
+include { BASIC_METADATA as BASIC_METADATA_RETRY } from '../modules/agentic'
+include { ADVANCED_METADATA; REMOVE_PROCESSED; SAVE } from '../modules/zotero'
+include { TAG as TAG_RETRY } from '../modules/agentic'
 
 include { batchArticles; filterAndBatch } from '../modules/json'
 
@@ -11,16 +11,16 @@ workflow PROCESS_ARTICLES {
         articles_json
 
     main:
-        EXTRACT_METADATA(
-            articles_json,
+        BASIC_METADATA(
+            batchArticles(articles_json, params.batch_size),
             file(params.metadata_extraction_system_prompt),
             params.metadata_extraction_model,
             true,
             params.debug
         )
 
-        failed_metadata = batchArticles(EXTRACT_METADATA.out.fail, params.batch_size)
-        EXTRACT_METADATA_RETRY(
+        failed_metadata = batchArticles(BASIC_METADATA.out.fail, params.batch_size)
+        BASIC_METADATA_RETRY(
             failed_metadata,
             file(params.metadata_extraction_system_prompt),
             params.metadata_extraction_model,
@@ -28,56 +28,50 @@ workflow PROCESS_ARTICLES {
             params.debug
         )
 
-        metadata_articles = EXTRACT_METADATA.out.pass
-            .concat(EXTRACT_METADATA_RETRY.out.pass)
-        filtered_metadata = filterAndBatch(metadata_articles, params.batch_size, "doi", null)
-        SCREEN(
-            filtered_metadata.no_match,
-            file(params.screening_system_prompt),
+        metadata_articles = BASIC_METADATA.out.pass
+            .concat(BASIC_METADATA_RETRY.out.pass)
+        articles_with_doi = filterAndBatch(metadata_articles, params.batch_size, "doi", null)
+
+        ADVANCED_METADATA(articles_with_doi.no_match)
+
+        TAG(
+            ADVANCED_METADATA.out,
+            file(params.tagging_system_prompt),
             file(params.research_interests),
-            params.screening_model,
+            params.tagging_model,
             true,
             params.debug
         )
 
-        SCREEN_RETRY(
-            SCREEN.out.fail,
-            file(params.screening_system_prompt),
+        TAG_RETRY(
+            TAG.out.fail,
+            file(params.tagging_system_prompt),
             file(params.research_interests),
-            params.screening_model,
+            params.tagging_model,
             false,
             params.debug
         )
 
-        screened_articles = SCREEN.out.pass
-            .concat(SCREEN_RETRY.out.pass)
-        filtered_screened = filterAndBatch(screened_articles, params.batch_size, "screening_decision", true)
-        PRIORITIZE(
-            filtered_screened.match,
-            file(params.prioritization_system_prompt),
+        tagged_articles = TAG.out.pass
+            .concat(TAG_RETRY.out.pass)
+
+        SCORE(
+            tagged_articles,
             file(params.research_interests),
-            params.prioritization_model,
-            true,
             params.debug
         )
 
-        PRIORITIZE_RETRY(
-            PRIORITIZE.out.fail,
-            file(params.prioritization_system_prompt),
-            file(params.research_interests),
-            params.prioritization_model,
-            false,
+        EMBED(
+            tagged_articles,
+            params.embedding_model,
             params.debug
         )
 
-        prioritized_articles = PRIORITIZE.out.pass
-            .concat(PRIORITIZE_RETRY.out.pass)
-        all_articles = prioritized_articles
-            .concat(filtered_metadata.match)
-            .concat(filtered_screened.no_match)
+        all_articles = SCORE.out
+            .concat(TAG_RETRY.out.fail)
         final_batches = batchArticles(all_articles, 100)
 
     emit:
-        prioritized_articles = prioritized_articles
+        scored_articles = SCORE.out
         all_articles = final_batches
 }

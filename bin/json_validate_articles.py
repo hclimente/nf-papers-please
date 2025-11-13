@@ -57,10 +57,8 @@ def validate_articles_json(
             "title",
             "doi",
             "summary",
-            "screening_decision",
-            "screening_reasoning",
-            "priority_decision",
-            "priority_reasoning",
+            "tags",
+            "reasoning",
         ]
     else:
         raise ValueError(f"Unknown stage: {stage}")

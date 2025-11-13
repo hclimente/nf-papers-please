@@ -53,3 +53,26 @@ def get_env_variable(var_name: str, raise_error: bool = False) -> str:
         if raise_error:
             raise ValueError(error_msg)
     return value
+
+
+def build_pg_connection_string(user: str, host: str) -> str:
+    """
+    Build a PostgreSQL connection string from individual components.
+
+    Args:
+        user: PostgreSQL username
+        host: PostgreSQL host (can include port/database or be full connection details)
+
+    Returns:
+        Complete PostgreSQL connection string
+    """
+    password = get_env_variable("PGPASSWORD", "")
+
+    # If host already contains full connection details (starts with ep- for Neon), use it directly
+    # Otherwise, construct the basic connection string
+    if host.startswith("ep-") or "?" in host:
+        # Full host with parameters provided
+        return f"postgresql://{user}:{password}@{host}"
+    else:
+        # Simple host:port/database format
+        return f"postgresql://{user}:{password}@{host}"

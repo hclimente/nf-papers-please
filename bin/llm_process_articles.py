@@ -3,7 +3,7 @@ import argparse
 import logging
 import pathlib
 
-from common.llm import llm_query
+from common.llm import chat
 from common.models import ArticleList, pprint
 from common.parsers import (
     add_input_articles_json_argument,
@@ -35,11 +35,11 @@ def llm_process_articles(
     Process articles using LLM based on the provided stage and prompt.
 
     Args:
-        stage (str): The processing stage (e.g., "metadata", "screening", "priority").
+        stage (str): The processing stage (e.g., "metadata", "tagging").
         articles_json (str): Path to the JSON file containing the articles to process.
         system_prompt_path (str): The path to the system prompt file.
         research_interests_path (str): The path to a text file containing the user's research interests.
-        model (str): The model to use for screening. One of 'gemini-1.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'.
+        model (str): The model to use. One of 'gemini-1.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'.
         allow_qc_errors (bool): Whether to allow QC errors without failing the process.
         debug (bool): Whether to enable debug mode.
     """
@@ -59,7 +59,7 @@ def llm_process_articles(
     logging.info(f"Loaded {len(articles)} articles.")
     logging.debug(f"Articles: {pprint(articles)}")
 
-    response_text = llm_query(
+    response_text = chat(
         articles=articles,
         system_prompt_path=system_prompt_path,
         model=model,
@@ -106,14 +106,8 @@ if __name__ == "__main__":
     metadata_parser = add_llm_arguments(
         metadata_parser, include_research_interests=False
     )
-    screening_parser = subparsers.add_parser("screening")
-    screening_parser = add_llm_arguments(
-        screening_parser, include_research_interests=True
-    )
-    priority_parser = subparsers.add_parser("priority")
-    priority_parser = add_llm_arguments(
-        priority_parser, include_research_interests=True
-    )
+    tagging_parser = subparsers.add_parser("tagging")
+    tagging_parser = add_llm_arguments(tagging_parser, include_research_interests=True)
 
     args = parser.parse_args()
     try:

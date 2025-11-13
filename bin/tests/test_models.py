@@ -16,8 +16,7 @@ from common.models import (
     InstitutionalAuthor,
     Article,
     MetadataResponse,
-    ScreeningResponse,
-    PriorityResponse,
+    TaggingResponse,
     pprint,
 )
 
@@ -122,10 +121,8 @@ class TestArticle:
             issue=4,
             date=date(2024, 1, 15),
             language="en",
-            screening_decision=True,
-            screening_reasoning="Relevant to research",
-            priority_decision="high",
-            priority_reasoning="Important findings",
+            tags=["Network Biology", "Cancer Biology"],
+            reasoning="Important findings",
             access_date=date(2024, 1, 20),
             raw_contents="Full article content",
             zotero_key="ABC123",
@@ -137,8 +134,8 @@ class TestArticle:
         assert article.volume == 123
         assert article.issue == 4
         assert article.language == "en"
-        assert article.screening_decision is True
-        assert article.priority_decision == "high"
+        assert article.tags == ["Network Biology", "Cancer Biology"]
+        assert article.reasoning == "Important findings"
         assert article.zotero_key == "ABC123"
 
     def test_article_with_mixed_authors(self):
@@ -176,10 +173,8 @@ class TestArticle:
         assert article.volume is None
         assert article.issue is None
         assert article.language is None
-        assert article.screening_decision is None
-        assert article.screening_reasoning is None
-        assert article.priority_decision is None
-        assert article.priority_reasoning is None
+        assert article.tags is None
+        assert article.reasoning is None
         assert article.zotero_key is None
 
     def test_article_requires_url(self):
@@ -326,143 +321,80 @@ class TestMetadataResponse:
             assert "doi" in str(exc_info.value).lower()
 
 
-class TestScreeningResponse:
-    """Test suite for ScreeningResponse model"""
+class TestLabellingResponse:
+    """Test suite for LabellingResponse model"""
 
-    def test_create_screening_response_accept(self):
-        """Test creating a ScreeningResponse with accept decision"""
-        response = ScreeningResponse(
-            doi="10.1234/test", decision=True, reasoning="Relevant article"
+    def test_create_labelling_response(self):
+        """Test creating a valid LabellingResponse"""
+        response = TaggingResponse(
+            doi="10.1234/test",
+            tags=["Network Biology", "Cancer Biology"],
+            reasoning="Important findings in network-based cancer research",
         )
         assert response.doi == "10.1234/test"
-        assert response.screening_decision is True
-        assert response.screening_reasoning == "Relevant article"
-
-    def test_create_screening_response_reject(self):
-        """Test creating a ScreeningResponse with reject decision"""
-        response = ScreeningResponse(
-            doi="10.1234/test", decision=False, reasoning="Not relevant"
+        assert response.tags == ["Network Biology", "Cancer Biology"]
+        assert (
+            response.reasoning == "Important findings in network-based cancer research"
         )
-        assert response.doi == "10.1234/test"
-        assert response.screening_decision is False
-        assert response.screening_reasoning == "Not relevant"
 
-    def test_screening_response_field_alias(self):
-        """Test that screening_decision uses 'decision' alias"""
-        data = {"doi": "10.1234/test", "decision": True, "reasoning": "Relevant"}
-        response = ScreeningResponse.model_validate(data)
-        assert response.screening_decision is True
-        assert response.screening_reasoning == "Relevant"
-
-    def test_screening_response_cleans_boolean_strings(self):
-        """Test that screening_decision cleans string boolean values"""
-        # Test various string representations of booleans
-        test_cases = [
-            ("true", True),
-            ("True", True),
-            ("TRUE", True),
-            ("false", False),
-            ("False", False),
-            ("FALSE", False),
-        ]
-        for input_val, expected in test_cases:
-            response = ScreeningResponse(
-                doi="10.1234/test", decision=input_val, reasoning="Test"
-            )
-            assert response.screening_decision == expected
-
-    def test_screening_response_accepts_boolean(self):
-        """Test that screening_decision accepts actual boolean values"""
-        response_true = ScreeningResponse(
-            doi="10.1234/test", decision=True, reasoning="Test"
+    def test_labelling_response_single_tag(self):
+        """Test LabellingResponse with single tag"""
+        response = TaggingResponse(
+            doi="10.1234/test",
+            tags=["Review"],
+            reasoning="Comprehensive review article",
         )
-        assert response_true.screening_decision is True
+        assert response.tags == ["Review"]
 
-        response_false = ScreeningResponse(
-            doi="10.1234/test", decision=False, reasoning="Test"
+    def test_labelling_response_multiple_tags(self):
+        """Test LabellingResponse with multiple tags"""
+        response = TaggingResponse(
+            doi="10.1234/test",
+            tags=[
+                "Computational Biology",
+                "Network Biology",
+                "Drug discovery",
+                "Drug Target Discovery",
+                "Review",
+            ],
+            reasoning="Network-based drug discovery review",
         )
-        assert response_false.screening_decision is False
+        assert len(response.tags) == 5
 
-    def test_screening_response_requires_all_fields(self):
-        """Test that ScreeningResponse requires all fields"""
+    def test_labelling_response_empty_tags(self):
+        """Test LabellingResponse with empty tags list"""
+        response = TaggingResponse(
+            doi="10.1234/test", tags=[], reasoning="No matching categories"
+        )
+        assert response.tags == []
+
+    def test_labelling_response_requires_all_fields(self):
+        """Test that LabellingResponse requires all fields"""
         with pytest.raises(ValidationError) as exc_info:
-            ScreeningResponse(doi="10.1234/test", decision=True)
+            TaggingResponse(doi="10.1234/test", tags=["Test"])
         assert "reasoning" in str(exc_info.value).lower()
 
         with pytest.raises(ValidationError) as exc_info:
-            ScreeningResponse(doi="10.1234/test", reasoning="Test")
-        assert "decision" in str(exc_info.value).lower()
+            TaggingResponse(doi="10.1234/test", reasoning="Test")
+        assert "tags" in str(exc_info.value).lower()
 
         with pytest.raises(ValidationError) as exc_info:
-            ScreeningResponse(decision=True, reasoning="Test")
+            TaggingResponse(tags=["Test"], reasoning="Test")
         assert "doi" in str(exc_info.value).lower()
 
-
-class TestPriorityResponse:
-    """Test suite for PriorityResponse model"""
-
-    def test_create_priority_response_high(self):
-        """Test creating a PriorityResponse with high priority"""
-        response = PriorityResponse(
-            doi="10.1234/test", decision="high", reasoning="Important findings"
+    def test_labelling_response_tags_must_be_list(self):
+        """Test that tags must be a list of strings"""
+        # This should work - list of strings
+        response = TaggingResponse(
+            doi="10.1234/test", tags=["Network Biology", "Review"], reasoning="Test"
         )
-        assert response.doi == "10.1234/test"
-        assert response.priority_decision == "high"
-        assert response.priority_reasoning == "Important findings"
+        assert response.tags == ["Network Biology", "Review"]
 
-    def test_create_priority_response_medium(self):
-        """Test creating a PriorityResponse with medium priority"""
-        response = PriorityResponse(
-            doi="10.1234/test", decision="medium", reasoning="Moderately relevant"
-        )
-        assert response.priority_decision == "medium"
-
-    def test_create_priority_response_low(self):
-        """Test creating a PriorityResponse with low priority"""
-        response = PriorityResponse(
-            doi="10.1234/test", decision="low", reasoning="Less urgent"
-        )
-        assert response.priority_decision == "low"
-
-    def test_priority_response_field_alias(self):
-        """Test that priority_decision uses 'decision' alias"""
-        data = {"doi": "10.1234/test", "decision": "high", "reasoning": "Important"}
-        response = PriorityResponse.model_validate(data)
-        assert response.priority_decision == "high"
-        assert response.priority_reasoning == "Important"
-
-    def test_priority_response_cleans_case_variations(self):
-        """Test that priority_decision normalizes case variations"""
-        test_cases = [
-            ("high", "high"),
-            ("High", "high"),
-            ("HIGH", "high"),
-            ("medium", "medium"),
-            ("Medium", "medium"),
-            ("MEDIUM", "medium"),
-            ("low", "low"),
-            ("Low", "low"),
-            ("LOW", "low"),
-        ]
-        for input_val, expected in test_cases:
-            response = PriorityResponse(
-                doi="10.1234/test", decision=input_val, reasoning="Test"
+        # This should fail - not a list
+        with pytest.raises(ValidationError):
+            TaggingResponse(
+                doi="10.1234/test", tags="Network Biology", reasoning="Test"
             )
-            assert response.priority_decision == expected
-
-    def test_priority_response_requires_all_fields(self):
-        """Test that PriorityResponse requires all fields"""
-        with pytest.raises(ValidationError) as exc_info:
-            PriorityResponse(doi="10.1234/test", decision="high")
-        assert "reasoning" in str(exc_info.value).lower()
-
-        with pytest.raises(ValidationError) as exc_info:
-            PriorityResponse(doi="10.1234/test", reasoning="Test")
-        assert "decision" in str(exc_info.value).lower()
-
-        with pytest.raises(ValidationError) as exc_info:
-            PriorityResponse(decision="high", reasoning="Test")
-        assert "doi" in str(exc_info.value).lower()
 
 
 class TestPprint:
@@ -559,27 +491,18 @@ class TestPprint:
         assert parsed["title"] == "Test Article"
         assert parsed["doi"] == "10.1234/test"
 
-    def test_pprint_screening_response(self):
-        """Test pprint with ScreeningResponse"""
-        response = ScreeningResponse(
-            doi="10.1234/test", decision=True, reasoning="Relevant"
+    def test_pprint_labelling_response(self):
+        """Test pprint with LabellingResponse"""
+        response = TaggingResponse(
+            doi="10.1234/test",
+            tags=["Network Biology", "Review"],
+            reasoning="Important findings",
         )
         result = pprint(response)
         parsed = json.loads(result)
         assert parsed["doi"] == "10.1234/test"
-        assert parsed["screening_decision"] is True
-        assert parsed["screening_reasoning"] == "Relevant"
-
-    def test_pprint_priority_response(self):
-        """Test pprint with PriorityResponse"""
-        response = PriorityResponse(
-            doi="10.1234/test", decision="high", reasoning="Important"
-        )
-        result = pprint(response)
-        parsed = json.loads(result)
-        assert parsed["doi"] == "10.1234/test"
-        assert parsed["priority_decision"] == "high"
-        assert parsed["priority_reasoning"] == "Important"
+        assert parsed["tags"] == ["Network Biology", "Review"]
+        assert parsed["reasoning"] == "Important findings"
 
     def test_pprint_empty_list(self):
         """Test pprint with empty list"""

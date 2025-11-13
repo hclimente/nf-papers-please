@@ -14,6 +14,7 @@ from common.parsers import (
     add_output_argument,
     add_debug_argument,
     add_duckdb_arguments,
+    add_postgresql_arguments,
     add_llm_arguments,
 )
 
@@ -186,6 +187,126 @@ class TestAddDuckdbArguments:
         # Should not raise error when not provided
         args = parser.parse_args([])
         assert hasattr(args, "db_path")
+
+
+class TestAddPostgresqlArguments:
+    """Test suite for add_postgresql_arguments function"""
+
+    def test_adds_user_host_arguments(self):
+        """Test that user and host arguments are added to parser"""
+        parser = argparse.ArgumentParser()
+        result = add_postgresql_arguments(parser)
+
+        # Check that it returns the parser
+        assert result is parser
+
+        # Parse with the arguments
+        args = parser.parse_args(
+            [
+                "--user",
+                "testuser",
+                "--host",
+                "localhost/db",
+            ]
+        )
+        assert args.user == "testuser"
+        assert args.host == "localhost/db"
+
+    def test_arguments_are_required(self):
+        """Test that user and host arguments are required"""
+        parser = argparse.ArgumentParser()
+        add_postgresql_arguments(parser)
+
+        # Should raise error when not provided
+        with pytest.raises(SystemExit):
+            parser.parse_args([])
+
+    def test_accepts_various_host_formats(self):
+        """Test that host accepts various PostgreSQL host formats"""
+        parser = argparse.ArgumentParser()
+        add_postgresql_arguments(parser)
+
+        test_hosts = [
+            "localhost/db",
+            "localhost:5432/db",
+            "remote.host.com:5432/production_db",
+            "ep-lingering-tree.us-east-1.aws.neon.tech/neondb",
+        ]
+
+        for host in test_hosts:
+            args = parser.parse_args(["--user", "user", "--host", host])
+            assert args.host == host
+
+    def test_attribute_names(self):
+        """Test that arguments have the correct attribute names"""
+        parser = argparse.ArgumentParser()
+        add_postgresql_arguments(parser)
+
+        args = parser.parse_args(["--user", "myuser", "--host", "myhost/mydb"])
+
+        # Check attribute names
+        assert hasattr(args, "user")
+        assert hasattr(args, "host")
+        assert args.user == "myuser"
+        assert args.host == "myhost/mydb"
+
+
+class TestBuildPostgresqlConnectionString:
+    """Test suite for build_pg_connection_string function"""
+
+    def test_builds_basic_connection_string(self, monkeypatch):
+        """Test building a basic connection string"""
+        from common.utils import build_pg_connection_string
+
+        # Mock the environment variable
+        monkeypatch.setenv("PGPASSWORD", "testpass")
+
+        conn_str = build_pg_connection_string("user", "localhost/db")
+        assert (
+            conn_str == "postgresql://user:testpass@localhost/db"  # noqa F402 # pragma: allowlist secret
+        )
+
+    def test_builds_connection_string_with_port(self, monkeypatch):
+        """Test building a connection string with port"""
+        from common.utils import build_pg_connection_string
+
+        # Mock the environment variable
+        monkeypatch.setenv("PGPASSWORD", "testpass")
+
+        conn_str = build_pg_connection_string("user", "localhost:5432/db")
+        assert conn_str == "postgresql://user:testpass@localhost:5432/db"  # noqa F402 # pragma: allowlist secret
+
+    def test_builds_connection_string_with_neon_host(self, monkeypatch):
+        """Test building a connection string with Neon host"""
+        from common.utils import build_pg_connection_string
+
+        # Mock the environment variable
+        monkeypatch.setenv("PGPASSWORD", "secret123")
+
+        conn_str = build_pg_connection_string(
+            "neondb_owner",
+            "ep-lingering-tree.us-east-1.aws.neon.tech/neondb",
+        )
+        assert (
+            conn_str
+            == "postgresql://neondb_owner:secret123@ep-lingering-tree.us-east-1.aws.neon.tech/neondb"  # pragma: allowlist secret
+        )
+
+    def test_builds_connection_string_with_query_params(self, monkeypatch):
+        """Test building a connection string with query parameters"""
+        from common.utils import build_pg_connection_string
+
+        # Mock the environment variable
+        monkeypatch.setenv("PGPASSWORD", "mypass")
+
+        conn_str = build_pg_connection_string(
+            "user",
+            "localhost/db?sslmode=require&channel_binding=require",
+        )
+        assert (
+            conn_str
+            == "postgresql://user:mypass@localhost/db?sslmode=require&channel_binding=require"  # pragma: allowlist secret
+        )
 
 
 class TestAddLlmArguments:

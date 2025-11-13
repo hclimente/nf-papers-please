@@ -55,7 +55,7 @@ class TestLLMProcessArticles:
         mock_response = '{"articles": []}'
 
         with (
-            patch("llm_process_articles.llm_query") as mock_llm,
+            patch("llm_process_articles.chat") as mock_llm,
             patch("llm_process_articles.validate_llm_response") as mock_validate,
             patch("llm_process_articles.save_validated_responses") as mock_save,
             patch("llm_process_articles.pathlib.Path.write_text") as mock_write,
@@ -91,10 +91,10 @@ class TestLLMProcessArticles:
             mock_save.assert_called_once()
             mock_write.assert_called_once_with(mock_response)
 
-    def test_screening_stage_with_research_interests(
+    def test_tagging_stage_with_research_interests(
         self, sample_articles, mock_env, tmp_path
     ):
-        """Test screening stage with research interests"""
+        """Test tagging stage with research interests"""
         # Setup
         articles_json = tmp_path / "articles.json"
         articles_json.write_text(ArticleList.dump_json(sample_articles).decode())
@@ -109,7 +109,7 @@ class TestLLMProcessArticles:
 
         try:
             with (
-                patch("llm_process_articles.llm_query") as mock_llm,
+                patch("llm_process_articles.chat") as mock_llm,
                 patch("llm_process_articles.validate_llm_response") as mock_validate,
                 patch("llm_process_articles.pathlib.Path.write_text"),
             ):
@@ -118,7 +118,7 @@ class TestLLMProcessArticles:
 
                 # Execute
                 llm_process_articles(
-                    stage="screening",
+                    stage="tagging",
                     articles_json=str(articles_json),
                     system_prompt_path=str(system_prompt),
                     research_interests_path=str(research_interests),
@@ -132,55 +132,17 @@ class TestLLMProcessArticles:
                 assert call_kwargs["research_interests_path"] == str(research_interests)
                 assert call_kwargs["model"] == "gemini-2.5-flash-lite"
 
-                assert mock_validate.call_args[1]["stage"] == "screening"
+                assert mock_validate.call_args[1]["stage"] == "tagging"
                 assert mock_validate.call_args[1]["merge_key"] == "doi"
                 assert mock_validate.call_args[1]["allow_qc_errors"] is True
         finally:
             # Cleanup: Remove generated JSON files
             from pathlib import Path
 
-            for pattern in ["screening_pass.json", "screening_fail.json"]:
+            for pattern in ["tagging_pass.json", "tagging_fail.json"]:
                 file_path = Path(pattern)
                 if file_path.exists():
                     file_path.unlink()
-
-    def test_priority_stage_uses_doi_merge_key(
-        self, sample_articles, mock_env, tmp_path
-    ):
-        """Test that priority stage uses doi as merge key"""
-        # Setup
-        articles_json = tmp_path / "articles.json"
-        articles_json.write_text(ArticleList.dump_json(sample_articles).decode())
-
-        system_prompt = tmp_path / "prompt.md"
-        system_prompt.write_text("Test prompt")
-
-        research_interests = tmp_path / "interests.md"
-        research_interests.write_text("Test interests")
-
-        with (
-            patch("llm_process_articles.llm_query") as mock_llm,
-            patch("llm_process_articles.validate_llm_response") as mock_validate,
-            patch("llm_process_articles.save_validated_responses"),
-            patch("llm_process_articles.pathlib.Path.write_text"),
-        ):
-            mock_llm.return_value = '{"articles": []}'
-            mock_validate.return_value = {}
-
-            # Execute
-            llm_process_articles(
-                stage="priority",
-                articles_json=str(articles_json),
-                system_prompt_path=str(system_prompt),
-                research_interests_path=str(research_interests),
-                model="gemini-2.5-pro",
-                allow_qc_errors=False,
-                debug=False,
-            )
-
-            # Verify
-            assert mock_validate.call_args[1]["stage"] == "priority"
-            assert mock_validate.call_args[1]["merge_key"] == "doi"
 
     def test_saves_raw_response_to_file(self, sample_articles, mock_env, tmp_path):
         """Test that raw LLM response is saved to file"""
@@ -194,7 +156,7 @@ class TestLLMProcessArticles:
         mock_response = '{"articles": [{"title": "test"}]}'
 
         with (
-            patch("llm_process_articles.llm_query") as mock_llm,
+            patch("llm_process_articles.chat") as mock_llm,
             patch("llm_process_articles.validate_llm_response") as mock_validate,
             patch("llm_process_articles.save_validated_responses"),
             patch("llm_process_articles.pathlib.Path.write_text") as mock_write,
@@ -226,7 +188,7 @@ class TestLLMProcessArticles:
         system_prompt.write_text("Test prompt")
 
         with (
-            patch("llm_process_articles.llm_query") as mock_llm,
+            patch("llm_process_articles.chat") as mock_llm,
             patch("llm_process_articles.validate_llm_response") as mock_validate,
             patch("llm_process_articles.save_validated_responses"),
             patch("llm_process_articles.pathlib.Path.write_text"),
@@ -245,15 +207,15 @@ class TestLLMProcessArticles:
                 debug=False,
             )
 
-            # Verify articles were loaded and passed to llm_query
+            # Verify articles were loaded and passed to chat
             call_kwargs = mock_llm.call_args[1]
             loaded_articles = call_kwargs["articles"]
             assert len(loaded_articles) == 2
             assert loaded_articles[0].title == "Test Article 1"
             assert loaded_articles[1].title == "Test Article 2"
 
-    def test_passes_tools_to_llm_query(self, sample_articles, mock_env, tmp_path):
-        """Test that metadata tools are passed to llm_query"""
+    def test_passes_tools_to_chat(self, sample_articles, mock_env, tmp_path):
+        """Test that metadata tools are passed to chat"""
         # Setup
         articles_json = tmp_path / "articles.json"
         articles_json.write_text(ArticleList.dump_json(sample_articles).decode())
@@ -262,7 +224,7 @@ class TestLLMProcessArticles:
         system_prompt.write_text("Test prompt")
 
         with (
-            patch("llm_process_articles.llm_query") as mock_llm,
+            patch("llm_process_articles.chat") as mock_llm,
             patch("llm_process_articles.validate_llm_response") as mock_validate,
             patch("llm_process_articles.save_validated_responses"),
             patch("llm_process_articles.pathlib.Path.write_text"),
@@ -300,7 +262,7 @@ class TestLLMProcessArticles:
         system_prompt.write_text("Test prompt")
 
         with (
-            patch("llm_process_articles.llm_query") as mock_llm,
+            patch("llm_process_articles.chat") as mock_llm,
             patch("llm_process_articles.validate_llm_response") as mock_validate,
             patch("llm_process_articles.save_validated_responses") as mock_save,
             patch("llm_process_articles.pathlib.Path.write_text"),
@@ -335,7 +297,7 @@ class TestLLMProcessArticles:
         system_prompt.write_text("Test prompt")
 
         with (
-            patch("llm_process_articles.llm_query") as mock_llm,
+            patch("llm_process_articles.chat") as mock_llm,
             patch("llm_process_articles.validate_llm_response") as mock_validate,
             patch("llm_process_articles.save_validated_responses") as mock_save,
             patch("llm_process_articles.pathlib.Path.write_text"),
@@ -369,7 +331,7 @@ class TestLLMProcessArticles:
         system_prompt.write_text("Test prompt")
 
         with (
-            patch("llm_process_articles.llm_query") as mock_llm,
+            patch("llm_process_articles.chat") as mock_llm,
             patch("llm_process_articles.validate_llm_response") as mock_validate,
             patch("llm_process_articles.save_validated_responses"),
             patch("llm_process_articles.pathlib.Path.write_text"),
@@ -407,7 +369,7 @@ class TestLLMProcessArticles:
         research_interests.write_text("Test")
 
         with (
-            patch("llm_process_articles.llm_query") as mock_llm,
+            patch("llm_process_articles.chat") as mock_llm,
             patch("llm_process_articles.validate_llm_response") as mock_validate,
             patch("llm_process_articles.save_validated_responses"),
             patch("llm_process_articles.pathlib.Path.write_text"),
@@ -416,7 +378,7 @@ class TestLLMProcessArticles:
             mock_validate.return_value = {}
 
             # Test each stage
-            for stage in ["metadata", "screening", "priority"]:
+            for stage in ["metadata", "tagging"]:
                 # Execute
                 llm_process_articles(
                     stage=stage,
@@ -447,7 +409,7 @@ class TestLLMProcessArticles:
         mock_response = '{"articles": [{"title": "validated"}]}'
 
         with (
-            patch("llm_process_articles.llm_query") as mock_llm,
+            patch("llm_process_articles.chat") as mock_llm,
             patch("llm_process_articles.validate_llm_response") as mock_validate,
             patch("llm_process_articles.save_validated_responses"),
             patch("llm_process_articles.pathlib.Path.write_text"),
@@ -479,7 +441,7 @@ class TestLLMProcessArticles:
         system_prompt.write_text("Test prompt")
 
         with (
-            patch("llm_process_articles.llm_query") as mock_llm,
+            patch("llm_process_articles.chat") as mock_llm,
             patch("llm_process_articles.validate_llm_response") as mock_validate,
             patch("llm_process_articles.save_validated_responses") as mock_save,
             patch("llm_process_articles.pathlib.Path.write_text"),
@@ -522,7 +484,7 @@ class TestLLMProcessArticles:
 
         for model in models:
             with (
-                patch("llm_process_articles.llm_query") as mock_llm,
+                patch("llm_process_articles.chat") as mock_llm,
                 patch("llm_process_articles.validate_llm_response") as mock_validate,
                 patch("llm_process_articles.save_validated_responses"),
                 patch("llm_process_articles.pathlib.Path.write_text"),
