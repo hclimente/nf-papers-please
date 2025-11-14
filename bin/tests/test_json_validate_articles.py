@@ -23,7 +23,7 @@ class TestValidateArticlesJson:
         """Fixture for minimal article data"""
         return {
             "url": "https://example.com/article1",
-            "journal_name": "Nature",
+            "journal": "Nature",
             "date": "2024-01-15",
             "raw_contents": "Article content",
         }
@@ -33,7 +33,7 @@ class TestValidateArticlesJson:
         """Fixture for full article data with all fields"""
         return {
             "url": "https://example.com/article1",
-            "journal_name": "Nature",
+            "journal": "Nature",
             "date": "2024-01-15",
             "raw_contents": "Article content",
             "title": "Test Article",
@@ -45,7 +45,7 @@ class TestValidateArticlesJson:
             "issue": 4,
             "language": "en",
             "tags": ["Network Biology", "Cancer Biology"],
-            "reasoning": "High relevance and importance",
+            "reasoning": "High priority and importance",
             "zotero_key": "ABC123",
         }
 
@@ -73,7 +73,7 @@ class TestValidateArticlesJson:
             # Assertions
             assert len(result) == 1
             assert result[0]["url"] == "https://example.com/article1"
-            assert result[0]["journal_name"] == "Nature"
+            assert result[0]["journal"] == "Nature"
             assert result[0]["date"] == "2024-01-15"
             assert result[0]["raw_contents"] == "Article content"
             assert result[0]["access_date"] == date.today().isoformat()
@@ -107,7 +107,7 @@ class TestValidateArticlesJson:
             # Assertions - only core fields should remain
             assert len(result) == 1
             assert "url" in result[0]
-            assert "journal_name" in result[0]
+            assert "journal" in result[0]
             assert "date" in result[0]
             assert "access_date" in result[0]
             assert "raw_contents" in result[0]
@@ -149,7 +149,7 @@ class TestValidateArticlesJson:
             # Assertions - export stage should keep more fields
             assert len(result) == 1
             assert result[0]["url"] == "https://example.com/article1"
-            assert result[0]["journal_name"] == "Nature"
+            assert result[0]["journal"] == "Nature"
             assert result[0]["date"] == "2024-01-15"
             assert result[0]["raw_contents"] == "Article content"
             assert result[0]["access_date"] == date.today().isoformat()
@@ -157,7 +157,7 @@ class TestValidateArticlesJson:
             assert result[0]["doi"] == "10.1234/test"
             assert result[0]["summary"] == "Article summary"
             assert result[0]["tags"] == ["Network Biology", "Cancer Biology"]
-            assert result[0]["reasoning"] == "High relevance and importance"
+            assert result[0]["reasoning"] == "High priority and importance"
 
             # Fields not required for export should be removed
             assert "authors" not in result[0]
@@ -200,7 +200,7 @@ class TestValidateArticlesJson:
             # Create second article
             article2 = minimal_article_data.copy()
             article2["url"] = "https://example.com/article2"
-            article2["journal_name"] = "Science"
+            article2["journal"] = "Science"
 
             # Create input JSON file with multiple articles
             input_file = pathlib.Path(tmpdir) / "input.json"
@@ -223,9 +223,9 @@ class TestValidateArticlesJson:
             # Assertions
             assert len(result) == 2
             assert result[0]["url"] == "https://example.com/article1"
-            assert result[0]["journal_name"] == "Nature"
+            assert result[0]["journal"] == "Nature"
             assert result[1]["url"] == "https://example.com/article2"
-            assert result[1]["journal_name"] == "Science"
+            assert result[1]["journal"] == "Science"
 
     def test_validate_sets_access_date_to_today(self, minimal_article_data):
         """Test that access_date is set to today's date"""
@@ -356,7 +356,7 @@ class TestValidateArticlesJson:
             # Create article missing required field
             invalid_article = {
                 "url": "https://example.com/article1",
-                # Missing journal_name
+                # Missing journal
                 "date": "2024-01-15",
                 "raw_contents": "Content",
             }
@@ -382,7 +382,7 @@ class TestValidateArticlesJson:
             # Create article with invalid URL
             invalid_article = {
                 "url": "not-a-valid-url",
-                "journal_name": "Nature",
+                "journal": "Nature",
                 "date": "2024-01-15",
                 "raw_contents": "Content",
             }
@@ -408,7 +408,7 @@ class TestValidateArticlesJson:
             # Create article with invalid date
             invalid_article = {
                 "url": "https://example.com/article1",
-                "journal_name": "Nature",
+                "journal": "Nature",
                 "date": "not-a-date",
                 "raw_contents": "Content",
             }

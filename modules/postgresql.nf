@@ -1,55 +1,6 @@
-process CREATE_ARTICLES_DB {
-
-    container 'community.wave.seqera.io/library/pip_psycopg2-binary:6f4dafaf446c4354'
-    secret 'PGPASSWORD'
-
-    input:
-    path JOURNALS_TSV
-    val USER
-    val HOST
-    val GLOBAL_CUTOFF_DATE
-
-    output:
-    val true
-
-    script:
-    """
-    db_create.py pg \
---journals_tsv ${JOURNALS_TSV} \
---user "${USER}" \
---host "${HOST}" \
---global_cutoff_date ${GLOBAL_CUTOFF_DATE}
-    """
-
-}
-
-process FETCH_JOURNALS {
-
-    container 'community.wave.seqera.io/library/pip_psycopg2-binary:6f4dafaf446c4354'
-    secret 'PGPASSWORD'
-
-    input:
-    val USER
-    val HOST
-
-    output:
-    path "journals.tsv"
-
-    script:
-    """
-    db_extract_fields.py pg \
---user "${USER}" \
---host "${HOST}" \
---table sources \
---columns "name, feed_url, last_checked" \
---out journals.tsv
-    """
-
-}
-
 process REMOVE_PROCESSED {
 
-    container 'community.wave.seqera.io/library/pip_psycopg2-binary:6f4dafaf446c4354'
+    container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
     secret 'PGPASSWORD'
 
     input:
@@ -74,7 +25,8 @@ process REMOVE_PROCESSED {
 
 process SAVE {
 
-    container 'community.wave.seqera.io/library/pip_psycopg2-binary:6f4dafaf446c4354'
+    container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
+    maxForks 1
     secret 'PGPASSWORD'
 
     input:
@@ -97,7 +49,7 @@ process SAVE {
 
 process UPDATE_TIMESTAMPS {
 
-    container 'community.wave.seqera.io/library/pip_psycopg2-binary:6f4dafaf446c4354'
+    container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
     secret 'PGPASSWORD'
 
     input:
@@ -117,6 +69,30 @@ process UPDATE_TIMESTAMPS {
 --table sources \
 --set_clause "last_checked = '${today}'" \
 --where_clause "1=1"
+    """
+
+}
+
+process FETCH_NEAREST_NEIGHBORS {
+
+    container 'community.wave.seqera.io/library/pip_pgvector_psycopg2-binary_sqlmodel:af6f8a5438d58434'
+    secret 'PGPASSWORD'
+
+    input:
+    path ARTICLES_JSON
+    val USER
+    val HOST
+
+    output:
+    path "knn.json"
+
+    script:
+    """
+    db_find_nearest_neighbors.py pg \
+--articles_json ${ARTICLES_JSON} \
+--user "${USER}" \
+--host "${HOST}" \
+--out knn.json
     """
 
 }

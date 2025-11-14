@@ -1,6 +1,6 @@
 process ADVANCED_METADATA {
 
-    container 'community.wave.seqera.io/library/pip_habanero_pydantic:3882895f50c53509'
+    container 'community.wave.seqera.io/library/pip_habanero_pgvector_sqlmodel:98d2da5778775e0e'
     secret 'USER_EMAIL'
 
     input:
@@ -18,9 +18,33 @@ process ADVANCED_METADATA {
 
 }
 
+process FETCH_ARTICLES {
+
+    container 'community.wave.seqera.io/library/pip_pgvector_pyzotero_sqlmodel:e830732bfc803843'
+    secret 'ZOTERO_API_KEY'
+
+    input:
+    val ZOTERO_USER_ID
+    val ZOTERO_COLLECTION_ID
+    val ZOTERO_LIBRARY_TYPE
+
+    output:
+    path "zotero_articles.json", optional: true
+
+    script:
+    """
+    zotero_fetch_articles.py \
+--zotero_user_id ${ZOTERO_USER_ID} \
+--zotero_library_type ${ZOTERO_LIBRARY_TYPE} \
+--zotero_collection_id ${ZOTERO_COLLECTION_ID} \
+--out zotero_articles.json
+    """
+
+}
+
 process REMOVE_PROCESSED {
 
-    container 'community.wave.seqera.io/library/pip_pydantic_pyzotero:ba16c1f9d97e42dc'
+    container 'community.wave.seqera.io/library/pip_pgvector_pyzotero_sqlmodel:e830732bfc803843'
     secret 'ZOTERO_API_KEY'
 
     input:
@@ -46,7 +70,7 @@ process REMOVE_PROCESSED {
 
 process SAVE {
 
-    container 'community.wave.seqera.io/library/pip_pydantic_pyzotero:ba16c1f9d97e42dc'
+    container 'community.wave.seqera.io/library/pip_pgvector_pyzotero_sqlmodel:e830732bfc803843'
     secret 'ZOTERO_API_KEY'
 
     input:

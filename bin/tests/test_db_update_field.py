@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-from db_update_field import get_update_field_sql
-
 # Test connection string for PostgreSQL tests
 TEST_PG_CONN_STRING = "postgresql://user:pass@localhost/db"  # pragma: allowlist secret
 
@@ -70,13 +68,13 @@ class TestUpdateFieldDuckDB:
         update_field(
             table="articles",
             set_clause="tags = 'biology'",
-            where_clause="date > '2025-01-01' AND journal_name = 'Nature'",
+            where_clause="date > '2025-01-01' AND journal = 'Nature'",
             db_type="duckdb",
             db_path="test.duckdb",
         )
 
         query = mock_conn.execute.call_args[0][0]
-        assert "WHERE date > '2025-01-01' AND journal_name = 'Nature'" in query
+        assert "WHERE date > '2025-01-01' AND journal = 'Nature'" in query
 
 
 class TestUpdateFieldPostgreSQL:
@@ -177,28 +175,10 @@ class TestUpdateFieldPostgreSQL:
         update_field(
             table="articles",
             set_clause="tags = 'biology'",
-            where_clause="date > '2025-01-01' AND journal_name = 'Nature'",
+            where_clause="date > '2025-01-01' AND journal = 'Nature'",
             db_type="pg",
             connection_string=TEST_PG_CONN_STRING,
         )
 
         query = mock_cursor.execute.call_args[0][0]
-        assert "WHERE date > '2025-01-01' AND journal_name = 'Nature'" in query
-
-
-class TestGetUpdateFieldSql:
-    """Test get_update_field_sql function."""
-
-    def test_duckdb_update_sql(self):
-        """Test DuckDB UPDATE statement generation."""
-        sql = get_update_field_sql("articles", "title", "url", db_type="duckdb")
-        assert "UPDATE articles" in sql
-        assert "SET title = ?" in sql
-        assert "WHERE url = ?" in sql
-
-    def test_postgresql_update_sql(self):
-        """Test PostgreSQL UPDATE statement generation."""
-        sql = get_update_field_sql("articles", "tags", "doi", db_type="pg")
-        assert "UPDATE articles" in sql
-        assert "SET tags = %s" in sql
-        assert "WHERE doi = %s" in sql
+        assert "WHERE date > '2025-01-01' AND journal = 'Nature'" in query

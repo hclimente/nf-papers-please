@@ -23,9 +23,9 @@ The vocabulary is organized into four dimensions:
 
 ## Critical Rules:
 1. Output ONLY valid JSON array - no markdown, no explanations, no additional text
-2. Each object must have exactly: `doi`, `tags`, `reasoning`
-3. `tags` must be an array of strings (exact category names from the vocabulary)
-4. `reasoning` is a brief explanation of why these tags were assigned
+2. Each object must have exactly: `doi`, `reasoning`, `tags`
+3. `reasoning` is a brief explanation of why these tags were assigned
+4. `tags` must be an array of strings (exact category names from the vocabulary)
 5. Use double quotes for all JSON keys and string values
 6. String values must be single-line (escape newlines as \n if needed)
 7. Start your response with `[` and end with `]` - nothing else
@@ -35,8 +35,8 @@ The vocabulary is organized into four dimensions:
 [
   {{
     "doi": "<string>",
-    "tags": ["<category1>", "<category2>", ...],
-    "reasoning": "<string: brief explanation of tag assignments>"
+    "reasoning": "<string: brief explanation of tag assignments>",
+    "tags": ["<category1>", "<category2>", ...]
   }}
 ]
 ```
@@ -57,8 +57,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example1",
-        "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "Review", "Nature Reviews Drug Discovery"],
-        "reasoning": "Uses network-based methods (Network Biology, parent Computational Biology), focuses on cancer (Cancer Biology), identifies drug targets (Drug Target Discovery, parent Drug discovery), comprehensive review article (Review), published in preferred journal (Nature Reviews Drug Discovery)."
+        "reasoning": "Uses network-based methods (Network Biology, parent Computational Biology), focuses on cancer (Cancer Biology), identifies drug targets (Drug Target Discovery, parent Drug discovery), comprehensive review article (Review), published in preferred journal (Nature Reviews Drug Discovery).",
+        "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "Review", "Nature Reviews Drug Discovery"]
       }
     ]
   },
@@ -74,8 +74,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example2",
-        "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "New Computational Method", "Pre-print"],
-        "reasoning": "Network-based approach (Network Biology, parent Computational Biology), cancer focus (Cancer Biology), drug target prediction (Drug Target Discovery, parent Drug discovery), novel ML framework (New Computational Method), BiorXiv pre-print (Pre-print)."
+        "reasoning": "Network-based approach (Network Biology, parent Computational Biology), cancer focus (Cancer Biology), drug target prediction (Drug Target Discovery, parent Drug discovery), novel ML framework (New Computational Method), BiorXiv pre-print (Pre-print).",
+        "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "New Computational Method", "Pre-print"]
       }
     ]
   },
@@ -91,8 +91,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example3",
-        "tags": ["Computational Biology", "Statistical Genetics", "Drug discovery", "Drug Target Discovery", "Methodological Guidelines", "Nature Genetics"],
-        "reasoning": "GWAS methods (Statistical Genetics, parent Computational Biology), disease gene identification (Drug Target Discovery, parent Drug discovery), benchmarking study provides methodological guidance (Methodological Guidelines), published in Nature Genetics."
+        "reasoning": "GWAS methods (Statistical Genetics, parent Computational Biology), disease gene identification (Drug Target Discovery, parent Drug discovery), benchmarking study provides methodological guidance (Methodological Guidelines), published in Nature Genetics.",
+        "tags": ["Computational Biology", "Statistical Genetics", "Drug discovery", "Drug Target Discovery", "Methodological Guidelines", "Nature Genetics"]
       }
     ]
   },
@@ -108,8 +108,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example4",
-        "tags": ["Computational Biology", "DNA LLM", "New Computational Method", "Foundations and Trends in Machine Learning"],
-        "reasoning": "Genomic sequence model (DNA LLM, parent Computational Biology), novel deep learning method (New Computational Method), published in preferred journal (Foundations and Trends in Machine Learning)."
+        "reasoning": "Genomic sequence model (DNA LLM, parent Computational Biology), novel deep learning method (New Computational Method), published in preferred journal (Foundations and Trends in Machine Learning).",
+        "tags": ["Computational Biology", "DNA LLM", "New Computational Method", "Foundations and Trends in Machine Learning"]
       }
     ]
   },
@@ -125,8 +125,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example5",
-        "tags": ["Computational Biology", "Network Biology", "New Computational Method"],
-        "reasoning": "Graph-based approach (Network Biology, parent Computational Biology), novel GNN method (New Computational Method). Journal not in preferred list."
+        "reasoning": "Graph-based approach (Network Biology, parent Computational Biology), novel GNN method (New Computational Method). Journal not in preferred list.",
+        "tags": ["Computational Biology", "Network Biology", "New Computational Method"]
       }
     ]
   },
@@ -141,8 +141,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example_pizzazz",
-        "tags": ["Computational Biology", "Network Biology", "Drug discovery", "Drug Target Discovery", "Review", "Methodological Guidelines"],
-        "reasoning": "Network-based methods (Network Biology, parent Computational Biology), drug discovery focus (Drug Target Discovery, parent Drug discovery), comprehensive review of field (Review), provides unified framework (Methodological Guidelines). Landmark paper in top venue."
+        "reasoning": "Network-based methods (Network Biology, parent Computational Biology), drug discovery focus (Drug Target Discovery, parent Drug discovery), comprehensive review of field (Review), provides unified framework (Methodological Guidelines). Landmark paper in top venue.",
+        "tags": ["Computational Biology", "Network Biology", "Drug discovery", "Drug Target Discovery", "Review", "Methodological Guidelines"]
       }
     ]
   },
@@ -158,8 +158,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example6",
-        "tags": ["Computational Biology", "Cancer Biology", "Large-Scale Analyses"],
-        "reasoning": "Cancer study (Cancer Biology, parent Computational Biology), large-scale single-cell analysis (Large-Scale Analyses). Journal not in preferred list."
+        "reasoning": "Cancer study (Cancer Biology, parent Computational Biology), large-scale single-cell analysis (Large-Scale Analyses). Journal not in preferred list.",
+        "tags": ["Computational Biology", "Cancer Biology", "Large-Scale Analyses"]
       }
     ]
   },
@@ -175,8 +175,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example7",
-        "tags": ["Computational Biology", "Network Biology", "Drug discovery", "Drug Target Discovery", "Pre-print"],
-        "reasoning": "Network-based approach (Network Biology, parent Computational Biology), identifies therapeutic targets (Drug Target Discovery, parent Drug discovery), ArXiv pre-print (Pre-print)."
+        "reasoning": "Network-based approach (Network Biology, parent Computational Biology), identifies therapeutic targets (Drug Target Discovery, parent Drug discovery), ArXiv pre-print (Pre-print).",
+        "tags": ["Computational Biology", "Network Biology", "Drug discovery", "Drug Target Discovery", "Pre-print"]
       }
     ]
   },
@@ -192,8 +192,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example8",
-        "tags": ["Computational Biology", "Methodological Guidelines", "Review"],
-        "reasoning": "Computational biology methods (Computational Biology), provides best practices (Methodological Guidelines), review article (Review). Journal not in preferred list."
+        "reasoning": "Computational biology methods (Computational Biology), provides best practices (Methodological Guidelines), review article (Review). Journal not in preferred list.",
+        "tags": ["Computational Biology", "Methodological Guidelines", "Review"]
       }
     ]
   },
@@ -209,8 +209,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example9",
-        "tags": ["Computational Biology", "Methodological Guidelines", "Review", "Trends in Genetics"],
-        "reasoning": "Machine learning in biology (Computational Biology), methodological guidance (Methodological Guidelines), review article (Review), published in preferred journal (Trends in Genetics)."
+        "reasoning": "Machine learning in biology (Computational Biology), methodological guidance (Methodological Guidelines), review article (Review), published in preferred journal (Trends in Genetics).",
+        "tags": ["Computational Biology", "Methodological Guidelines", "Review", "Trends in Genetics"]
       }
     ]
   },
@@ -226,8 +226,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example10",
-        "tags": ["Computational Biology", "Other application", "Pre-print"],
-        "reasoning": "ML in biology context (Computational Biology), but clinical ML without genomics/biology focus (Other application), MedrXiv pre-print (Pre-print)."
+        "reasoning": "ML in biology context (Computational Biology), but clinical ML without genomics/biology focus (Other application), MedrXiv pre-print (Pre-print).",
+        "tags": ["Computational Biology", "Other application", "Pre-print"]
       }
     ]
   },
@@ -243,8 +243,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example11",
-        "tags": ["Computational Biology", "Other application", "Only non-human application(s)"],
-        "reasoning": "Computational analysis (Computational Biology), but zebrafish-specific developmental study with no human relevance (Other application, Only non-human application(s)). Journal not in preferred list."
+        "reasoning": "Computational analysis (Computational Biology), but zebrafish-specific developmental study with no human relevance (Other application, Only non-human application(s)). Journal not in preferred list.",
+        "tags": ["Computational Biology", "Other application", "Only non-human application(s)"]
       }
     ]
   },
@@ -260,8 +260,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example12",
-        "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "Nature Genetics", "Corrigendum"],
-        "reasoning": "Network-based methods (Network Biology, parent Computational Biology), cancer focus (Cancer Biology), disease gene identification (Drug Target Discovery, parent Drug discovery), published in Nature Genetics, but is a corrigendum (Corrigendum)."
+        "reasoning": "Network-based methods (Network Biology, parent Computational Biology), cancer focus (Cancer Biology), disease gene identification (Drug Target Discovery, parent Drug discovery), published in Nature Genetics, but is a corrigendum (Corrigendum).",
+        "tags": ["Computational Biology", "Network Biology", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "Nature Genetics", "Corrigendum"]
       }
     ]
   },
@@ -277,8 +277,8 @@ The vocabulary is organized into four dimensions:
     "response": [
       {
         "doi": "10.1234/example13",
-        "tags": ["Computational Biology", "Network Biology", "Statistical Genetics", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "New Computational Method"],
-        "reasoning": "Combines multiple subfields: graph-based methods (Network Biology), GWAS (Statistical Genetics), cancer (Cancer Biology), all under Computational Biology parent. Identifies disease genes (Drug Target Discovery, parent Drug discovery), novel method (New Computational Method). Journal not in preferred list."
+        "reasoning": "Combines multiple subfields: graph-based methods (Network Biology), GWAS (Statistical Genetics), cancer (Cancer Biology), all under Computational Biology parent. Identifies disease genes (Drug Target Discovery, parent Drug discovery), novel method (New Computational Method). Journal not in preferred list.",
+        "tags": ["Computational Biology", "Network Biology", "Statistical Genetics", "Cancer Biology", "Drug discovery", "Drug Target Discovery", "New Computational Method"]
       }
     ]
   }

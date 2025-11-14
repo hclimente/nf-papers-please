@@ -1,6 +1,8 @@
 import logging
 import os
 
+from .models import Article, ArticleTable
+
 
 def get_common_variations(expected_values: list):
     """
@@ -55,24 +57,35 @@ def get_env_variable(var_name: str, raise_error: bool = False) -> str:
     return value
 
 
-def build_pg_connection_string(user: str, host: str) -> str:
+def article_to_text(article: Article | ArticleTable) -> str:
     """
-    Build a PostgreSQL connection string from individual components.
+    Deprecated: Use article.to_embedding_text() instead.
+
+    Prepare the text representation of an article for embedding.
 
     Args:
-        user: PostgreSQL username
-        host: PostgreSQL host (can include port/database or be full connection details)
+        article: The article object.
 
     Returns:
-        Complete PostgreSQL connection string
+        str: The text representation of the article.
     """
-    password = get_env_variable("PGPASSWORD", "")
+    return article.to_embedding_text()
 
-    # If host already contains full connection details (starts with ep- for Neon), use it directly
-    # Otherwise, construct the basic connection string
-    if host.startswith("ep-") or "?" in host:
-        # Full host with parameters provided
-        return f"postgresql://{user}:{password}@{host}"
-    else:
-        # Simple host:port/database format
-        return f"postgresql://{user}:{password}@{host}"
+
+def prune_article_for_classification(article: Article) -> Article:
+    """
+    Deprecated: Use article.prune_for_classification() instead.
+
+    Create a pruned copy of an article with only fields needed for classification.
+
+    Keeps: title, journal, authors (first and last only), summary, tags, doi, nearest_neighbors.
+    Removes all other fields to reduce token usage in LLM prompts.
+    Recursively prunes any Article objects in nearest_neighbors.
+
+    Args:
+        article: The full article object.
+
+    Returns:
+        Article: A pruned copy with only classification-relevant fields.
+    """
+    return article.prune_for_classification()

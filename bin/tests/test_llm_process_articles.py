@@ -21,7 +21,7 @@ class TestLLMProcessArticles:
             Article(
                 title="Test Article 1",
                 url="https://example.com/article1",
-                journal_name="Test Journal",
+                journal="Test Journal",
                 date=date(2024, 1, 1),
                 access_date=date(2024, 1, 15),
                 raw_contents="Content 1",
@@ -29,7 +29,7 @@ class TestLLMProcessArticles:
             Article(
                 title="Test Article 2",
                 url="https://example.com/article2",
-                journal_name="Test Journal",
+                journal="Test Journal",
                 date=date(2024, 1, 2),
                 access_date=date(2024, 1, 15),
                 raw_contents="Content 2",
@@ -505,3 +505,178 @@ class TestLLMProcessArticles:
 
                 # Verify correct model was passed
                 assert mock_llm.call_args[1]["model"] == model
+
+
+class TestLLMProcessArticlesCLI:
+    """Test suite for llm_process_articles CLI interface"""
+
+    def test_cli_argument_parsing_metadata(self, tmp_path, monkeypatch):
+        """Test that CLI arguments are parsed correctly for metadata command"""
+        import sys
+        import argparse
+
+        # Create dummy files
+        articles_json = tmp_path / "articles.json"
+        articles_json.write_text("[]")
+        prompt = tmp_path / "prompt.md"
+        prompt.write_text("test")
+
+        test_args = [
+            "llm_process_articles.py",
+            "--articles_json",
+            str(articles_json),
+            "metadata",
+            "--system_prompt_path",
+            str(prompt),
+            "--model",
+            "gemini-2.5-flash-lite",
+            "--allow_qc_errors",
+            "False",  # Note: This will be cast to bool, "False" string becomes True
+        ]
+
+        monkeypatch.setattr(sys, "argv", test_args)
+
+        # Parse arguments using the same logic as the script
+        from common.parsers import (
+            add_input_articles_json_argument,
+            add_debug_argument,
+            add_llm_arguments,
+        )
+
+        parser = argparse.ArgumentParser()
+        parser = add_input_articles_json_argument(parser)
+        parser = add_debug_argument(parser)
+        subparsers = parser.add_subparsers(dest="command", required=True)
+
+        metadata_parser = subparsers.add_parser("metadata")
+        metadata_parser = add_llm_arguments(
+            metadata_parser, include_research_interests=False
+        )
+
+        args = parser.parse_args()
+
+        assert args.command == "metadata"
+        assert str(articles_json) in args.articles_json
+        assert str(prompt) in args.system_prompt_path
+        assert args.model == "gemini-2.5-flash-lite"
+        # When type=bool in argparse, any non-empty string becomes True
+        assert args.allow_qc_errors is True
+        assert args.debug is False
+
+    def test_cli_argument_parsing_tagging(self, tmp_path, monkeypatch):
+        """Test that CLI arguments are parsed correctly for tagging command"""
+        import sys
+        import argparse
+
+        # Create dummy files
+        articles_json = tmp_path / "articles.json"
+        articles_json.write_text("[]")
+        prompt = tmp_path / "prompt.md"
+        prompt.write_text("test")
+        interests = tmp_path / "interests.md"
+        interests.write_text("interests")
+
+        test_args = [
+            "llm_process_articles.py",
+            "--articles_json",
+            str(articles_json),
+            "tagging",
+            "--system_prompt_path",
+            str(prompt),
+            "--research_interests_path",
+            str(interests),
+            "--model",
+            "gemini-1.5-flash",
+            "--allow_qc_errors",
+            "true",
+        ]
+
+        monkeypatch.setattr(sys, "argv", test_args)
+
+        from common.parsers import (
+            add_input_articles_json_argument,
+            add_debug_argument,
+            add_llm_arguments,
+        )
+
+        parser = argparse.ArgumentParser()
+        parser = add_input_articles_json_argument(parser)
+        parser = add_debug_argument(parser)
+        subparsers = parser.add_subparsers(dest="command", required=True)
+
+        tagging_parser = subparsers.add_parser("tagging")
+        tagging_parser = add_llm_arguments(
+            tagging_parser, include_research_interests=True
+        )
+
+        args = parser.parse_args()
+
+        assert args.command == "tagging"
+        assert hasattr(args, "research_interests_path")
+        assert str(interests) in args.research_interests_path
+        assert args.model == "gemini-1.5-flash"
+        assert args.allow_qc_errors is True  # Parsed as boolean, not string
+
+    def test_cli_debug_flag_parsing(self, tmp_path, monkeypatch):
+        """Test that debug flag is parsed correctly"""
+        import sys
+        import argparse
+
+        articles_json = tmp_path / "articles.json"
+        articles_json.write_text("[]")
+        prompt = tmp_path / "prompt.md"
+        prompt.write_text("test")
+
+        test_args = [
+            "llm_process_articles.py",
+            "--articles_json",
+            str(articles_json),
+            "--debug",
+            "metadata",
+            "--system_prompt_path",
+            str(prompt),
+            "--model",
+            "gemini-2.5-flash-lite",
+            "--allow_qc_errors",
+            "false",
+        ]
+
+        monkeypatch.setattr(sys, "argv", test_args)
+
+        from common.parsers import (
+            add_input_articles_json_argument,
+            add_debug_argument,
+            add_llm_arguments,
+        )
+
+        parser = argparse.ArgumentParser()
+        parser = add_input_articles_json_argument(parser)
+        parser = add_debug_argument(parser)
+        subparsers = parser.add_subparsers(dest="command", required=True)
+
+        metadata_parser = subparsers.add_parser("metadata")
+        metadata_parser = add_llm_arguments(
+            metadata_parser, include_research_interests=False
+        )
+
+        args = parser.parse_args()
+
+        assert args.debug is True
+
+    def test_cli_missing_required_args(self, monkeypatch):
+        """Test CLI with missing required arguments"""
+        import sys
+        import argparse
+
+        test_args = ["llm_process_articles.py"]  # Missing all required arguments
+        monkeypatch.setattr(sys, "argv", test_args)
+
+        from common.parsers import add_input_articles_json_argument, add_debug_argument
+
+        parser = argparse.ArgumentParser()
+        parser = add_input_articles_json_argument(parser)
+        parser = add_debug_argument(parser)
+        _ = parser.add_subparsers(dest="command", required=True)
+
+        with pytest.raises(SystemExit):
+            _ = parser.parse_args()

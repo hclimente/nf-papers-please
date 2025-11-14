@@ -1,78 +1,149 @@
 #!/usr/bin/env python
 import argparse
-import json
 import logging
-from typing import Dict, List, Tuple
+import pathlib
 
+from sqlmodel import Session, create_engine, select
+
+from common.models import (
+    ArticleList,
+    ArticleTable,
+    Author,
+    AuthorTable,
+    JournalTable,
+    Tag,
+)
 from common.parsers import (
     add_input_articles_json_argument,
-    add_duckdb_arguments,
     add_postgresql_arguments,
 )
-from common.utils import build_pg_connection_string
-
-# Field names for insertion (excluding auto-generated id)
-ARTICLE_INSERT_FIELDS = [
-    "title",
-    "summary",
-    "url",
-    "journal_name",
-    "date",
-    "doi",
-    "tags",
-    "reasoning",
-    "embedding",
-]
+from common.db import (
+    build_connection_string,
+    setup_db,
+)
 
 
-def extract_article_fields(article: Dict, fields: List[str] = None) -> Tuple:
+def get_or_create_journal(
+    session: Session, name: str, short_name: str | None
+) -> "JournalTable":
     """
-    Extract fields from an article dictionary for database insertion.
+    Find an existing journal or create a new one.
 
     Args:
-        article: Dictionary containing article data
-        fields: List of field names to extract (defaults to ARTICLE_INSERT_FIELDS)
-
+        session: SQLModel session.
+        name: Journal name string.
+        short_name: Journal short name string or None.
     Returns:
-        Tuple of field values in the same order as fields
+        JournalTable instance.
     """
-    if fields is None:
-        fields = ARTICLE_INSERT_FIELDS
+    from common.models import JournalTable
 
-    values = []
-    for field in fields:
-        if field in ["tags", "reasoning", "embedding"]:
-            values.append(article.get(field, None))
-        else:
-            values.append(article[field])
-    return tuple(values)
+    statement = select(JournalTable).where(JournalTable.name == name)
+    journal = session.exec(statement).first()
+
+    if not journal:
+        journal = JournalTable(name=name, short_name=short_name)
+        session.add(journal)
+        session.flush()
+
+    return journal
 
 
-def get_insert_article_sql(db_type: str = "duckdb") -> str:
+def get_or_create_author(session: Session, author_data: Author) -> AuthorTable:
     """
-    Get SQL template for inserting an article.
+    Find an existing author or create a new one.
 
     Args:
-        db_type: Either 'duckdb' or 'postgresql'
+        session: SQLModel session.
+        author_data: author data
 
     Returns:
-        SQL INSERT statement with appropriate placeholder style
+        AuthorTable instance.
     """
-    placeholders = (
-        "?, ?, ?, ?, ?, ?, ?, ?, ?"
-        if db_type == "duckdb"
-        else "%s, %s, %s, %s, %s, %s, %s, %s, %s"
+    statement = select(AuthorTable).where(
+        AuthorTable.first_name == author_data.first_name,
+        AuthorTable.last_name == author_data.last_name,
     )
-    return f"""
-        INSERT INTO articles (title, summary, url, journal_name, date, doi, tags, reasoning, embedding)
-        VALUES ({placeholders})
+    author = session.exec(statement).first()
+
+    if not author:
+        author = AuthorTable(**author_data.model_dump())
+        session.add(author)
+        session.flush()
+
+    return author
+
+
+def get_or_create_tag(session: Session, tag_name: str) -> Tag:
     """
+    Find an existing tag or create a new one.
+
+    Args:
+        session: SQLModel session.
+        tag_name: Tag name string.
+
+    Returns:
+        Tag instance.
+    """
+    statement = select(Tag).where(Tag.name == tag_name)
+    tag = session.exec(statement).first()
+
+    if not tag:
+        tag = Tag(name=tag_name)
+        session.add(tag)
+        session.flush()
+
+    return tag
+
+
+def convert_article_to_table(article, session: Session) -> ArticleTable:
+    """
+    Convert Article (Pydantic) to ArticleTable (SQLModel) with relationships.
+
+    Args:
+        article: Article instance (Pydantic model).
+        session: SQLModel session.
+
+    Returns:
+        ArticleTable instance with authors and tags linked.
+    """
+    # Convert Article to ArticleTable
+    article_table = ArticleTable(
+        **article.model_dump(
+            exclude={
+                "authors",
+                "tags",
+                "embedding",
+                "journal",
+                "journal_short_name",
+                "nearest_neighbors",
+            }
+        )
+    )
+
+    if article.journal:
+        article_table.journal = get_or_create_journal(
+            session, article.journal, article.journal_short_name
+        )
+
+    if article.authors:
+        for author_data in article.authors:
+            author = get_or_create_author(session, author_data)
+            article_table.authors.append(author)
+
+    if article.embedding:
+        article_table.embedding = article.embedding
+
+    if article.tags:
+        for tag_name in article.tags:
+            tag = get_or_create_tag(session, tag_name)
+            article_table.tags.append(tag)
+
+    return article_table
 
 
 def insert_article(
     articles_json: str,
-    db_type: str,
-    db_path: str = None,
     connection_string: str = None,
 ) -> None:
     """
@@ -90,49 +161,17 @@ def insert_article(
         None
     """
 
-    articles = json.load(open(articles_json, "r"))
-    logging.info(f"Loaded {len(articles)} articles from {articles_json}.")
+    json_string = pathlib.Path(articles_json).read_text()
+    articles = ArticleList.validate_json(json_string)
 
-    insert_sql = get_insert_article_sql(db_type=db_type)
+    engine = create_engine(connection_string, echo=True)
 
-    if db_type == "duckdb":
-        import duckdb
+    with Session(engine) as session:
+        for article in articles:
+            article_table = convert_article_to_table(article, session)
+            session.add(article_table)
 
-        for a in articles:
-            logging.info(f"Inserting article: {a['title'][:50]}...")
-
-            with duckdb.connect(db_path) as con:
-                try:
-                    article_values = extract_article_fields(a)
-                    con.execute(insert_sql, article_values)
-                    logging.info("✅ Article inserted successfully")
-                except Exception as e:
-                    logging.error(f"❌ Failed to insert article: {e}")
-                    raise
-
-    elif db_type == "pg":
-        try:
-            import psycopg2
-        except ImportError:
-            raise ImportError(
-                "psycopg2 is required for PostgreSQL support. "
-                "Install it with: pip install psycopg2-binary"
-            )
-
-        for a in articles:
-            logging.info(f"Inserting article: {a['title'][:50]}...")
-
-            with psycopg2.connect(connection_string) as conn:
-                with conn.cursor() as cur:
-                    try:
-                        article_values = extract_article_fields(a)
-                        cur.execute(insert_sql, article_values)
-                        conn.commit()
-                        logging.info("✅ Article inserted successfully")
-                    except Exception as e:
-                        conn.rollback()
-                        logging.error(f"❌ Failed to insert article: {e}")
-                        raise
+        session.commit()
 
 
 if __name__ == "__main__":
@@ -146,12 +185,6 @@ if __name__ == "__main__":
         dest="db_type", required=True, help="Database backend to use"
     )
 
-    duckdb_parser = subparsers.add_parser(
-        "duckdb", help="Use DuckDB as the database backend"
-    )
-    duckdb_parser = add_duckdb_arguments(duckdb_parser)
-    duckdb_parser = add_input_articles_json_argument(duckdb_parser)
-
     pg_parser = subparsers.add_parser(
         "pg", help="Use PostgreSQL as the database backend"
     )
@@ -160,17 +193,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Build connection string for PostgreSQL
-    connection_string = None
-    db_path = None
-    if args.db_type == "pg":
-        connection_string = build_pg_connection_string(args.user, args.host)
-    else:  # duckdb
-        db_path = args.db_path
+    connection_string = build_connection_string(args.user, args.host)
+    setup_db(connection_string)
 
     insert_article(
         articles_json=args.articles_json,
-        db_type=args.db_type,
-        db_path=db_path,
         connection_string=connection_string,
     )

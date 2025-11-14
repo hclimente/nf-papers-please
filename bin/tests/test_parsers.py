@@ -256,34 +256,34 @@ class TestBuildPostgresqlConnectionString:
 
     def test_builds_basic_connection_string(self, monkeypatch):
         """Test building a basic connection string"""
-        from common.utils import build_pg_connection_string
+        from common.db import build_connection_string
 
         # Mock the environment variable
         monkeypatch.setenv("PGPASSWORD", "testpass")
 
-        conn_str = build_pg_connection_string("user", "localhost/db")
+        conn_str = build_connection_string("user", "localhost/db")
         assert (
             conn_str == "postgresql://user:testpass@localhost/db"  # noqa F402 # pragma: allowlist secret
         )
 
     def test_builds_connection_string_with_port(self, monkeypatch):
         """Test building a connection string with port"""
-        from common.utils import build_pg_connection_string
+        from common.db import build_connection_string
 
         # Mock the environment variable
         monkeypatch.setenv("PGPASSWORD", "testpass")
 
-        conn_str = build_pg_connection_string("user", "localhost:5432/db")
+        conn_str = build_connection_string("user", "localhost:5432/db")
         assert conn_str == "postgresql://user:testpass@localhost:5432/db"  # noqa F402 # pragma: allowlist secret
 
     def test_builds_connection_string_with_neon_host(self, monkeypatch):
         """Test building a connection string with Neon host"""
-        from common.utils import build_pg_connection_string
+        from common.db import build_connection_string
 
         # Mock the environment variable
         monkeypatch.setenv("PGPASSWORD", "secret123")
 
-        conn_str = build_pg_connection_string(
+        conn_str = build_connection_string(
             "neondb_owner",
             "ep-lingering-tree.us-east-1.aws.neon.tech/neondb",
         )
@@ -294,12 +294,12 @@ class TestBuildPostgresqlConnectionString:
 
     def test_builds_connection_string_with_query_params(self, monkeypatch):
         """Test building a connection string with query parameters"""
-        from common.utils import build_pg_connection_string
+        from common.db import build_connection_string
 
         # Mock the environment variable
         monkeypatch.setenv("PGPASSWORD", "mypass")
 
-        conn_str = build_pg_connection_string(
+        conn_str = build_connection_string(
             "user",
             "localhost/db?sslmode=require&channel_binding=require",
         )
