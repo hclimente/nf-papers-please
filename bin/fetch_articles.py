@@ -93,7 +93,7 @@ def fetch_rss_feed(
             continue
 
         article_data = {
-            "journal_name": journal_name,
+            "journal": journal_name,
             "url": item.link,
             "raw_contents": str(item),
             "date": item_date_naive.date().isoformat(),

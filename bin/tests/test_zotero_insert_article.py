@@ -19,7 +19,7 @@ from zotero_insert_article import (
     insert_batch,
     insert_article,
 )
-from common.models import Article, Author, InstitutionalAuthor
+from common.models import Article, Author
 
 
 class TestAddCreators:
@@ -61,7 +61,7 @@ class TestAddCreators:
 
     def test_add_creators_institutional_author(self):
         """Test with InstitutionalAuthor"""
-        authors = [InstitutionalAuthor(name="MIT Research Group")]
+        authors = [Author(last_name="MIT Research Group")]
         result = add_creators(authors)
 
         assert len(result) == 1
@@ -74,7 +74,7 @@ class TestAddCreators:
         """Test with mix of Author and InstitutionalAuthor"""
         authors = [
             Author(first_name="John", last_name="Doe"),
-            InstitutionalAuthor(name="MIT Research Group"),
+            Author(last_name="MIT Research Group"),
             Author(first_name="Jane", last_name="Smith"),
         ]
         result = add_creators(authors)
@@ -130,7 +130,7 @@ class TestCreateZoteroArticle:
         return Article(
             title="Test Article",
             url="https://example.com/article",
-            journal_name="Nature",
+            journal="Nature",
             date=date(2025, 10, 15),
             access_date=date(2025, 10, 31),
             raw_contents="Raw content",
@@ -143,19 +143,19 @@ class TestCreateZoteroArticle:
             title="Full Test Article",
             authors=[
                 Author(first_name="John", last_name="Doe"),
-                InstitutionalAuthor(name="MIT"),
+                Author(last_name="MIT"),
             ],
             summary="This is a test summary",
             doi="10.1234/test",
             url="https://example.com/article",
-            journal_name="Nature",
+            journal="Nature",
             journal_short_name="Nat.",
             volume=123,
             issue=4,
             date=date(2025, 10, 15),
             language="en",
             tags=["Network Biology", "Cancer Biology"],
-            reasoning="High relevance and importance",
+            reasoning="High priority and importance",
             access_date=date(2025, 10, 31),
             raw_contents="Raw content",
         )
@@ -247,13 +247,13 @@ class TestCreateZoteroNote:
         return Article(
             title="Test Article",
             url="https://example.com/article",
-            journal_name="Nature",
+            journal="Nature",
             date=date(2025, 10, 15),
             access_date=date(2025, 10, 31),
             raw_contents="Raw content",
             zotero_key="ABC123",
             tags=["Machine Learning", "Systems Biology"],
-            reasoning="High relevance due to novel findings in core research area",
+            reasoning="High priority due to novel findings in core research area",
         )
 
     def test_create_zotero_note(self, article_with_key, mock_zotero):
@@ -263,7 +263,7 @@ class TestCreateZoteroNote:
         assert result["parentItem"] == "ABC123"
         assert "AI Scoring reasoning:" in result["note"]
         assert (
-            "High relevance due to novel findings in core research area"
+            "High priority due to novel findings in core research area"
             in result["note"]
         )
 
@@ -450,24 +450,24 @@ class TestInsertArticle:
             {
                 "title": "Test Article 1",
                 "url": "https://example.com/article1",
-                "journal_name": "Nature",
+                "journal": "Nature",
                 "date": "2025-10-15",
                 "access_date": "2025-10-31",
                 "raw_contents": "Content 1",
                 "doi": "10.1234/test1",
                 "tags": ["Network Biology", "Cancer Biology"],
-                "reasoning": "High relevance to research interests",
+                "reasoning": "High priority to research interests",
             },
             {
                 "title": "Test Article 2",
                 "url": "https://example.com/article2",
-                "journal_name": "Science",
+                "journal": "Science",
                 "date": "2025-10-20",
                 "access_date": "2025-10-31",
                 "raw_contents": "Content 2",
                 "doi": "10.1234/test2",
                 "tags": ["Machine Learning"],
-                "reasoning": "Medium relevance to research interests",
+                "reasoning": "Medium priority to research interests",
             },
         ]
 
@@ -571,7 +571,7 @@ class TestInsertArticle:
                 {
                     "title": f"Article {i}",
                     "url": f"https://example.com/article{i}",
-                    "journal_name": "Nature",
+                    "journal": "Nature",
                     "date": "2025-10-15",
                     "access_date": "2025-10-31",
                     "raw_contents": f"Content {i}",

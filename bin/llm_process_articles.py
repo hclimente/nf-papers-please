@@ -4,7 +4,7 @@ import logging
 import pathlib
 
 from common.llm import chat
-from common.models import ArticleList, pprint
+from common.models import ArticleList
 from common.parsers import (
     add_input_articles_json_argument,
     add_debug_argument,
@@ -57,10 +57,17 @@ def llm_process_articles(
     json_string = pathlib.Path(articles_json).read_text()
     articles = ArticleList.validate_json(json_string)
     logging.info(f"Loaded {len(articles)} articles.")
-    logging.debug(f"Articles: {pprint(articles)}")
+    # logging.debug(f"Articles: {pprint(articles)}")
+
+    # For classify stage, prune articles to only include relevant fields
+    if stage == "classify":
+        articles_for_llm = [article.prune_for_classification() for article in articles]
+        logging.info("Pruned articles for classification stage.")
+    else:
+        articles_for_llm = articles
 
     response_text = chat(
-        articles=articles,
+        articles=articles_for_llm,
         system_prompt_path=system_prompt_path,
         model=model,
         api_key=get_env_variable("GOOGLE_API_KEY"),
@@ -108,6 +115,10 @@ if __name__ == "__main__":
     )
     tagging_parser = subparsers.add_parser("tagging")
     tagging_parser = add_llm_arguments(tagging_parser, include_research_interests=True)
+    classify_parser = subparsers.add_parser("classify")
+    classify_parser = add_llm_arguments(
+        classify_parser, include_research_interests=False
+    )
 
     args = parser.parse_args()
     try:

@@ -9,7 +9,6 @@ from httpx import HTTPStatusError
 from common.models import (
     ArticleList,
     Author,
-    InstitutionalAuthor,
     pprint,
 )
 from common.parsers import (
@@ -34,7 +33,7 @@ def process_author_list(author_data: list) -> list[Author]:
         if "name" in author:
             # Institutional author
             name = author["name"]
-            authors.append(InstitutionalAuthor(name=name))
+            authors.append(Author(last_name=name))
         else:
             first_name = author["given"]
             last_name = author["family"]
@@ -93,7 +92,7 @@ def fetch_metadata(articles_json: str, error_strategy: str) -> None:
         journal_short_name = getattr(metadata, "short_container_title", [[None]])[0]
 
         if journal_short_name:
-            article.journal_short_name = journal_short_name[0][0]
+            article.journal_short_name = journal_short_name[0]
 
         article.volume = getattr(metadata, "volume", [None])[0]
         article.issue = getattr(metadata, "issue", [None])[0]

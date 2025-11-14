@@ -562,7 +562,7 @@ class TestValidateLlmResponse:
                 {
                     "doi": "10.1234/test",
                     "tags": ["Network Biology"],
-                    "reasoning": "High relevance article",
+                    "reasoning": "High priority article",
                 }
             ]
         )
@@ -647,6 +647,88 @@ class TestValidateLlmResponse:
         assert len(result) == 2
         assert "10.1234/test1" in result
         assert "10.1234/test2" in result
+
+    @patch("common.validation.logging.info")
+    def test_validate_classify_response(self, mock_info):
+        """Test validating classify stage response"""
+        response_text = json.dumps(
+            [
+                {
+                    "doi": "10.1234/test",
+                    "priority": "high",
+                    "reasoning": "Strong alignment with cluster on network-based methods",
+                }
+            ]
+        )
+
+        result = validate_llm_response(
+            stage="classify",
+            response_text=response_text,
+            merge_key="doi",
+            allow_qc_errors=False,
+        )
+
+        assert "10.1234/test" in result
+        assert result["10.1234/test"].priority == "high"
+        assert "Strong alignment" in result["10.1234/test"].reasoning
+
+    @patch("common.validation.logging.info")
+    def test_validate_classify_response_all_levels(self, mock_info):
+        """Test validating classify response with all priority levels"""
+        response_text = json.dumps(
+            [
+                {
+                    "doi": "10.1234/high",
+                    "priority": "high",
+                    "reasoning": "High alignment",
+                },
+                {
+                    "doi": "10.1234/medium",
+                    "priority": "medium",
+                    "reasoning": "Medium alignment",
+                },
+                {
+                    "doi": "10.1234/low",
+                    "priority": "low",
+                    "reasoning": "Low alignment",
+                },
+            ]
+        )
+
+        result = validate_llm_response(
+            stage="classify",
+            response_text=response_text,
+            merge_key="doi",
+            allow_qc_errors=False,
+        )
+
+        assert len(result) == 3
+        assert result["10.1234/high"].priority == "high"
+        assert result["10.1234/medium"].priority == "medium"
+        assert result["10.1234/low"].priority == "low"
+
+    @patch("common.validation.logging.info")
+    def test_validate_classify_response_invalid_priority(self, mock_info):
+        """Test validation rejects invalid priority values"""
+        response_text = json.dumps(
+            [
+                {
+                    "doi": "10.1234/invalid",
+                    "priority": "very high",  # Invalid
+                    "reasoning": "Test reasoning",
+                }
+            ]
+        )
+
+        result = validate_llm_response(
+            stage="classify",
+            response_text=response_text,
+            merge_key="doi",
+            allow_qc_errors=True,
+        )
+
+        # Should be rejected due to invalid priority
+        assert "10.1234/invalid" not in result
 
 
 class TestSaveValidatedResponses:

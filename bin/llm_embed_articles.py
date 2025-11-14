@@ -10,27 +10,9 @@ from common.parsers import (
     add_output_argument,
     add_debug_argument,
 )
-from common.utils import get_env_variable
-
-
-def prepare_text_to_embed(article) -> str:
-    """
-    Prepare the text representation of an article for embedding.
-
-    Args:
-        article: The article object.
-
-    Returns:
-        str: The text representation of the article.
-    """
-    return f"""
-Title: {article.title}
-Journal: {article.journal_name}
-First Author: {article.authors[0] if article.authors else "N/A"}
-Last Author: {article.authors[-1] if article.authors else "N/A"}
-Summary: {article.summary}
-Tags: {", ".join(article.tags) if article.tags else "N/A"}
-"""
+from common.utils import (
+    get_env_variable,
+)
 
 
 def llm_process_articles(
@@ -64,7 +46,7 @@ def llm_process_articles(
     logging.info(f"Loaded {len(articles)} articles.")
     logging.debug(f"Articles: {pprint(articles)}")
 
-    texts = [prepare_text_to_embed(article) for article in articles]
+    texts = [article.to_embedding_text() for article in articles]
 
     embeddings = embed(
         texts=texts,

@@ -25,7 +25,7 @@ class TestRemoveProcessed:
             Article(
                 title="Article 1",
                 url="https://example.com/article1",
-                journal_name="Journal 1",
+                journal="Journal 1",
                 date=date(2024, 1, 1),
                 access_date=date(2024, 1, 15),
                 raw_contents="Content 1",
@@ -33,7 +33,7 @@ class TestRemoveProcessed:
             Article(
                 title="Article 2",
                 url="https://example.com/article2",
-                journal_name="Journal 2",
+                journal="Journal 2",
                 date=date(2024, 1, 2),
                 access_date=date(2024, 1, 15),
                 raw_contents="Content 2",
@@ -41,7 +41,7 @@ class TestRemoveProcessed:
             Article(
                 title="Article 3",
                 url="https://example.com/article3",
-                journal_name="Journal 3",
+                journal="Journal 3",
                 date=date(2024, 1, 3),
                 access_date=date(2024, 1, 15),
                 raw_contents="Content 3",

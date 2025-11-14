@@ -10,7 +10,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from crossref_annotate_doi import process_author_list
-from common.models import Author, InstitutionalAuthor
+from common.models import Author
 
 
 class TestProcessAuthorList:
@@ -24,6 +24,7 @@ class TestProcessAuthorList:
         assert result is not None
         assert len(result) == 1
         assert isinstance(result[0], Author)
+        assert not result[0].is_institutional
         assert result[0].first_name == "John"
         assert result[0].last_name == "Doe"
 
@@ -34,8 +35,9 @@ class TestProcessAuthorList:
 
         assert result is not None
         assert len(result) == 1
-        assert isinstance(result[0], InstitutionalAuthor)
-        assert result[0].name == "University Research Lab"
+        assert isinstance(result[0], Author)
+        assert result[0].is_institutional
+        assert result[0].last_name == "University Research Lab"
 
     def test_process_multiple_individual_authors(self):
         """Test processing multiple individual authors"""
@@ -49,6 +51,7 @@ class TestProcessAuthorList:
         assert result is not None
         assert len(result) == 3
         assert all(isinstance(author, Author) for author in result)
+        assert all(not author.is_institutional for author in result)
         assert result[0].first_name == "John"
         assert result[0].last_name == "Doe"
         assert result[1].first_name == "Jane"
@@ -63,9 +66,10 @@ class TestProcessAuthorList:
 
         assert result is not None
         assert len(result) == 2
-        assert all(isinstance(author, InstitutionalAuthor) for author in result)
-        assert result[0].name == "Research Institute A"
-        assert result[1].name == "Laboratory B"
+        assert all(isinstance(author, Author) for author in result)
+        assert all(author.is_institutional for author in result)
+        assert result[0].last_name == "Research Institute A"
+        assert result[1].last_name == "Laboratory B"
 
     def test_process_mixed_authors(self):
         """Test processing mixed individual and institutional authors"""
@@ -80,16 +84,20 @@ class TestProcessAuthorList:
         assert result is not None
         assert len(result) == 4
         assert isinstance(result[0], Author)
-        assert isinstance(result[1], InstitutionalAuthor)
+        assert not result[0].is_institutional
+        assert isinstance(result[1], Author)
+        assert result[1].is_institutional
         assert isinstance(result[2], Author)
-        assert isinstance(result[3], InstitutionalAuthor)
+        assert not result[2].is_institutional
+        assert isinstance(result[3], Author)
+        assert result[3].is_institutional
 
         assert result[0].first_name == "John"
         assert result[0].last_name == "Doe"
-        assert result[1].name == "Research Institute"
+        assert result[1].last_name == "Research Institute"
         assert result[2].first_name == "Jane"
         assert result[2].last_name == "Smith"
-        assert result[3].name == "University Lab"
+        assert result[3].last_name == "University Lab"
 
     def test_process_empty_list(self):
         """Test processing an empty author list"""
@@ -123,8 +131,10 @@ class TestProcessAuthorList:
 
         assert result is not None
         assert len(result) == 2
-        assert result[0].name == "Max Planck Institute für Molekulare Genetik"
-        assert result[1].name == "Centre National de la Recherche Scientifique (CNRS)"
+        assert result[0].last_name == "Max Planck Institute für Molekulare Genetik"
+        assert (
+            result[1].last_name == "Centre National de la Recherche Scientifique (CNRS)"
+        )
 
     def test_process_author_with_unicode_characters(self):
         """Test processing author names with Unicode characters"""
@@ -163,7 +173,7 @@ class TestProcessAuthorList:
         assert result is not None
         assert len(result) == 1
         assert (
-            result[0].name
+            result[0].last_name
             == "The International Consortium for Advanced Research in Biomedical Sciences and Technology"
         )
 
@@ -187,6 +197,7 @@ class TestProcessAuthorList:
         assert result is not None
         assert len(result) == 100
         assert all(isinstance(author, Author) for author in result)
+        assert all(not author.is_institutional for author in result)
         assert result[0].first_name == "Author0"
         assert result[99].first_name == "Author99"
 
@@ -217,9 +228,13 @@ class TestProcessAuthorList:
         assert result is not None
         assert len(result) == 4
         assert isinstance(result[0], Author)
-        assert isinstance(result[1], InstitutionalAuthor)
+        assert not result[0].is_institutional
+        assert isinstance(result[1], Author)
+        assert result[1].is_institutional
         assert isinstance(result[2], Author)
-        assert isinstance(result[3], InstitutionalAuthor)
+        assert not result[2].is_institutional
+        assert isinstance(result[3], Author)
+        assert result[3].is_institutional
 
     def test_process_author_returns_correct_types(self):
         """Test that function returns correct types for each author"""
@@ -232,11 +247,9 @@ class TestProcessAuthorList:
         assert result is not None
         assert isinstance(result, list)
         assert isinstance(result[0], Author)
-        assert not isinstance(result[0], InstitutionalAuthor)
-        assert isinstance(result[1], InstitutionalAuthor)
-        assert not isinstance(result[1], Author) or isinstance(
-            result[1], InstitutionalAuthor
-        )
+        assert not result[0].is_institutional
+        assert isinstance(result[1], Author)
+        assert result[1].is_institutional
 
     def test_process_author_with_empty_strings(self):
         """Test processing authors with empty string values"""
@@ -289,7 +302,7 @@ class TestFetchMetadata:
             {
                 "title": "Test Article 1",
                 "url": "https://example.com/article1",
-                "journal_name": "Nature",
+                "journal": "Nature",
                 "date": "2024-01-01",
                 "access_date": "2024-01-15",
                 "raw_contents": "Content 1",

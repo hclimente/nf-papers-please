@@ -26,7 +26,7 @@ class TestLlmQuery:
             Article(
                 title="Test Article 1",
                 url="https://example.com/article1",
-                journal_name="Test Journal",
+                journal="Test Journal",
                 date=date(2024, 1, 1),
                 access_date=date(2024, 1, 15),
                 raw_contents="Content 1",
@@ -34,7 +34,7 @@ class TestLlmQuery:
             Article(
                 title="Test Article 2",
                 url="https://example.com/article2",
-                journal_name="Test Journal",
+                journal="Test Journal",
                 date=date(2024, 1, 2),
                 access_date=date(2024, 1, 15),
                 raw_contents="Content 2",

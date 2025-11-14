@@ -1,48 +1,3 @@
-process CREATE_ARTICLES_DB {
-
-    container 'community.wave.seqera.io/library/duckdb:1.4.1--3daff581f117ee85'
-    publishDir "${DUCKDB_PARENT_DIR}", mode: 'link'
-
-    input:
-    path JOURNALS_TSV
-    val DUCKDB_FILENAME
-    val DUCKDB_PARENT_DIR
-    val GLOBAL_CUTOFF_DATE
-
-    output:
-    path "${DUCKDB_FILENAME}"
-
-    script:
-    """
-    db_create.py duckdb \
---journals_tsv ${JOURNALS_TSV} \
---db_path ${DUCKDB_FILENAME} \
---global_cutoff_date ${GLOBAL_CUTOFF_DATE}
-    """
-
-}
-
-process FETCH_JOURNALS {
-
-    container 'community.wave.seqera.io/library/duckdb:1.4.1--3daff581f117ee85'
-
-    input:
-    path DUCKDB_PATH
-
-    output:
-    path "journals.tsv"
-
-    script:
-    """
-    db_extract_fields.py duckdb \
---db_path ${DUCKDB_PATH} \
---table sources \
---columns "name, feed_url, last_checked" \
---out journals.tsv
-    """
-
-}
-
 process REMOVE_PROCESSED {
 
     container 'community.wave.seqera.io/library/duckdb:1.4.1--3daff581f117ee85'
@@ -63,7 +18,6 @@ process REMOVE_PROCESSED {
     """
 
 }
-
 
 process SAVE {
 

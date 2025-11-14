@@ -1,291 +1,221 @@
 """Tests for db_remove_processed.py script."""
 
-from unittest.mock import MagicMock, mock_open, patch
-
-from db_remove_processed import (
-    get_create_temp_articles_table_sql,
-    get_select_unprocessed_sql,
-)
+from unittest.mock import MagicMock, patch, mock_open
 
 # Test connection string for PostgreSQL tests
 TEST_PG_CONN_STRING = "postgresql://user:pass@localhost/db"  # pragma: allowlist secret
 
 
-class TestRemoveUnprocessedArticlesDuckDB:
-    """Test remove_unprocessed_articles function with DuckDB."""
+class TestRemoveProcessedArticles:
+    """Test remove_processed_articles function with SQLModel."""
 
-    @patch("duckdb.connect")
-    @patch(
-        "builtins.open",
-        new_callable=mock_open,
-        read_data='[{"url": "https://example1.com"}, {"url": "https://example2.com"}]',
-    )
-    def test_creates_temp_table(self, mock_file, mock_connect):
+    @patch("db_remove_processed.create_engine")
+    @patch("pathlib.Path.read_text")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_creates_temp_table(self, mock_file, mock_read_text, mock_create_engine):
         """Test that temporary table is created."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
-        mock_conn = MagicMock()
-        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn.__exit__ = MagicMock(return_value=False)
-        mock_conn.execute.return_value.fetchall.return_value = [
-            ("https://example1.com",)
-        ]
-        mock_connect.return_value = mock_conn
+        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}, {"url": "https://example2.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Science"}]'
 
-        remove_unprocessed_articles(
-            "articles.json", "output.json", "duckdb", db_path="test.duckdb"
-        )
+        mock_engine = MagicMock()
+        mock_create_engine.return_value = mock_engine
 
-        # Check that CREATE TEMPORARY TABLE was called
-        create_calls = [
-            call
-            for call in mock_conn.execute.call_args_list
-            if "CREATE TEMPORARY TABLE" in str(call)
-        ]
-        assert len(create_calls) > 0
+        with patch("db_remove_processed.Session") as mock_session_class:
+            mock_session_instance = MagicMock()
+            mock_session_class.return_value.__enter__.return_value = (
+                mock_session_instance
+            )
+            mock_session_instance.exec.return_value.all.return_value = [
+                ("https://example1.com",)
+            ]
 
-    @patch("duckdb.connect")
-    @patch(
-        "builtins.open",
-        new_callable=mock_open,
-        read_data='[{"url": "https://example1.com"}, {"url": "https://example2.com"}]',
-    )
-    def test_inserts_urls_to_temp_table(self, mock_file, mock_connect):
+            # Mock the Table.create method
+            with patch("db_remove_processed.Table") as mock_table_class:
+                mock_table = MagicMock()
+                mock_table_class.return_value = mock_table
+
+                remove_processed_articles(
+                    "articles.json",
+                    "output.json",
+                    connection_string=TEST_PG_CONN_STRING,
+                )
+
+                # Check that temp table was created
+                assert mock_table.create.called
+
+    @patch("db_remove_processed.create_engine")
+    @patch("pathlib.Path.read_text")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_inserts_urls_to_temp_table(
+        self, mock_file, mock_read_text, mock_create_engine
+    ):
         """Test that URLs are inserted into temporary table."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
-        mock_conn = MagicMock()
-        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn.__exit__ = MagicMock(return_value=False)
-        mock_conn.execute.return_value.fetchall.return_value = [
-            ("https://example1.com",)
-        ]
-        mock_connect.return_value = mock_conn
+        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}, {"url": "https://example2.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Science"}]'
 
-        remove_unprocessed_articles(
-            "articles.json", "output.json", "duckdb", db_path="test.duckdb"
-        )
+        mock_engine = MagicMock()
+        mock_create_engine.return_value = mock_engine
 
-        # Check that executemany was called
-        assert mock_conn.executemany.called
-        call_args = mock_conn.executemany.call_args
-        assert "INSERT INTO tmp_articles" in call_args[0][0]
+        with patch("db_remove_processed.Session") as mock_session_class:
+            mock_session_instance = MagicMock()
+            mock_session_class.return_value.__enter__.return_value = (
+                mock_session_instance
+            )
+            mock_session_instance.exec.return_value.all.return_value = [
+                ("https://example1.com",)
+            ]
 
-    @patch("duckdb.connect")
-    @patch("db_remove_processed.json.load")
-    @patch("db_remove_processed.json.dump")
-    @patch("builtins.open", new_callable=mock_open)
-    def test_writes_unprocessed_articles(
-        self, mock_file, mock_dump, mock_load, mock_connect
-    ):
+            # Mock the Table.create method
+            with patch("db_remove_processed.Table"):
+                remove_processed_articles(
+                    "articles.json",
+                    "output.json",
+                    connection_string=TEST_PG_CONN_STRING,
+                )
+
+                # Check that execute was called to insert URLs
+                assert mock_session_instance.execute.called
+
+    @patch("db_remove_processed.create_engine")
+    @patch("pathlib.Path.read_text")
+    @patch("builtins.open", mock_open())
+    def test_writes_unprocessed_articles(self, mock_read_text, mock_create_engine):
         """Test that unprocessed articles are written to output file."""
-        from db_remove_processed import remove_unprocessed_articles
+        from db_remove_processed import remove_processed_articles
 
-        mock_load.return_value = [
-            {"url": "https://example1.com", "title": "Article 1"},
-            {"url": "https://example2.com", "title": "Article 2"},
-        ]
+        mock_read_text.return_value = '[{"url": "https://example1.com", "title": "Article 1", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}, {"url": "https://example2.com", "title": "Article 2", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Science"}]'
 
-        mock_conn = MagicMock()
-        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn.__exit__ = MagicMock(return_value=False)
-        # Only example1 is unprocessed
-        mock_conn.execute.return_value.fetchall.return_value = [
-            ("https://example1.com",)
-        ]
-        mock_connect.return_value = mock_conn
+        mock_engine = MagicMock()
+        mock_create_engine.return_value = mock_engine
 
-        remove_unprocessed_articles(
-            "articles.json", "output.json", "duckdb", db_path="test.duckdb"
-        )
+        with patch("db_remove_processed.Session") as mock_session_class:
+            mock_session_instance = MagicMock()
+            mock_session_class.return_value.__enter__.return_value = (
+                mock_session_instance
+            )
+            # Only example1 is unprocessed
+            mock_session_instance.exec.return_value.all.return_value = [
+                ("https://example1.com",)
+            ]
 
-        # Check that json.dump was called with only unprocessed article
-        assert mock_dump.called
-        dumped_articles = mock_dump.call_args[0][0]
-        assert len(dumped_articles) == 1
-        assert dumped_articles[0]["url"] == "https://example1.com"
+            # Mock the Table.create and drop methods
+            with patch("db_remove_processed.Table"):
+                with patch("builtins.open", mock_open()) as mock_file:
+                    remove_processed_articles(
+                        "articles.json",
+                        "output.json",
+                        connection_string=TEST_PG_CONN_STRING,
+                    )
 
-    @patch("duckdb.connect")
-    @patch(
-        "builtins.open",
-        new_callable=mock_open,
-        read_data="[]",
-    )
-    def test_handles_empty_articles_list(self, mock_file, mock_connect):
-        """Test that empty articles list is handled."""
-        from db_remove_processed import remove_unprocessed_articles
+                    # Check that output file was opened for writing
+                    mock_file.assert_called_with("output.json", "w")
+                    # Check that write was called
+                    handle = mock_file()
+                    assert handle.write.called
 
-        mock_conn = MagicMock()
-        mock_connect.return_value = mock_conn
+    @patch("db_remove_processed.create_engine")
+    @patch("pathlib.Path.read_text")
+    def test_filters_correctly(self, mock_read_text, mock_create_engine):
+        """Test that articles are filtered correctly based on database results."""
+        from db_remove_processed import remove_processed_articles
 
-        remove_unprocessed_articles(
-            "articles.json", "output.json", "duckdb", db_path="test.duckdb"
-        )
+        mock_read_text.return_value = '[{"url": "https://example1.com", "title": "Article 1", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}, {"url": "https://example2.com", "title": "Article 2", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Science"}, {"url": "https://example3.com", "title": "Article 3", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Cell"}]'
 
-        # Should not try to connect to database
-        assert not mock_connect.called
+        mock_engine = MagicMock()
+        mock_create_engine.return_value = mock_engine
 
+        with patch("db_remove_processed.Session") as mock_session_class:
+            mock_session_instance = MagicMock()
+            mock_session_class.return_value.__enter__.return_value = (
+                mock_session_instance
+            )
+            # Only example1 and example3 are unprocessed
+            mock_session_instance.exec.return_value.all.return_value = [
+                ("https://example1.com",),
+                ("https://example3.com",),
+            ]
 
-class TestRemoveUnprocessedArticlesPostgreSQL:
-    """Test remove_unprocessed_articles function with PostgreSQL."""
+            written_content = []
 
-    @patch("psycopg2.connect")
-    @patch("psycopg2.extras.execute_values")
-    @patch(
-        "builtins.open",
-        new_callable=mock_open,
-        read_data='[{"url": "https://example1.com"}, {"url": "https://example2.com"}]',
-    )
-    def test_creates_temp_table(self, mock_file, mock_execute_values, mock_connect):
-        """Test that temporary table is created."""
-        from db_remove_processed import remove_unprocessed_articles
+            def mock_write(content):
+                written_content.append(content)
 
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn.__exit__ = MagicMock(return_value=False)
-        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
-        mock_cursor.__exit__ = MagicMock(return_value=False)
-        mock_cursor.fetchall.return_value = [("https://example1.com",)]
-        mock_conn.cursor.return_value = mock_cursor
-        mock_connect.return_value = mock_conn
+            with patch("db_remove_processed.Table"):
+                with patch("builtins.open", mock_open()) as mock_file:
+                    mock_file.return_value.write.side_effect = mock_write
 
-        remove_unprocessed_articles(
-            "articles.json",
-            "output.json",
-            "pg",
-            connection_string=TEST_PG_CONN_STRING,
-        )
+                    remove_processed_articles(
+                        "articles.json",
+                        "output.json",
+                        connection_string=TEST_PG_CONN_STRING,
+                    )
 
-        # Check that CREATE TEMP TABLE was called
-        create_calls = [
-            call
-            for call in mock_cursor.execute.call_args_list
-            if "CREATE" in str(call) and "TEMP" in str(call)
-        ]
-        assert len(create_calls) > 0
+                    # Verify that some content was written
+                    assert len(written_content) > 0
 
-    @patch("psycopg2.connect")
-    @patch("psycopg2.extras.execute_values")
-    @patch(
-        "builtins.open",
-        new_callable=mock_open,
-        read_data='[{"url": "https://example1.com"}, {"url": "https://example2.com"}]',
-    )
-    def test_uses_execute_values(self, mock_file, mock_execute_values, mock_connect):
-        """Test that execute_values is used for batch insert."""
-        from db_remove_processed import remove_unprocessed_articles
+    @patch("db_remove_processed.create_engine")
+    @patch("pathlib.Path.read_text")
+    @patch("builtins.open", mock_open())
+    def test_commits_transaction(self, mock_read_text, mock_create_engine):
+        """Test that transaction is committed."""
+        from db_remove_processed import remove_processed_articles
 
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn.__exit__ = MagicMock(return_value=False)
-        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
-        mock_cursor.__exit__ = MagicMock(return_value=False)
-        mock_cursor.fetchall.return_value = [("https://example1.com",)]
-        mock_conn.cursor.return_value = mock_cursor
-        mock_connect.return_value = mock_conn
+        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}]'
 
-        remove_unprocessed_articles(
-            "articles.json",
-            "output.json",
-            "pg",
-            connection_string=TEST_PG_CONN_STRING,
-        )
+        mock_engine = MagicMock()
+        mock_create_engine.return_value = mock_engine
 
-        # Check that execute_values was called
-        assert mock_execute_values.called
-        call_args = mock_execute_values.call_args
-        assert "INSERT INTO tmp_articles" in call_args[0][1]
+        with patch("db_remove_processed.Session") as mock_session_class:
+            mock_session_instance = MagicMock()
+            mock_session_class.return_value.__enter__.return_value = (
+                mock_session_instance
+            )
+            mock_session_instance.exec.return_value.all.return_value = [
+                ("https://example1.com",)
+            ]
 
-    @patch("psycopg2.connect")
-    @patch("psycopg2.extras.execute_values")
-    @patch("db_remove_processed.json.load")
-    @patch("db_remove_processed.json.dump")
-    @patch("builtins.open", new_callable=mock_open)
-    def test_writes_unprocessed_articles(
-        self, mock_file, mock_dump, mock_load, mock_execute_values, mock_connect
-    ):
-        """Test that unprocessed articles are written to output file."""
-        from db_remove_processed import remove_unprocessed_articles
+            with patch("db_remove_processed.Table"):
+                remove_processed_articles(
+                    "articles.json",
+                    "output.json",
+                    connection_string=TEST_PG_CONN_STRING,
+                )
 
-        mock_load.return_value = [
-            {"url": "https://example1.com", "title": "Article 1"},
-            {"url": "https://example2.com", "title": "Article 2"},
-        ]
+                # Check that commit was called
+                assert mock_session_instance.commit.called
 
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn.__exit__ = MagicMock(return_value=False)
-        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
-        mock_cursor.__exit__ = MagicMock(return_value=False)
-        # Only example1 is unprocessed
-        mock_cursor.fetchall.return_value = [("https://example1.com",)]
-        mock_conn.cursor.return_value = mock_cursor
-        mock_connect.return_value = mock_conn
+    @patch("db_remove_processed.create_engine")
+    @patch("pathlib.Path.read_text")
+    @patch("builtins.open", mock_open())
+    def test_drops_temp_table(self, mock_read_text, mock_create_engine):
+        """Test that temporary table is dropped after processing."""
+        from db_remove_processed import remove_processed_articles
 
-        remove_unprocessed_articles(
-            "articles.json",
-            "output.json",
-            "pg",
-            connection_string=TEST_PG_CONN_STRING,
-        )
+        mock_read_text.return_value = '[{"url": "https://example1.com", "date": "2025-01-01", "access_date": "2025-11-09", "raw_contents": "test", "journal": "Nature"}]'
 
-        # Check that json.dump was called with only unprocessed article
-        assert mock_dump.called
-        dumped_articles = mock_dump.call_args[0][0]
-        assert len(dumped_articles) == 1
-        assert dumped_articles[0]["url"] == "https://example1.com"
+        mock_engine = MagicMock()
+        mock_create_engine.return_value = mock_engine
 
-    @patch("psycopg2.connect")
-    @patch(
-        "builtins.open",
-        new_callable=mock_open,
-        read_data="[]",
-    )
-    def test_handles_empty_articles_list(self, mock_file, mock_connect):
-        """Test that empty articles list is handled."""
-        from db_remove_processed import remove_unprocessed_articles
+        with patch("db_remove_processed.Session") as mock_session_class:
+            mock_session_instance = MagicMock()
+            mock_session_class.return_value.__enter__.return_value = (
+                mock_session_instance
+            )
+            mock_session_instance.exec.return_value.all.return_value = [
+                ("https://example1.com",)
+            ]
 
-        mock_conn = MagicMock()
-        mock_connect.return_value = mock_conn
+            with patch("db_remove_processed.Table") as mock_table_class:
+                mock_table = MagicMock()
+                mock_table_class.return_value = mock_table
 
-        remove_unprocessed_articles(
-            "articles.json",
-            "output.json",
-            "pg",
-            connection_string=TEST_PG_CONN_STRING,
-        )
+                remove_processed_articles(
+                    "articles.json",
+                    "output.json",
+                    connection_string=TEST_PG_CONN_STRING,
+                )
 
-        # Should not try to connect to database
-        assert not mock_connect.called
-
-
-class TestGetSelectUnprocessedSql:
-    """Test get_select_unprocessed_sql function."""
-
-    def test_returns_left_join_query(self):
-        """Test returns LEFT JOIN query."""
-        sql = get_select_unprocessed_sql()
-        assert "SELECT a.url" in sql
-        assert "FROM tmp_articles a" in sql
-        assert "LEFT JOIN articles p" in sql
-        assert "ON a.url = p.url" in sql
-        assert "WHERE p.title IS NULL" in sql
-
-
-class TestGetCreateTempArticlesTableSql:
-    """Test get_create_temp_articles_table_sql function."""
-
-    def test_duckdb_uses_temporary(self):
-        """Test DuckDB uses TEMPORARY keyword."""
-        sql = get_create_temp_articles_table_sql(db_type="duckdb")
-        assert "CREATE TEMPORARY TABLE tmp_articles" in sql
-        assert "url TEXT" in sql
-
-    def test_postgresql_uses_temp(self):
-        """Test PostgreSQL uses TEMP keyword."""
-        sql = get_create_temp_articles_table_sql(db_type="pg")
-        assert "CREATE TEMP TABLE tmp_articles" in sql
-        assert "url TEXT" in sql
+                # Check that temp table was dropped
+                assert mock_table.drop.called

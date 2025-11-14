@@ -92,7 +92,7 @@ def sample_article():
     return Article(
         title="Test Article",
         url="https://example.com/article",
-        journal_name="Test Journal",
+        journal="Test Journal",
         date=date(2024, 1, 1),
         access_date=date(2024, 1, 1),
         raw_contents="Test content",
